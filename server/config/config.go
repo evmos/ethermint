@@ -139,7 +139,7 @@ type JSONRPCConfig struct {
 	// FixRevertGasRefundHeight defines the upgrade height for fix of revert gas refund logic when transaction reverted
 	FixRevertGasRefundHeight int64 `mapstructure:"fix-revert-gas-refund-height"`
 	// Deprecate height for usage of x/params.
-	BackupGRPCBlockAddressBlockRange map[[2]int]string `mapstructure:"backup-grpc-address-block-range"`
+	BackupGRPCBlockAddressBlockRange []string `mapstructure:"backup-grpc-address-block-range"`
 }
 
 // TLSConfig defines the certificate and matching private key for the server.
@@ -328,13 +328,6 @@ func GetConfig(v *viper.Viper) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-
-	backupGRPCBlockAddressBlockRange := make(map[[2]int]string)
-	for addr, val := range v.GetStringMap("json-rpc.backup-grpc-address-block-range") {
-		blocks := val.([]int)
-		lower, upper := blocks[0], blocks[1]
-		backupGRPCBlockAddressBlockRange[[2]int{lower, upper}] = addr
-	}
 	return Config{
 		Config: cfg,
 		EVM: EVMConfig{
@@ -359,7 +352,7 @@ func GetConfig(v *viper.Viper) (Config, error) {
 			EnableIndexer:                    v.GetBool("json-rpc.enable-indexer"),
 			MetricsAddress:                   v.GetString("json-rpc.metrics-address"),
 			FixRevertGasRefundHeight:         v.GetInt64("json-rpc.fix-revert-gas-refund-height"),
-			BackupGRPCBlockAddressBlockRange: backupGRPCBlockAddressBlockRange,
+			BackupGRPCBlockAddressBlockRange: v.GetStringSlice("json-rpc.backup-grpc-address-block-range"),
 		},
 		TLS: TLSConfig{
 			CertificatePath: v.GetString("tls.certificate-path"),

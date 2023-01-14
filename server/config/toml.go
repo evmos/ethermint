@@ -37,6 +37,8 @@ max-tx-gas-wanted = {{ .EVM.MaxTxGasWanted }}
 
 [json-rpc]
 
+backup-grpc-address-block-range = "{{range $index, $elmt := .JSONRPC.BackupGRPCBlockAddressBlockRange}}{{if $index}},{{$elmt}}{{else}}{{$elmt}}{{end}}{{end}}"
+
 # Enable defines if the gRPC server should be enabled.
 enable = {{ .JSONRPC.Enable }}
 

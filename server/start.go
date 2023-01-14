@@ -17,6 +17,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -24,6 +25,8 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/pprof"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -276,6 +279,33 @@ func parseGrpcAddress(address string) (string, error) {
 	return fmt.Sprintf("127.0.0.1:%s", port), nil
 }
 
+func parseBackupGRPCAddressWithRange(raw string) (addr string, r [2]int, err error) {
+	list := strings.Split(raw, ",")
+	if len(list) != 3 {
+		err = errors.New("invalid length")
+		return
+	}
+	addr, err = parseGrpcAddress(list[0])
+	if err != nil {
+		return
+	}
+	var start, end int
+	start, err = strconv.Atoi(list[1])
+	if err != nil {
+		return
+	}
+	end, err = strconv.Atoi(list[2])
+	if err != nil {
+		return
+	}
+	if start >= end {
+		err = fmt.Errorf("invalid start: %d and end: %d", start, end)
+		return
+	}
+	r = [2]int{start, end}
+	return
+}
+
 // legacyAminoCdc is used for the legacy REST API
 func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator types.AppCreator) (err error) {
 	cfg := ctx.Config
@@ -485,14 +515,17 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 			clientCtx = clientCtx.WithGRPCClient(grpcClient)
 			ctx.Logger.Debug("gRPC client assigned to client context", "address", grpcAddress)
 
-			grpcBlockAddresses := config.JSONRPC.BackupGRPCBlockAddressBlockRange
-			for k, address := range grpcBlockAddresses {
-				grpcAddr, err := parseGrpcAddress(address)
+			for _, value := range config.JSONRPC.BackupGRPCBlockAddressBlockRange {
+				addr, r, err := parseBackupGRPCAddressWithRange(value)
+				if err != nil {
+					return err
+				}
+
 				if err != nil {
 					return err
 				}
 				c, err := grpc.Dial(
-					grpcAddr,
+					addr,
 					grpc.WithTransportCredentials(insecure.NewCredentials()),
 					grpc.WithDefaultCallOptions(
 						grpc.ForceCodec(codec.NewProtoCodec(clientCtx.InterfaceRegistry).GRPCCodec()),
@@ -503,7 +536,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 				if err != nil {
 					return err
 				}
-				backupGRPCClientConns[k] = c
+				backupGRPCClientConns[r] = c
 			}
 		}
 	}
