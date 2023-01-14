@@ -333,7 +333,7 @@ func (b *Backend) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *rp
 	// From ContextWithHeight: if the provided height is 0,
 	// it will return an empty context and the gRPC query will use
 	// the latest block height for querying.
-	// TODO: use latest queryClient to estimate, need estimate for old block?
+	// use latest queryClient to estimate
 	res, err := b.queryClient.EstimateGas(rpctypes.ContextWithHeight(blockNr.Int64()), &req)
 	if err != nil {
 		return 0, err
@@ -381,7 +381,7 @@ func (b *Backend) DoCall(
 	// Make sure the context is canceled when the call has completed
 	// this makes sure resources are cleaned up.
 	defer cancel()
-	// TODO: use latest queryClient to call, need call for old block?
+	// use latest queryClient to call
 	res, err := b.queryClient.EthCall(ctx, &req)
 	if err != nil {
 		return nil, err
