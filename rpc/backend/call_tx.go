@@ -366,7 +366,8 @@ func (b *Backend) DoCall(
 	// From ContextWithHeight: if the provided height is 0,
 	// it will return an empty context and the gRPC query will use
 	// the latest block height for querying.
-	ctx := rpctypes.ContextWithHeight(blockNr.Int64())
+	height := blockNr.Int64()
+	ctx := rpctypes.ContextWithHeight(height)
 	timeout := b.RPCEVMTimeout()
 
 	// Setup context so it may be canceled the call has completed
@@ -381,8 +382,7 @@ func (b *Backend) DoCall(
 	// Make sure the context is canceled when the call has completed
 	// this makes sure resources are cleaned up.
 	defer cancel()
-	// use latest queryClient to call
-	res, err := b.queryClient.EthCall(ctx, &req)
+	res, err := b.getGrpcClient(height).EthCall(ctx, &req)
 	if err != nil {
 		return nil, err
 	}
