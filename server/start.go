@@ -17,7 +17,6 @@ package server
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -25,8 +24,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/pprof"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -194,6 +191,7 @@ which accepts a path for the resulting pprof file.
 	cmd.Flags().Int(srvflags.JSONRPCMaxOpenConnections, config.DefaultMaxOpenConnections, "Sets the maximum number of simultaneous connections for the server listener") //nolint:lll
 	cmd.Flags().Bool(srvflags.JSONRPCEnableIndexer, false, "Enable the custom tx indexer for json-rpc")
 	cmd.Flags().Bool(srvflags.JSONRPCEnableMetrics, false, "Define if EVM rpc metrics server should be enabled")
+	cmd.Flags().String(srvflags.JSONRPCBackupGRPCBlockAddressBlockRange, "", "Define if backup grpc and block range is available")
 
 	cmd.Flags().String(srvflags.EVMTracer, config.DefaultEVMTracer, "the EVM tracer type to collect execution traces from the EVM transaction execution (json|struct|access_list|markdown)") //nolint:lll
 	cmd.Flags().Uint64(srvflags.EVMMaxTxGasWanted, config.DefaultMaxTxGasWanted, "the gas wanted for each eth tx returned in ante handler in check tx mode")                                 //nolint:lll
@@ -277,33 +275,6 @@ func parseGrpcAddress(address string) (string, error) {
 		return "", errorsmod.Wrapf(err, "invalid grpc address %s", address)
 	}
 	return fmt.Sprintf("127.0.0.1:%s", port), nil
-}
-
-func parseBackupGRPCAddressWithRange(raw string) (addr string, r [2]int, err error) {
-	list := strings.Split(raw, ",")
-	if len(list) != 3 {
-		err = errors.New("invalid length")
-		return
-	}
-	addr, err = parseGrpcAddress(list[0])
-	if err != nil {
-		return
-	}
-	var start, end int
-	start, err = strconv.Atoi(list[1])
-	if err != nil {
-		return
-	}
-	end, err = strconv.Atoi(list[2])
-	if err != nil {
-		return
-	}
-	if start >= end {
-		err = fmt.Errorf("invalid start: %d and end: %d", start, end)
-		return
-	}
-	r = [2]int{start, end}
-	return
 }
 
 // legacyAminoCdc is used for the legacy REST API
@@ -515,17 +486,15 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 			clientCtx = clientCtx.WithGRPCClient(grpcClient)
 			ctx.Logger.Debug("gRPC client assigned to client context", "address", grpcAddress)
 
-			for _, value := range config.JSONRPC.BackupGRPCBlockAddressBlockRange {
-				addr, r, err := parseBackupGRPCAddressWithRange(value)
-				if err != nil {
-					return err
-				}
-
+			grpcBlockAddresses := config.JSONRPC.BackupGRPCBlockAddressBlockRange
+			fmt.Printf("mm-grpcBlockAddresses: %+v\n", grpcBlockAddresses)
+			for k, address := range grpcBlockAddresses {
+				grpcAddr, err := parseGrpcAddress(address)
 				if err != nil {
 					return err
 				}
 				c, err := grpc.Dial(
-					addr,
+					grpcAddr,
 					grpc.WithTransportCredentials(insecure.NewCredentials()),
 					grpc.WithDefaultCallOptions(
 						grpc.ForceCodec(codec.NewProtoCodec(clientCtx.InterfaceRegistry).GRPCCodec()),
@@ -536,7 +505,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 				if err != nil {
 					return err
 				}
-				backupGRPCClientConns[r] = c
+				backupGRPCClientConns[k] = c
 			}
 		}
 	}

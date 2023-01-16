@@ -16,6 +16,7 @@
 package config
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"path"
@@ -139,7 +140,7 @@ type JSONRPCConfig struct {
 	// FixRevertGasRefundHeight defines the upgrade height for fix of revert gas refund logic when transaction reverted
 	FixRevertGasRefundHeight int64 `mapstructure:"fix-revert-gas-refund-height"`
 	// Deprecate height for usage of x/params.
-	BackupGRPCBlockAddressBlockRange []string `mapstructure:"backup-grpc-address-block-range"`
+	BackupGRPCBlockAddressBlockRange map[[2]int]string `mapstructure:"backup-grpc-address-block-range"`
 }
 
 // TLSConfig defines the certificate and matching private key for the server.
@@ -225,24 +226,25 @@ func GetAPINamespaces() []string {
 // DefaultJSONRPCConfig returns an EVM config with the JSON-RPC API enabled by default
 func DefaultJSONRPCConfig() *JSONRPCConfig {
 	return &JSONRPCConfig{
-		Enable:                   true,
-		API:                      GetDefaultAPINamespaces(),
-		Address:                  DefaultJSONRPCAddress,
-		WsAddress:                DefaultJSONRPCWsAddress,
-		GasCap:                   DefaultGasCap,
-		EVMTimeout:               DefaultEVMTimeout,
-		TxFeeCap:                 DefaultTxFeeCap,
-		FilterCap:                DefaultFilterCap,
-		FeeHistoryCap:            DefaultFeeHistoryCap,
-		BlockRangeCap:            DefaultBlockRangeCap,
-		LogsCap:                  DefaultLogsCap,
-		HTTPTimeout:              DefaultHTTPTimeout,
-		HTTPIdleTimeout:          DefaultHTTPIdleTimeout,
-		AllowUnprotectedTxs:      DefaultAllowUnprotectedTxs,
-		MaxOpenConnections:       DefaultMaxOpenConnections,
-		EnableIndexer:            false,
-		MetricsAddress:           DefaultJSONRPCMetricsAddress,
-		FixRevertGasRefundHeight: DefaultFixRevertGasRefundHeight,
+		Enable:                           true,
+		API:                              GetDefaultAPINamespaces(),
+		Address:                          DefaultJSONRPCAddress,
+		WsAddress:                        DefaultJSONRPCWsAddress,
+		GasCap:                           DefaultGasCap,
+		EVMTimeout:                       DefaultEVMTimeout,
+		TxFeeCap:                         DefaultTxFeeCap,
+		FilterCap:                        DefaultFilterCap,
+		FeeHistoryCap:                    DefaultFeeHistoryCap,
+		BlockRangeCap:                    DefaultBlockRangeCap,
+		LogsCap:                          DefaultLogsCap,
+		HTTPTimeout:                      DefaultHTTPTimeout,
+		HTTPIdleTimeout:                  DefaultHTTPIdleTimeout,
+		AllowUnprotectedTxs:              DefaultAllowUnprotectedTxs,
+		MaxOpenConnections:               DefaultMaxOpenConnections,
+		EnableIndexer:                    false,
+		MetricsAddress:                   DefaultJSONRPCMetricsAddress,
+		FixRevertGasRefundHeight:         DefaultFixRevertGasRefundHeight,
+		BackupGRPCBlockAddressBlockRange: make(map[[2]int]string),
 	}
 }
 
@@ -328,6 +330,19 @@ func GetConfig(v *viper.Viper) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+
+	data := make(map[string][2]int)
+	raw := v.GetString("json-rpc.backup-grpc-address-block-range")
+	if len(raw) > 0 {
+		err = json.Unmarshal([]byte(raw), &data)
+		if err != nil {
+			return Config{}, err
+		}
+	}
+	backupGRPCBlockAddressBlockRange := make(map[[2]int]string)
+	for k, v := range data {
+		backupGRPCBlockAddressBlockRange[v] = k
+	}
 	return Config{
 		Config: cfg,
 		EVM: EVMConfig{
@@ -352,7 +367,7 @@ func GetConfig(v *viper.Viper) (Config, error) {
 			EnableIndexer:                    v.GetBool("json-rpc.enable-indexer"),
 			MetricsAddress:                   v.GetString("json-rpc.metrics-address"),
 			FixRevertGasRefundHeight:         v.GetInt64("json-rpc.fix-revert-gas-refund-height"),
-			BackupGRPCBlockAddressBlockRange: v.GetStringSlice("json-rpc.backup-grpc-address-block-range"),
+			BackupGRPCBlockAddressBlockRange: backupGRPCBlockAddressBlockRange,
 		},
 		TLS: TLSConfig{
 			CertificatePath: v.GetString("tls.certificate-path"),

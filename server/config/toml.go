@@ -37,8 +37,6 @@ max-tx-gas-wanted = {{ .EVM.MaxTxGasWanted }}
 
 [json-rpc]
 
-backup-grpc-address-block-range = "{{range $index, $elmt := .JSONRPC.BackupGRPCBlockAddressBlockRange}}{{if $index}},{{$elmt}}{{else}}{{$elmt}}{{end}}{{end}}"
-
 # Enable defines if the gRPC server should be enabled.
 enable = {{ .JSONRPC.Enable }}
 
@@ -94,8 +92,12 @@ enable-indexer = {{ .JSONRPC.EnableIndexer }}
 # Prometheus metrics path: /debug/metrics/prometheus
 metrics-address = "{{ .JSONRPC.MetricsAddress }}"
 
-# Upgrade height for fix of revert gas refund logic when transaction reverted.
-fix-revert-gas-refund-height = {{ .JSONRPC.FixRevertGasRefundHeight }}
+# A list of grpc address with block range
+# Example: "0.0.0.0:26113" = [0, 20]
+[json-rpc.backup-grpc-address-block-range]
+{{ range $k, $v := .JSONRPC.BackupGRPCBlockAddressBlockRange }}
+"{{ $v }}" = [{{index $k 0 }}, {{ index $k 1}}]
+{{ end }}
 
 ###############################################################################
 ###                             TLS Configuration                           ###

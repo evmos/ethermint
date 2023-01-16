@@ -19,7 +19,7 @@
         'feehistory-cap': 100,
         'block-range-cap': 10000,
         'logs-cap': 10000,
-        'fix-revert-gas-refund-height': 1,
+        'backup-grpc-address-block-range': '',  //'{{"0.0.0.0:26113": [0, 20]}}',
       },
     },
     validators: [{
