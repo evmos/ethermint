@@ -19,6 +19,7 @@
         'feehistory-cap': 100,
         'block-range-cap': 10000,
         'logs-cap': 10000,
+        'fix-revert-gas-refund-height': 1,
       },
     },
     validators: [{

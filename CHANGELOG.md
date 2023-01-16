@@ -131,6 +131,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (analytics) [#1434](https://github.com/evmos/ethermint/pull/1434) Remove unbound labels from custom tendermint metrics.
 * (rpc) [#1484](https://github.com/evmos/ethermint/pull/1484) Align empty account result for old blocks as ethereum instead of return account not found error.
 * (rpc) [#1503](https://github.com/evmos/ethermint/pull/1503) Fix block hashes returned on JSON-RPC filter `eth_newBlockFilter`.
+* (rpc) [#1557](https://github.com/evmos/ethermint/pull/1557) Patch GasUsed before the fix of revert gas refund logic when transaction reverted for `eth_getTransactionReceipt`.
 * (ante) [#1566](https://github.com/evmos/ethermint/pull/1566) Fix `gasWanted` on `EthGasConsumeDecorator` ante handler when running transaction in `ReCheckMode`
 
 ## [v0.19.3] - 2022-10-14
