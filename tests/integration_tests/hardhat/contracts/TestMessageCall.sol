@@ -1,4 +1,5 @@
-pragma solidity > 0.6.6;
+// SPDX-License-Identifier: MIT
+pragma solidity > 0.8.0;
 
 contract Inner {
     event TestEvent(uint256);
@@ -11,7 +12,7 @@ contract Inner {
 // An contract that do lots of message calls
 contract TestMessageCall {
     Inner _inner;
-    constructor() public {
+    constructor() {
         _inner = new Inner();
     }
 
