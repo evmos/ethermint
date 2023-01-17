@@ -31,7 +31,7 @@ func (b *Backend) getGrpcClient(height int64) *rpctypes.QueryClient {
 	for blocks, client := range b.backupQueryClients {
 		// b1-b2 -> g1
 		// b3-b4 -> g2
-		if blocks[0] <= int(height) && blocks[1] >= int(height) {
+		if int64(blocks[0]) <= height && int64(blocks[1]) >= height {
 			return client
 		}
 	}
