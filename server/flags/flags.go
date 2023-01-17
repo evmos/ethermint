@@ -69,6 +69,7 @@ const (
 	// Set to `metrics` which is hardcoded flag from go-ethereum.
 	// https://github.com/ethereum/go-ethereum/blob/master/metrics/metrics.go#L35-L55
 	JSONRPCEnableMetrics            = "metrics"
+	JSONRPCFixRevertGasRefundHeight = "json-rpc.fix-revert-gas-refund-height"
 	JSONRPCFixClearAccessListHeight = "json-rpc.fix-clear-access-list-height"
 )
 
