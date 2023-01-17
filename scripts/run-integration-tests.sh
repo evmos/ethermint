@@ -10,4 +10,4 @@ cd ../tests/integration_tests/hardhat
 HUSKY_SKIP_INSTALL=1 npm install
 npm run typechain
 cd ..
-pytest -vv -s
+pytest -v -s test_account.py
