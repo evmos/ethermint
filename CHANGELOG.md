@@ -38,6 +38,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### Features
+
+* (rpc) [#1603](https://github.com/evmos/ethermint/pull/1603) Support multi gRPC query clients serve with old binary.
+
 ## [v0.21.0-rc1] - 2022-1-13
 
 ### State Machine Breaking
