@@ -164,25 +164,23 @@ def test_cosmovisor_upgrade(custom_ethermint: Ethermint):
 
     # check get_balance and eth_call don't work on pruned state
     with pytest.raises(Exception):
-        w3.eth.get_balance(
-            validator, block_identifier=old_height
-        )
+        w3.eth.get_balance(validator, block_identifier=old_height)
 
     base_dir = custom_ethermint.base_dir
     for i in [0, 1]:
-        supervisorctl(
-            base_dir / "../tasks.ini", "stop", f"ethermint_9000-1-node{i}"
-        )
+        supervisorctl(base_dir / "../tasks.ini", "stop", f"ethermint_9000-1-node{i}")
 
     procs = []
 
     def append_proc(log, cmd):
         with (base_dir / log).open("a") as logfile:
-            procs.append(subprocess.Popen(
-                cmd,
-                stdout=logfile,
-                stderr=subprocess.STDOUT,
-            ))
+            procs.append(
+                subprocess.Popen(
+                    cmd,
+                    stdout=logfile,
+                    stderr=subprocess.STDOUT,
+                )
+            )
 
     path = Path(custom_ethermint.chain_binary).parent.parent.parent
     append_proc(
@@ -201,7 +199,7 @@ def test_cosmovisor_upgrade(custom_ethermint: Ethermint):
             f"{str(path)}/{plan_name}/bin/ethermintd",
             "start",
             "--json-rpc.backup-grpc-address-block-range",
-            f"{{\"0.0.0.0:{grpc_port1}\": [0, {target_height}]}}",
+            f'{{"0.0.0.0:{grpc_port1}": [0, {target_height}]}}',
             "--home",
             base_dir / "node0",
         ],
@@ -212,13 +210,9 @@ def test_cosmovisor_upgrade(custom_ethermint: Ethermint):
             wait_for_port(ports.evmrpc_port(custom_ethermint.base_port(i)))
 
         # check json-rpc query on older blocks works
-        assert old_balance == w3.eth.get_balance(
-            validator, block_identifier=old_height
-        )
+        assert old_balance == w3.eth.get_balance(validator, block_identifier=old_height)
         assert receipt.status == 1
-        assert old_balance == w3.eth.get_balance(
-            validator, block_identifier=old_height
-        )
+        assert old_balance == w3.eth.get_balance(validator, block_identifier=old_height)
         assert old_base_fee == w3.eth.get_block(old_height).baseFeePerGas
 
         # check eth_call on older blocks works

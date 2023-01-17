@@ -95,7 +95,14 @@ func init() {
 				},
 			}
 		},
-		Web3Namespace: func(*server.Context, client.Context, map[[2]int]*grpc.ClientConn, *rpcclient.WSClient, bool, ethermint.EVMTxIndexer) []rpc.API {
+		Web3Namespace: func(
+			*server.Context,
+			client.Context,
+			map[[2]int]*grpc.ClientConn,
+			*rpcclient.WSClient,
+			bool,
+			ethermint.EVMTxIndexer,
+		) []rpc.API {
 			return []rpc.API{
 				{
 					Namespace: Web3Namespace,
@@ -105,7 +112,14 @@ func init() {
 				},
 			}
 		},
-		NetNamespace: func(_ *server.Context, clientCtx client.Context, _ map[[2]int]*grpc.ClientConn, _ *rpcclient.WSClient, _ bool, _ ethermint.EVMTxIndexer) []rpc.API {
+		NetNamespace: func(
+			_ *server.Context,
+			clientCtx client.Context,
+			_ map[[2]int]*grpc.ClientConn,
+			_ *rpcclient.WSClient,
+			_ bool,
+			_ ethermint.EVMTxIndexer,
+		) []rpc.API {
 			return []rpc.API{
 				{
 					Namespace: NetNamespace,
@@ -132,7 +146,14 @@ func init() {
 				},
 			}
 		},
-		TxPoolNamespace: func(ctx *server.Context, _ client.Context, _ map[[2]int]*grpc.ClientConn, _ *rpcclient.WSClient, _ bool, _ ethermint.EVMTxIndexer) []rpc.API {
+		TxPoolNamespace: func(
+			ctx *server.Context,
+			_ client.Context,
+			_ map[[2]int]*grpc.ClientConn,
+			_ *rpcclient.WSClient,
+			_ bool,
+			_ ethermint.EVMTxIndexer,
+		) []rpc.API {
 			return []rpc.API{
 				{
 					Namespace: TxPoolNamespace,
