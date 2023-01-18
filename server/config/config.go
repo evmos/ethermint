@@ -35,13 +35,13 @@ const (
 	DefaultGRPCAddress = "0.0.0.0:9900"
 
 	// DefaultJSONRPCAddress is the default address the JSON-RPC server binds to.
-	DefaultJSONRPCAddress = "0.0.0.0:8545"
+	DefaultJSONRPCAddress = "127.0.0.1:8545"
 
 	// DefaultJSONRPCWsAddress is the default address the JSON-RPC WebSocket server binds to.
-	DefaultJSONRPCWsAddress = "0.0.0.0:8546"
+	DefaultJSONRPCWsAddress = "127.0.0.1:8546"
 
 	// DefaultJsonRPCMetricsAddress is the default address the JSON-RPC Metrics server binds to.
-	DefaultJSONRPCMetricsAddress = "0.0.0.0:6065"
+	DefaultJSONRPCMetricsAddress = "127.0.0.1:6065"
 
 	// DefaultEVMTracer is the default vm.Tracer type
 	DefaultEVMTracer = ""

@@ -11,7 +11,7 @@ TEST_QTD=1
 
 #PORT AND RPC_PORT 3 initial digits, to be concat with a suffix later when node is initialized
 RPC_PORT="854"
-IP_ADDR="0.0.0.0"
+IP_ADDR="127.0.0.1"
 MODE="rpc"
 
 KEY="mykey"
