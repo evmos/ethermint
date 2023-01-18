@@ -134,7 +134,7 @@ func (b *Backend) processBlock(
 	// set basefee
 	targetOneFeeHistory.BaseFee = blockBaseFee
 	cfg := b.ChainConfig()
-	if cfg.IsLondon(big.NewInt(blockHeight)) {
+	if cfg.IsLondon(big.NewInt(blockHeight + 1)) {
 		targetOneFeeHistory.NextBaseFee = misc.CalcBaseFee(cfg, b.CurrentHeader())
 	} else {
 		targetOneFeeHistory.NextBaseFee = new(big.Int)
