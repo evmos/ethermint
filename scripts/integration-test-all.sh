@@ -16,7 +16,7 @@ REMOVE_DATA_DIR=false
 RPC_PORT="854"
 # Ethereum JSONRPC Websocket
 WS_PORT="855"
-IP_ADDR="0.0.0.0"
+IP_ADDR="127.0.0.1"
 
 KEY="mykey"
 CHAINID="ethermint_9000-1"
