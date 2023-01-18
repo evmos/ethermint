@@ -191,7 +191,7 @@ func (b *Backend) FeeHistory(
 		reward[i] = make([]*hexutil.Big, rewardCount)
 	}
 
-	thisBaseFee := make([]*hexutil.Big, blockCount)
+	thisBaseFee := make([]*hexutil.Big, blockCount+1)
 	thisGasUsedRatio := make([]float64, blockCount)
 
 	// rewards should only be calculated if reward percentiles were included
@@ -227,6 +227,7 @@ func (b *Backend) FeeHistory(
 
 		// copy
 		thisBaseFee[index] = (*hexutil.Big)(oneFeeHistory.BaseFee)
+		thisBaseFee[index+1] = (*hexutil.Big)(oneFeeHistory.NextBaseFee)
 		thisGasUsedRatio[index] = oneFeeHistory.GasUsedRatio
 		if calculateRewards {
 			for j := 0; j < rewardCount; j++ {
