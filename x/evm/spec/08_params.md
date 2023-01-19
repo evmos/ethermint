@@ -80,3 +80,5 @@ By default, all block configuration fields but `ConstantinopleBlock`, are enable
 | ArrowGlacierBlock   | 0                                                                    |
 | GrayGlacierBlock    | 0                                                                    |
 | MergeNetsplitBlock  | 0                                                                    |
+| ShanghaiBlock       | 0                                                                    |
+| CancunBlock.        | 0                                                                    |
