@@ -2,10 +2,7 @@ import pytest
 from web3 import Web3
 
 from .network import setup_ethermint
-from .utils import (
-    ADDRS,
-    send_transaction,
-)
+from .utils import send_transaction, ADDRS
 
 
 @pytest.fixture(scope="module")
