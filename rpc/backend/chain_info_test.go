@@ -337,7 +337,7 @@ func (suite *BackendTestSuite) TestFeeHistory() {
 				RegisterParamsError(queryClient, &header, ethrpc.BlockNumber(1).Int64())
 			},
 			1,
-			0,
+			-1,
 			nil,
 			nil,
 			false,
@@ -351,7 +351,7 @@ func (suite *BackendTestSuite) TestFeeHistory() {
 				RegisterParams(queryClient, &header, ethrpc.BlockNumber(1).Int64())
 			},
 			1,
-			0,
+			-1,
 			nil,
 			nil,
 			false,
@@ -421,7 +421,7 @@ func (suite *BackendTestSuite) TestFeeHistory() {
 			1,
 			1,
 			&rpc.FeeHistoryResult{
-				OldestBlock:  (*hexutil.Big)(big.NewInt(0)),
+				OldestBlock:  (*hexutil.Big)(big.NewInt(1)),
 				BaseFee:      []*hexutil.Big{(*hexutil.Big)(big.NewInt(1)), (*hexutil.Big)(big.NewInt(1))},
 				GasUsedRatio: []float64{0},
 				Reward:       [][]*hexutil.Big{{(*hexutil.Big)(big.NewInt(0)), (*hexutil.Big)(big.NewInt(0)), (*hexutil.Big)(big.NewInt(0)), (*hexutil.Big)(big.NewInt(0))}},
