@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/evmos/ethermint/x/evm/types"
-	gogotypes "github.com/gogo/protobuf/types"
 
 	"github.com/cosmos/cosmos-sdk/testutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -38,27 +37,9 @@ func TestMigrate(t *testing.T) {
 	legacySubspace := newMockSubspace(types.DefaultParams())
 	require.NoError(t, v4.MigrateStore(ctx, storeKey, legacySubspace, cdc))
 
-	// Get all the new parameters from the kvStore
-	var evmDenom string
-	bz := kvStore.Get(types.ParamStoreKeyEVMDenom)
-	evmDenom = string(bz)
+	paramsBz := kvStore.Get(types.ParamsKey)
+	var params types.Params
+	cdc.MustUnmarshal(paramsBz, &params)
 
-	var allowUnprotectedTx gogotypes.BoolValue
-	bz = kvStore.Get(types.ParamStoreKeyAllowUnprotectedTxs)
-	cdc.MustUnmarshal(bz, &allowUnprotectedTx)
-
-	enableCreate := kvStore.Has(types.ParamStoreKeyEnableCreate)
-	enableCall := kvStore.Has(types.ParamStoreKeyEnableCall)
-
-	var chainCfg types.ChainConfig
-	bz = kvStore.Get(types.ParamStoreKeyChainConfig)
-	cdc.MustUnmarshal(bz, &chainCfg)
-
-	var extraEIPs types.ExtraEIPs
-	bz = kvStore.Get(types.ParamStoreKeyExtraEIPs)
-	cdc.MustUnmarshal(bz, &extraEIPs)
-	require.Equal(t, types.AvailableExtraEIPs, extraEIPs.EIPs)
-
-	params := types.NewParams(evmDenom, allowUnprotectedTx.Value, enableCreate, enableCall, chainCfg, extraEIPs)
-	require.Equal(t, legacySubspace.ps, params)
+	require.Equal(t, params, legacySubspace.ps)
 }
