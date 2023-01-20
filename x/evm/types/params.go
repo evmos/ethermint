@@ -40,22 +40,12 @@ var (
 	DefaultExtraEIPs = ExtraEIPs{AvailableExtraEIPs}
 )
 
-// Parameter keys
-var (
-	ParamStoreKeyEVMDenom            = []byte("EVMDenom")
-	ParamStoreKeyEnableCreate        = []byte("EnableCreate")
-	ParamStoreKeyEnableCall          = []byte("EnableCall")
-	ParamStoreKeyExtraEIPs           = []byte("EnableExtraEIPs")
-	ParamStoreKeyChainConfig         = []byte("ChainConfig")
-	ParamStoreKeyAllowUnprotectedTxs = []byte("AllowUnprotectedTxs")
-
-	// AvailableExtraEIPs define the list of all EIPs that can be enabled by the
-	// EVM interpreter. These EIPs are applied in order and can override the
-	// instruction sets from the latest hard fork enabled by the ChainConfig. For
-	// more info check:
-	// https://github.com/ethereum/go-ethereum/blob/master/core/vm/interpreter.go#L97
-	AvailableExtraEIPs = []int64{1344, 1884, 2200, 2929, 3198, 3529}
-)
+// AvailableExtraEIPs define the list of all EIPs that can be enabled by the
+// EVM interpreter. These EIPs are applied in order and can override the
+// instruction sets from the latest hard fork enabled by the ChainConfig. For
+// more info check:
+// https://github.com/ethereum/go-ethereum/blob/master/core/vm/interpreter.go#L97
+var AvailableExtraEIPs = []int64{1344, 1884, 2200, 2929, 3198, 3529}
 
 // ParamKeyTable returns the parameter key table.
 func ParamKeyTable() paramtypes.KeyTable {
@@ -89,14 +79,7 @@ func DefaultParams() Params {
 
 // ParamSetPairs returns the parameter set pairs.
 func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
-	return paramtypes.ParamSetPairs{
-		paramtypes.NewParamSetPair(ParamStoreKeyEVMDenom, &p.EvmDenom, validateEVMDenom),
-		paramtypes.NewParamSetPair(ParamStoreKeyEnableCreate, &p.EnableCreate, validateBool),
-		paramtypes.NewParamSetPair(ParamStoreKeyEnableCall, &p.EnableCall, validateBool),
-		paramtypes.NewParamSetPair(ParamStoreKeyExtraEIPs, &p.ExtraEIPs.EIPs, validateEIPs),
-		paramtypes.NewParamSetPair(ParamStoreKeyChainConfig, &p.ChainConfig, validateChainConfig),
-		paramtypes.NewParamSetPair(ParamStoreKeyAllowUnprotectedTxs, &p.AllowUnprotectedTxs, validateBool),
-	}
+	return paramtypes.ParamSetPairs{}
 }
 
 // Validate performs basic validation on evm parameters.
