@@ -337,7 +337,7 @@ func (suite *BackendTestSuite) TestFeeHistory() {
 				RegisterParamsError(queryClient, &header, ethrpc.BlockNumber(1).Int64())
 			},
 			1,
-			0,
+			-1,
 			nil,
 			nil,
 			false,
@@ -351,7 +351,7 @@ func (suite *BackendTestSuite) TestFeeHistory() {
 				RegisterParams(queryClient, &header, ethrpc.BlockNumber(1).Int64())
 			},
 			1,
-			0,
+			-1,
 			nil,
 			nil,
 			false,
@@ -405,6 +405,7 @@ func (suite *BackendTestSuite) TestFeeHistory() {
 		{
 			"pass - Valid FeeHistoryResults object",
 			func(validator sdk.AccAddress) {
+				var header metadata.MD
 				baseFee := sdk.NewInt(1)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
@@ -414,12 +415,14 @@ func (suite *BackendTestSuite) TestFeeHistory() {
 				RegisterBaseFee(queryClient, baseFee)
 				RegisterValidatorAccount(queryClient, validator)
 				RegisterConsensusParams(client, 1)
+				RegisterParams(queryClient, &header, 1)
+				RegisterParamsWithoutHeader(queryClient, 1)
 			},
 			1,
 			1,
 			&rpc.FeeHistoryResult{
-				OldestBlock:  (*hexutil.Big)(big.NewInt(0)),
-				BaseFee:      []*hexutil.Big{(*hexutil.Big)(big.NewInt(1))},
+				OldestBlock:  (*hexutil.Big)(big.NewInt(1)),
+				BaseFee:      []*hexutil.Big{(*hexutil.Big)(big.NewInt(1)), (*hexutil.Big)(big.NewInt(1))},
 				GasUsedRatio: []float64{0},
 				Reward:       [][]*hexutil.Big{{(*hexutil.Big)(big.NewInt(0)), (*hexutil.Big)(big.NewInt(0)), (*hexutil.Big)(big.NewInt(0)), (*hexutil.Big)(big.NewInt(0))}},
 			},
