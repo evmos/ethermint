@@ -30,6 +30,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/consensus/misc"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -132,7 +133,12 @@ func (b *Backend) processBlock(
 
 	// set basefee
 	targetOneFeeHistory.BaseFee = blockBaseFee
-
+	cfg := b.ChainConfig()
+	if cfg.IsLondon(big.NewInt(blockHeight + 1)) {
+		targetOneFeeHistory.NextBaseFee = misc.CalcBaseFee(cfg, b.CurrentHeader())
+	} else {
+		targetOneFeeHistory.NextBaseFee = new(big.Int)
+	}
 	// set gas used ratio
 	gasLimitUint64, ok := (*ethBlock)["gasLimit"].(hexutil.Uint64)
 	if !ok {
