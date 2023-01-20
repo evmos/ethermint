@@ -67,4 +67,7 @@ def test_basic(cluster):
         diff = size - min - i
         reduce = size - diff
         target = reduce if diff >= 0 else max
-        assert len(fee_history["result"][field]) == target
+        res = fee_history["result"]
+        assert len(res[field]) == target
+        oldest = i + min - max
+        assert res["oldestBlock"] == hex(oldest if oldest > 0 else 0)
