@@ -27,8 +27,6 @@ func MigrateStore(
 		return err
 	}
 
-	params.ExtraEIPs.EIPs = types.AvailableExtraEIPs
-
 	bz, err := cdc.Marshal(&params)
 	if err != nil {
 		return err
