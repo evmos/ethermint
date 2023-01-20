@@ -41,6 +41,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Bug Fixes
 
 * (rpc) [#1613](https://github.com/evmos/ethermint/pull/1613) Change the default json-rpc listen address to localhost.
+* (rpc) [#1611](https://github.com/evmos/ethermint/pull/1611) Add missing next fee in fee history, fix wrong oldestBlock and align earliest input as ethereum.
 
 ## [v0.21.0-rc1] - 2022-1-13
 
