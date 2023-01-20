@@ -36,17 +36,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
-<<<<<<< HEAD
-=======
-## Unreleased
-
-### Bug Fixes
-
-* (rpc) [#1613](https://github.com/evmos/ethermint/pull/1613) Change the default json-rpc listen address to localhost.
-* (rpc) [#1611](https://github.com/evmos/ethermint/pull/1611) Add missing next fee in fee history, fix wrong oldestBlock and align earliest input as ethereum.
-
->>>>>>> 47fdfd3d (fix(rpc): align fee history (#1611))
-## [v0.21.0-rc1] - 2022-1-13
+## [v0.21.0-rc2] - 2022-1-20
 
 ### State Machine Breaking
 
@@ -63,6 +53,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Bug Fixes
 * (rpc) [#1600](https://github.com/evmos/ethermint/pull/1600) Revert changes from `TypedEvents`
+* (rpc) [#1611](https://github.com/evmos/ethermint/pull/1611) Add missing next fee in fee history, fix wrong oldestBlock and align earliest input as ethereum.
+* (rpc) [#1613](https://github.com/evmos/ethermint/pull/1613) Change the default json-rpc listen address to localhost.
 * (proto) [#1586](https://github.com/evmos/ethermint/pull/1586) Avoid duplicate register proto type in `evm` & `feemarket`
 
 ## [v0.20.0] - 2022-12-28
