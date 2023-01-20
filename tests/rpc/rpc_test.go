@@ -595,8 +595,8 @@ func TestEth_FeeHistory(t *testing.T) {
 	baseFeePerGas := info["baseFeePerGas"].([]interface{})
 	gasUsedRatio := info["gasUsedRatio"].([]interface{})
 
-	require.Equal(t, info["oldestBlock"].(string), "0x6")
+	require.Equal(t, info["oldestBlock"].(string), "0x7")
 	require.Equal(t, 4, len(gasUsedRatio))
-	require.Equal(t, 4, len(baseFeePerGas))
+	require.Equal(t, 5, len(baseFeePerGas))
 	require.Equal(t, 4, len(reward))
 }
