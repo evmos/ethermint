@@ -161,7 +161,7 @@ func (b *Backend) FeeHistory(
 ) (*rpctypes.FeeHistoryResult, error) {
 	blockEnd := int64(lastBlock)
 
-	if blockEnd <= 0 {
+	if blockEnd < 0 {
 		blockNumber, err := b.BlockNumber()
 		if err != nil {
 			return nil, err
@@ -169,36 +169,34 @@ func (b *Backend) FeeHistory(
 		blockEnd = int64(blockNumber)
 	}
 
-	userBlockCountInt := int64(userBlockCount)
+	blocks := int64(userBlockCount)
 	maxBlockCount := int64(b.cfg.JSONRPC.FeeHistoryCap)
-	if userBlockCountInt > maxBlockCount {
-		return nil, fmt.Errorf("FeeHistory user block count %d higher than %d", userBlockCountInt, maxBlockCount)
+	if blocks > maxBlockCount {
+		return nil, fmt.Errorf("FeeHistory user block count %d higher than %d", blocks, maxBlockCount)
 	}
 
-	blockStart := blockEnd - userBlockCountInt
-	if blockStart < 0 {
-		blockStart = 0
+	if blockEnd+1 < blocks {
+		blocks = blockEnd + 1
 	}
-
-	blockCount := blockEnd - blockStart
-
+	// Ensure not trying to retrieve before genesis.
+	blockStart := blockEnd + 1 - blocks
 	oldestBlock := (*hexutil.Big)(big.NewInt(blockStart))
 
 	// prepare space
-	reward := make([][]*hexutil.Big, blockCount)
+	reward := make([][]*hexutil.Big, blocks)
 	rewardCount := len(rewardPercentiles)
-	for i := 0; i < int(blockCount); i++ {
+	for i := 0; i < int(blocks); i++ {
 		reward[i] = make([]*hexutil.Big, rewardCount)
 	}
 
-	thisBaseFee := make([]*hexutil.Big, blockCount)
-	thisGasUsedRatio := make([]float64, blockCount)
+	thisBaseFee := make([]*hexutil.Big, blocks+1)
+	thisGasUsedRatio := make([]float64, blocks)
 
 	// rewards should only be calculated if reward percentiles were included
 	calculateRewards := rewardCount != 0
 
 	// fetch block
-	for blockID := blockStart; blockID < blockEnd; blockID++ {
+	for blockID := blockStart; blockID <= blockEnd; blockID++ {
 		index := int32(blockID - blockStart)
 		// tendermint block
 		tendermintblock, err := b.TendermintBlockByNumber(rpctypes.BlockNumber(blockID))
@@ -227,6 +225,7 @@ func (b *Backend) FeeHistory(
 
 		// copy
 		thisBaseFee[index] = (*hexutil.Big)(oneFeeHistory.BaseFee)
+		thisBaseFee[index+1] = (*hexutil.Big)(oneFeeHistory.NextBaseFee)
 		thisGasUsedRatio[index] = oneFeeHistory.GasUsedRatio
 		if calculateRewards {
 			for j := 0; j < rewardCount; j++ {
