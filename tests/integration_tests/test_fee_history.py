@@ -27,35 +27,44 @@ def cluster(request, custom_ethermint, geth):
         raise NotImplementedError
 
 
-def test_basic_fee(cluster):
+def test_basic(cluster):
     w3: Web3 = cluster.w3
     call = w3.provider.make_request
-    tx_value = 10
-    gas_price = w3.eth.gas_price
-    tx = {"to": ADDRS["community"], "value": tx_value, "gasPrice": gas_price}
+    tx = {"to": ADDRS["community"], "value": 10, "gasPrice": w3.eth.gas_price}
     send_transaction(w3, tx)
-    range = 4
+    size = 4
+    # size of base fee + next fee
+    max = size + 1
+    # only 1 base fee + next fee
+    min = 2
     method = "eth_feeHistory"
     field = "baseFeePerGas"
     percentiles = [100]
     height = w3.eth.block_number
     latest = dict(
         blocks=["latest", hex(height)],
-        # range of base fee + next fee
-        expect=range + 1,
+        expect=max,
     )
     earliest = dict(
         blocks=["earliest", "0x0"],
-        # only 1 base fee + next fee
-        expect=2,
+        expect=min,
     )
     for tc in [latest, earliest]:
         res = []
         with ThreadPoolExecutor(len(tc["blocks"])) as exec:
             tasks = [
-                exec.submit(call, method, [range, b, percentiles]) for b in tc["blocks"]
+                exec.submit(call, method, [size, b, percentiles]) for b in tc["blocks"]
             ]
             res = [future.result()["result"][field] for future in as_completed(tasks)]
         assert len(res) == len(tc["blocks"])
         assert res[0] == res[1]
         assert len(res[0]) == tc["expect"]
+
+    for x in range(max):
+        i = x + 1
+        fee_history = call(method, [size, hex(i), percentiles])
+        # start to reduce diff on i <= size - min
+        diff = size - min - i
+        reduce = size - diff
+        target = reduce if diff >= 0 else max
+        assert len(fee_history["result"][field]) == target
