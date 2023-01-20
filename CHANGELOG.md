@@ -142,6 +142,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [#1503](https://github.com/evmos/ethermint/pull/1503) Fix block hashes returned on JSON-RPC filter `eth_newBlockFilter`.
 * (rpc) [#1557](https://github.com/evmos/ethermint/pull/1557) Patch GasUsed before the fix of revert gas refund logic when transaction reverted for `eth_getTransactionReceipt`.
 * (ante) [#1566](https://github.com/evmos/ethermint/pull/1566) Fix `gasWanted` on `EthGasConsumeDecorator` ante handler when running transaction in `ReCheckMode`
+* (rpc) [#1591](https://github.com/evmos/ethermint/pull/1591) Fix block number returned in opcode for debug trace related api.
 
 ## [v0.19.3] - 2022-10-14
 
