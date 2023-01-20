@@ -68,7 +68,8 @@ import (
 	ethermint "github.com/evmos/ethermint/types"
 )
 
-type DBOpener func(types.AppOptions, string, dbm.BackendType) (dbm.DB, error)
+// DBOpener is a function to open `application.db`, potentially with customized options.
+type DBOpener func(opts types.AppOptions, rootDir string, backend dbm.BackendType) (dbm.DB, error)
 
 // StartOptions defines options that can be customized in `StartCmd`
 type StartOptions struct {
@@ -77,6 +78,7 @@ type StartOptions struct {
 	DBOpener        DBOpener
 }
 
+// NewDefaultStartOptions use the default db opener provided in tm-db.
 func NewDefaultStartOptions(appCreator types.AppCreator, defaultNodeHome string) StartOptions {
 	return StartOptions{
 		AppCreator:      appCreator,
