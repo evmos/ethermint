@@ -68,7 +68,7 @@ import (
 	ethermint "github.com/evmos/ethermint/types"
 )
 
-type DBOpener func(rootDir string, backendType dbm.BackendType) (dbm.DB, error)
+type DBOpener func(types.AppOptions, string, dbm.BackendType) (dbm.DB, error)
 
 // StartOptions defines options that can be customized in `StartCmd`
 type StartOptions struct {
@@ -136,7 +136,7 @@ which accepts a path for the resulting pprof file.
 			withTM, _ := cmd.Flags().GetBool(srvflags.WithTendermint)
 			if !withTM {
 				serverCtx.Logger.Info("starting ABCI without Tendermint")
-				return startStandAlone(serverCtx, opts.AppCreator)
+				return startStandAlone(serverCtx, opts)
 			}
 
 			serverCtx.Logger.Info("Unlocking keyring")
@@ -223,12 +223,12 @@ which accepts a path for the resulting pprof file.
 	return cmd
 }
 
-func startStandAlone(ctx *server.Context, appCreator types.AppCreator) error {
+func startStandAlone(ctx *server.Context, opts StartOptions) error {
 	addr := ctx.Viper.GetString(srvflags.Address)
 	transport := ctx.Viper.GetString(srvflags.Transport)
 	home := ctx.Viper.GetString(flags.FlagHome)
 
-	db, err := opts.DBOpener(home, server.GetAppDBBackend(ctx.Viper))
+	db, err := opts.DBOpener(ctx.Viper, home, server.GetAppDBBackend(ctx.Viper))
 	if err != nil {
 		return err
 	}
@@ -245,7 +245,7 @@ func startStandAlone(ctx *server.Context, appCreator types.AppCreator) error {
 		return err
 	}
 
-	app := appCreator(ctx.Logger, db, traceWriter, ctx.Viper)
+	app := opts.AppCreator(ctx.Logger, db, traceWriter, ctx.Viper)
 
 	config, err := config.GetConfig(ctx.Viper)
 	if err != nil {
@@ -317,7 +317,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, opts StartOpt
 		}()
 	}
 
-	db, err := opts.DBOpener(home, server.GetAppDBBackend(ctx.Viper))
+	db, err := opts.DBOpener(ctx.Viper, home, server.GetAppDBBackend(ctx.Viper))
 	if err != nil {
 		logger.Error("failed to open DB", "error", err.Error())
 		return err
@@ -642,7 +642,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, opts StartOpt
 	return server.WaitForQuitSignals()
 }
 
-func openDB(rootDir string, backendType dbm.BackendType) (dbm.DB, error) {
+func openDB(_ types.AppOptions, rootDir string, backendType dbm.BackendType) (dbm.DB, error) {
 	dataDir := filepath.Join(rootDir, "data")
 	return dbm.NewDB("application", backendType, dataDir)
 }
