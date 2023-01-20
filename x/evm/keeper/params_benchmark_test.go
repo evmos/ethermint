@@ -1,4 +1,4 @@
-package evm_test
+package keeper_test
 
 import (
 	"github.com/evmos/ethermint/x/evm/types"
