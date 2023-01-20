@@ -25,13 +25,11 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.ParamsKey)
 	if len(bz) == 0 {
-		var p types.Params
-		k.ss.GetParamSetIfExists(ctx, &p)
-		return p
+		params = k.GetLegacyParams(ctx)
+		return
 	}
-
 	k.cdc.MustUnmarshal(bz, &params)
-	return params
+	return
 }
 
 // SetParams sets the EVM params each in their individual key for better get performance
@@ -55,40 +53,4 @@ func (k Keeper) GetLegacyParams(ctx sdk.Context) types.Params {
 	var params types.Params
 	k.ss.GetParamSetIfExists(ctx, &params)
 	return params
-}
-
-// GetExtraEIPs returns the extra EIPs enabled on the chain.
-func (k Keeper) GetExtraEIPs(ctx sdk.Context) types.ExtraEIPs {
-	params := k.GetParams(ctx)
-	return params.ExtraEIPs
-}
-
-// GetChainConfig returns the chain configuration parameter.
-func (k Keeper) GetChainConfig(ctx sdk.Context) types.ChainConfig {
-	params := k.GetParams(ctx)
-	return params.ChainConfig
-}
-
-// GetEVMDenom returns the EVM denom.
-func (k Keeper) GetEVMDenom(ctx sdk.Context) string {
-	params := k.GetParams(ctx)
-	return params.EvmDenom
-}
-
-// GetEnableCall returns true if the EVM Call operation is enabled.
-func (k Keeper) GetEnableCall(ctx sdk.Context) bool {
-	params := k.GetParams(ctx)
-	return params.EnableCall
-}
-
-// GetEnableCreate returns true if the EVM Create contract operation is enabled.
-func (k Keeper) GetEnableCreate(ctx sdk.Context) bool {
-	params := k.GetParams(ctx)
-	return params.EnableCreate
-}
-
-// GetAllowUnprotectedTxs returns true if unprotected txs (i.e non-replay protected as per EIP-155) are supported by the chain.
-func (k Keeper) GetAllowUnprotectedTxs(ctx sdk.Context) bool {
-	params := k.GetParams(ctx)
-	return params.AllowUnprotectedTxs
 }

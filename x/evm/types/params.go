@@ -42,7 +42,6 @@ var (
 
 // Parameter keys
 var (
-	ParamsKey                        = []byte("Params")
 	ParamStoreKeyEVMDenom            = []byte("EVMDenom")
 	ParamStoreKeyEnableCreate        = []byte("EnableCreate")
 	ParamStoreKeyEnableCall          = []byte("EnableCall")

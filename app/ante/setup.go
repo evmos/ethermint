@@ -152,13 +152,14 @@ func (vbd EthValidateBasicDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simu
 	txFee := sdk.Coins{}
 	txGasLimit := uint64(0)
 
-	chainCfg := vbd.evmKeeper.GetChainConfig(ctx)
+	evmParams := vbd.evmKeeper.GetParams(ctx)
+	chainCfg := evmParams.GetChainConfig()
 	chainID := vbd.evmKeeper.ChainID()
 	ethCfg := chainCfg.EthereumConfig(chainID)
 	baseFee := vbd.evmKeeper.GetBaseFee(ctx, ethCfg)
-	enableCreate := vbd.evmKeeper.GetEnableCreate(ctx)
-	enableCall := vbd.evmKeeper.GetEnableCall(ctx)
-	evmDenom := vbd.evmKeeper.GetEVMDenom(ctx)
+	enableCreate := evmParams.GetEnableCreate()
+	enableCall := evmParams.GetEnableCall()
+	evmDenom := evmParams.GetEvmDenom()
 
 	for _, msg := range protoTx.GetMsgs() {
 		msgEthTx, ok := msg.(*evmtypes.MsgEthereumTx)

@@ -56,6 +56,9 @@ var (
 	KeyPrefixStorage = []byte{prefixStorage}
 )
 
+// ParamsKey is KVStore key for module's parameters
+var ParamsKey = []byte("Params")
+
 // Transient Store key prefixes
 var (
 	KeyPrefixTransientBloom   = []byte{prefixTransientBloom}
