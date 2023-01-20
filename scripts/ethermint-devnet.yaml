@@ -7,8 +7,8 @@ ethermint_9000-1:
     index-events:
       - ethereum_tx.ethereumTxHash
     json-rpc:
-      address: "0.0.0.0:{EVMRPC_PORT}"
-      ws-address: "0.0.0.0:{EVMRPC_PORT_WS}"
+      address: "127.0.0.1:{EVMRPC_PORT}"
+      ws-address: "127.0.0.1:{EVMRPC_PORT_WS}"
       api: "eth,net,web3,debug"
   validators:
     - coins: 1000000000000000000stake,10000000000000000000000aphoton

@@ -332,7 +332,7 @@ func New(l Logger, baseDir string, cfg Config) (*Network, error) {
 				if err != nil {
 					return nil, err
 				}
-				appCfg.JSONRPC.Address = fmt.Sprintf("0.0.0.0:%s", jsonRPCPort)
+				appCfg.JSONRPC.Address = fmt.Sprintf("127.0.0.1:%s", jsonRPCPort)
 			}
 			appCfg.JSONRPC.Enable = true
 			appCfg.JSONRPC.API = config.GetAPINamespaces()
