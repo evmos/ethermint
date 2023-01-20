@@ -38,8 +38,7 @@ import (
 // AddCommands adds server commands
 func AddCommands(
 	rootCmd *cobra.Command,
-	defaultNodeHome string,
-	appCreator types.AppCreator,
+	opts StartOptions,
 	appExport types.AppExporter,
 	addStartFlags types.ModuleInitFlags,
 ) {
@@ -57,15 +56,15 @@ func AddCommands(
 		tmcmd.ResetStateCmd,
 	)
 
-	startCmd := StartCmd(appCreator, defaultNodeHome)
+	startCmd := StartCmd(opts)
 	addStartFlags(startCmd)
 
 	rootCmd.AddCommand(
 		startCmd,
 		tendermintCmd,
-		sdkserver.ExportCmd(appExport, defaultNodeHome),
+		sdkserver.ExportCmd(appExport, opts.DefaultNodeHome),
 		version.NewVersionCommand(),
-		sdkserver.NewRollbackCmd(appCreator, defaultNodeHome),
+		sdkserver.NewRollbackCmd(opts.AppCreator, opts.DefaultNodeHome),
 
 		// custom tx indexer command
 		NewIndexTxCmd(),
