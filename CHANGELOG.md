@@ -44,6 +44,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (upgrade) [#1617](https://github.com/evmos/ethermint/pull/1617) Refactor `evm` module's parameters to store them under a single store key
 * (rpc) [#1611](https://github.com/evmos/ethermint/pull/1611) Add missing next fee in fee history, fix wrong oldestBlock and align earliest input as ethereum.
 
+### Improvements
+
+* (cli) [#1615](https://github.com/evmos/ethermint/pull/1615) Support customize db opener in `StartCmd`.
+
 ## [v0.21.0-rc1] - 2022-1-13
 
 ### State Machine Breaking
@@ -139,6 +143,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [#1503](https://github.com/evmos/ethermint/pull/1503) Fix block hashes returned on JSON-RPC filter `eth_newBlockFilter`.
 * (rpc) [#1557](https://github.com/evmos/ethermint/pull/1557) Patch GasUsed before the fix of revert gas refund logic when transaction reverted for `eth_getTransactionReceipt`.
 * (ante) [#1566](https://github.com/evmos/ethermint/pull/1566) Fix `gasWanted` on `EthGasConsumeDecorator` ante handler when running transaction in `ReCheckMode`
+* (rpc) [#1591](https://github.com/evmos/ethermint/pull/1591) Fix block number returned in opcode for debug trace related api.
 
 ## [v0.19.3] - 2022-10-14
 
