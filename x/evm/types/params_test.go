@@ -9,7 +9,7 @@ import (
 )
 
 func TestParamsValidate(t *testing.T) {
-	extraEips := ExtraEIPs{[]int64{2929, 1884, 1344}}
+	extraEips := []int64{2929, 1884, 1344}
 	testCases := []struct {
 		name     string
 		params   Params
@@ -37,7 +37,7 @@ func TestParamsValidate(t *testing.T) {
 			"invalid eip",
 			Params{
 				EvmDenom:  "stake",
-				ExtraEIPs: ExtraEIPs{[]int64{1}},
+				ExtraEIPs: []int64{1},
 			},
 			true,
 		},
@@ -55,7 +55,7 @@ func TestParamsValidate(t *testing.T) {
 }
 
 func TestParamsEIPs(t *testing.T) {
-	extraEips := ExtraEIPs{[]int64{2929, 1884, 1344}}
+	extraEips := []int64{2929, 1884, 1344}
 	params := NewParams("ara", false, true, true, DefaultChainConfig(), extraEips)
 	actual := params.EIPs()
 
