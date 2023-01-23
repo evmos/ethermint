@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"math"
 	"math/big"
+	"os"
 	"testing"
 	"time"
 
@@ -77,6 +78,9 @@ type KeeperTestSuite struct {
 var s *KeeperTestSuite
 
 func TestKeeperTestSuite(t *testing.T) {
+	if os.Getenv("benchmark") != "" {
+		t.Skip("Skipping Gingko Test")
+	}
 	s = new(KeeperTestSuite)
 	s.enableFeemarket = false
 	s.enableLondonHF = true
