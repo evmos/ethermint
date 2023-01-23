@@ -39,10 +39,7 @@ func InitGenesis(
 ) []abci.ValidatorUpdate {
 	k.WithChainID(ctx)
 
-	err := k.SetParams(ctx, data.Params)
-	if err != nil {
-		panic(fmt.Errorf("error setting params %s", err))
-	}
+	k.SetParams(ctx, data.Params)
 
 	// ensure evm module account is set
 	if addr := accountKeeper.GetModuleAddress(types.ModuleName); addr == nil {

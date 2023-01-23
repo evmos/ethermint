@@ -26,37 +26,17 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 )
 
-var (
-	amino = codec.NewLegacyAmino()
-	// ModuleCdc references the global evm module codec. Note, the codec should
-	// ONLY be used in certain instances of tests and for JSON encoding.
-	ModuleCdc = codec.NewProtoCodec(codectypes.NewInterfaceRegistry())
-
-	// AminoCdc is a amino codec created to support amino JSON compatible msgs.
-	AminoCdc = codec.NewAminoCodec(amino)
-)
-
-const (
-	// Amino names
-	updateParamsName = "ethermint/MsgUpdateParams"
-)
-
-// NOTE: This is required for the GetSignBytes function
-func init() {
-	RegisterLegacyAminoCodec(amino)
-	amino.Seal()
-}
+var ModuleCdc = codec.NewProtoCodec(codectypes.NewInterfaceRegistry())
 
 // RegisterInterfaces registers the client interfaces to protobuf Any.
 func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 	registry.RegisterImplementations(
-		(*tx.TxExtensionOptionI)(nil),
-		&ExtensionOptionsEthereumTx{},
-	)
-	registry.RegisterImplementations(
 		(*sdk.Msg)(nil),
 		&MsgEthereumTx{},
-		&MsgUpdateParams{},
+	)
+	registry.RegisterImplementations(
+		(*tx.TxExtensionOptionI)(nil),
+		&ExtensionOptionsEthereumTx{},
 	)
 	registry.RegisterInterface(
 		"ethermint.evm.v1.TxData",
@@ -69,7 +49,7 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
 }
 
-// PackTxData constructs a new Any packed with the given tx data value. It returns
+// PackClientState constructs a new Any packed with the given tx data value. It returns
 // an error if the client state can't be casted to a protobuf message or if the concrete
 // implementation is not registered to the protobuf codec.
 func PackTxData(txData TxData) (*codectypes.Any, error) {
@@ -99,9 +79,4 @@ func UnpackTxData(any *codectypes.Any) (TxData, error) {
 	}
 
 	return txData, nil
-}
-
-// RegisterLegacyAminoCodec required for EIP-712
-func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	cdc.RegisterConcrete(&MsgUpdateParams{}, updateParamsName, nil)
 }

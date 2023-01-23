@@ -1,9 +1,8 @@
 package keeper_test
 
 import (
-	"reflect"
-
 	"github.com/evmos/ethermint/x/evm/types"
+	"reflect"
 )
 
 func (suite *KeeperTestSuite) TestParams() {
@@ -97,4 +96,5 @@ func (suite *KeeperTestSuite) TestParams() {
 			suite.Require().Equal(tc.expected, outcome)
 		})
 	}
+
 }

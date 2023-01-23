@@ -52,28 +52,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### State Machine Breaking
 
-* (feemarket) [#1509](https://github.com/evmos/ethermint/pull/1509) Deprecate usage of x/params in x/feemarket
-* (evm) [#1472](https://github.com/evmos/ethermint/pull/1472) Deprecate x/params usage in x/evm
-* (deps) [#1575](https://github.com/evmos/ethermint/pull/1575) bump ibc-go to [`v6.1.0`]
-* (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to [`v0.46.6`]
-
-### Improvements
-
-* (evm) [#1582](https://github.com/evmos/ethermint/pull/1582) cleanup `evm` files
-* (evm) [#1544](https://github.com/evmos/ethermint/pull/1544) Migrate deprecated event emitting to new TypedEvent
-* (deps) [#1532](https://github.com/evmos/ethermint/pull/1532) Upgrade Go-Ethereum version to [`v1.10.26`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.26).
-
-### Bug Fixes
-* (rpc) [#1600](https://github.com/evmos/ethermint/pull/1600) Revert changes from `TypedEvents`
-* (proto) [#1586](https://github.com/evmos/ethermint/pull/1586) Avoid duplicate register proto type in `evm` & `feemarket`
-
-## [v0.20.0] - 2022-12-28
-
-### State Machine Breaking
-
-* (deps) [#1564](https://github.com/evmos/ethermint/pull/1564) Bump ibc-go to [`v5.2.0`](https://github.com/cosmos/ibc-go/releases/tag/v5.2.0)
-* (evm) [#1272](https://github.com/evmos/ethermint/pull/1272) Implement modular interface for the EVM.
-* (deps) [#1551](https://github.com/evmos/ethermint/pull/1551) Upgrade Cosmos SDK to [`v0.46.7`](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.46.7).
+* (deps) #[1575](https://github.com/evmos/ethermint/pull/1575) bump ibc-go to [`v6.1.0`]
+* (deps) [#1361](https://github.com/evmos/ethermint/pull/1361) Bump ibc-go to [`v5.1.0`](https://github.com/cosmos/ibc-go/releases/tag/v5.1.0)
+* (evm) [\#1272](https://github.com/evmos/ethermint/pull/1272) Implement modular interface for the EVM.
+* (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to [`v0.46.6`](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.46.6).
 * (feemarket) [#1194](https://github.com/evmos/ethermint/pull/1194) Apply feemarket to native cosmos tx.
 * (eth) [#1346](https://github.com/evmos/ethermint/pull/1346) Added support for `sdk.Dec` and `ed25519` type on eip712.
 * (evm) [#1452](https://github.com/evmos/ethermint/pull/1452) Simplify Gas Math in `ApplyTransaction`.
