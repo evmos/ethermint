@@ -4,7 +4,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	v4types "github.com/evmos/ethermint/x/evm/migrations/v4/types"
 	"github.com/evmos/ethermint/x/evm/types"
 )
@@ -27,41 +26,34 @@ func MigrateStore(
 	legacySubspace types.Subspace,
 	cdc codec.BinaryCodec,
 ) error {
-	var (
-		v4Params v4types.V4Params
-		params   types.Params
-	)
+	var params types.Params
 
-	legacySubspace.GetParamSetIfExists(ctx, &v4Params)
+	legacySubspace.GetParamSetIfExists(ctx, &params)
 
-	err := v4Params.Validate()
+	err := params.Validate()
 	if err != nil {
 		params = migratevRC1(cdc, ctx, storeKey)
 	} else {
-		params.AllowUnprotectedTxs = v4Params.AllowUnprotectedTxs
-		params.EnableCall = v4Params.EnableCall
-		params.EnableCreate = v4Params.EnableCreate
-		params.EvmDenom = v4Params.EvmDenom
-		params.ExtraEIPs.EIPs = v4Params.ExtraEIPs
 		params.ChainConfig = types.ChainConfig{
-			HomesteadBlock:      v4Params.ChainConfig.HomesteadBlock,
-			DAOForkBlock:        v4Params.ChainConfig.DAOForkBlock,
-			DAOForkSupport:      v4Params.ChainConfig.DAOForkSupport,
-			EIP150Block:         v4Params.ChainConfig.EIP150Block,
-			EIP150Hash:          v4Params.ChainConfig.EIP150Hash,
-			EIP155Block:         v4Params.ChainConfig.EIP155Block,
-			EIP158Block:         v4Params.ChainConfig.EIP158Block,
-			ByzantiumBlock:      v4Params.ChainConfig.ByzantiumBlock,
-			ConstantinopleBlock: v4Params.ChainConfig.ConstantinopleBlock,
-			PetersburgBlock:     v4Params.ChainConfig.PetersburgBlock,
-			IstanbulBlock:       v4Params.ChainConfig.IstanbulBlock,
-			MuirGlacierBlock:    v4Params.ChainConfig.MuirGlacierBlock,
-			BerlinBlock:         v4Params.ChainConfig.BerlinBlock,
-			LondonBlock:         v4Params.ChainConfig.LondonBlock,
-			ArrowGlacierBlock:   v4Params.ChainConfig.ArrowGlacierBlock,
-			MergeNetsplitBlock:  v4Params.ChainConfig.MergeNetsplitBlock,
-			ShanghaiBlock:       v4Params.ChainConfig.ShanghaiBlock,
-			CancunBlock:         v4Params.ChainConfig.CancunBlock,
+			HomesteadBlock:      params.ChainConfig.HomesteadBlock,
+			DAOForkBlock:        params.ChainConfig.DAOForkBlock,
+			DAOForkSupport:      params.ChainConfig.DAOForkSupport,
+			EIP150Block:         params.ChainConfig.EIP150Block,
+			EIP150Hash:          params.ChainConfig.EIP150Hash,
+			EIP155Block:         params.ChainConfig.EIP155Block,
+			EIP158Block:         params.ChainConfig.EIP158Block,
+			ByzantiumBlock:      params.ChainConfig.ByzantiumBlock,
+			ConstantinopleBlock: params.ChainConfig.ConstantinopleBlock,
+			PetersburgBlock:     params.ChainConfig.PetersburgBlock,
+			IstanbulBlock:       params.ChainConfig.IstanbulBlock,
+			MuirGlacierBlock:    params.ChainConfig.MuirGlacierBlock,
+			BerlinBlock:         params.ChainConfig.BerlinBlock,
+			LondonBlock:         params.ChainConfig.LondonBlock,
+			GrayGlacierBlock:    params.ChainConfig.GrayGlacierBlock,
+			ArrowGlacierBlock:   params.ChainConfig.ArrowGlacierBlock,
+			MergeNetsplitBlock:  params.ChainConfig.MergeNetsplitBlock,
+			ShanghaiBlock:       params.ChainConfig.ShanghaiBlock,
+			CancunBlock:         params.ChainConfig.CancunBlock,
 		}
 	}
 
@@ -83,7 +75,7 @@ func MigrateStore(
 func migratevRC1(cdc codec.BinaryCodec, ctx sdk.Context, storeKey storetypes.StoreKey) (params types.Params) {
 	var (
 		denom       string
-		extraEIPs   types.ExtraEIPs
+		extraEIPs   v4types.V4ExtraEIPs
 		chainConfig types.ChainConfig
 	)
 
@@ -106,7 +98,7 @@ func migratevRC1(cdc codec.BinaryCodec, ctx sdk.Context, storeKey storetypes.Sto
 	}
 
 	params.EvmDenom = denom
-	params.ExtraEIPs = extraEIPs
+	params.ExtraEIPs = extraEIPs.EIPs
 	params.ChainConfig = chainConfig
 	params.EnableCreate = store.Has(ParamStoreKeyEnableCreate)
 	params.EnableCall = store.Has(ParamStoreKeyEnableCall)
