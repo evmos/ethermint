@@ -27,7 +27,7 @@ func MigrateStore(
 	cdc codec.BinaryCodec,
 ) error {
 	var (
-		extraEIPs   v5types.ExtraEIPs
+		extraEIPs   v5types.V5ExtraEIPs
 		chainConfig types.ChainConfig
 		params      types.Params
 	)

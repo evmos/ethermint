@@ -24,24 +24,24 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 
-// ExtraEIPs represents extra EIPs for the vm.Config
-type ExtraEIPs struct {
+// V5ExtraEIPs represents extra EIPs for the vm.Config
+type V5ExtraEIPs struct {
 	// eips defines the additional EIPs for the vm.Config
 	EIPs []int64 `protobuf:"varint,1,rep,packed,name=eips,proto3" json:"eips,omitempty" yaml:"eips"`
 }
 
-func (m *ExtraEIPs) Reset()         { *m = ExtraEIPs{} }
-func (m *ExtraEIPs) String() string { return proto.CompactTextString(m) }
-func (*ExtraEIPs) ProtoMessage()    {}
-func (*ExtraEIPs) Descriptor() ([]byte, []int) {
+func (m *V5ExtraEIPs) Reset()         { *m = V5ExtraEIPs{} }
+func (m *V5ExtraEIPs) String() string { return proto.CompactTextString(m) }
+func (*V5ExtraEIPs) ProtoMessage()    {}
+func (*V5ExtraEIPs) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d21ecc92c8c8583e, []int{1}
 }
-func (m *ExtraEIPs) XXX_Unmarshal(b []byte) error {
+func (m *V5ExtraEIPs) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ExtraEIPs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *V5ExtraEIPs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_ExtraEIPs.Marshal(b, m, deterministic)
+		return xxx_messageInfo_V5ExtraEIPs.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -51,19 +51,19 @@ func (m *ExtraEIPs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return b[:n], nil
 	}
 }
-func (m *ExtraEIPs) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ExtraEIPs.Merge(m, src)
+func (m *V5ExtraEIPs) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_V5ExtraEIPs.Merge(m, src)
 }
-func (m *ExtraEIPs) XXX_Size() int {
+func (m *V5ExtraEIPs) XXX_Size() int {
 	return m.Size()
 }
-func (m *ExtraEIPs) XXX_DiscardUnknown() {
-	xxx_messageInfo_ExtraEIPs.DiscardUnknown(m)
+func (m *V5ExtraEIPs) XXX_DiscardUnknown() {
+	xxx_messageInfo_V5ExtraEIPs.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_ExtraEIPs proto.InternalMessageInfo
+var xxx_messageInfo_V5ExtraEIPs proto.InternalMessageInfo
 
-func (m *ExtraEIPs) GetEIPs() []int64 {
+func (m *V5ExtraEIPs) GetEIPs() []int64 {
 	if m != nil {
 		return m.EIPs
 	}
@@ -74,7 +74,7 @@ func (m *ExtraEIPs) GetEIPs() []int64 {
 
 
 func init() {
-	proto.RegisterType((*ExtraEIPs)(nil), "ethermint.evm.v1.ExtraEIPs")
+	proto.RegisterType((*V5ExtraEIPs)(nil), "ethermint.evm.v1.V5ExtraEIPs")
 }
 
 func init() { proto.RegisterFile("ethermint/evm/v1/evm.proto", fileDescriptor_d21ecc92c8c8583e) }
@@ -187,7 +187,7 @@ var fileDescriptor_d21ecc92c8c8583e = []byte{
 }
 
 
-func (m *ExtraEIPs) Marshal() (dAtA []byte, err error) {
+func (m *V5ExtraEIPs) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -197,12 +197,12 @@ func (m *ExtraEIPs) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ExtraEIPs) MarshalTo(dAtA []byte) (int, error) {
+func (m *V5ExtraEIPs) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ExtraEIPs) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *V5ExtraEIPs) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -242,7 +242,7 @@ func encodeVarintEvm(dAtA []byte, offset int, v uint64) int {
 	return base
 }
 
-func (m *ExtraEIPs) Size() (n int) {
+func (m *V5ExtraEIPs) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -266,7 +266,7 @@ func sozEvm(x uint64) (n int) {
 	return sovEvm(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
 
-func (m *ExtraEIPs) Unmarshal(dAtA []byte) error {
+func (m *V5ExtraEIPs) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -289,10 +289,10 @@ func (m *ExtraEIPs) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ExtraEIPs: wiretype end group for non-group")
+			return fmt.Errorf("proto: V5ExtraEIPs: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ExtraEIPs: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: V5ExtraEIPs: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
