@@ -74,6 +74,16 @@ func DefaultParams() Params {
 	}
 }
 
+// Parameter keys
+var (
+	ParamStoreKeyEVMDenom            = []byte("EVMDenom")
+	ParamStoreKeyEnableCreate        = []byte("EnableCreate")
+	ParamStoreKeyEnableCall          = []byte("EnableCall")
+	ParamStoreKeyExtraEIPs           = []byte("EnableExtraEIPs")
+	ParamStoreKeyChainConfig         = []byte("ChainConfig")
+	ParamStoreKeyAllowUnprotectedTxs = []byte("AllowUnprotectedTxs")
+)
+
 // ParamSetPairs returns the parameter set pairs.
 func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 	return paramtypes.ParamSetPairs{
