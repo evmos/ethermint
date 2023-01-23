@@ -36,7 +36,7 @@ var (
 	// DefaultEnableCall enables contract calls (i.e true)
 	DefaultEnableCall = true
 	// DefaultExtraEIPs  defines the set of activateable Ethereum Improvement Proposals
-	DefaultExtraEIPs = ExtraEIPs{AvailableExtraEIPs}
+	DefaultExtraEIPs = AvailableExtraEIPs
 )
 
 // AvailableExtraEIPs define the list of all EIPs that can be enabled by the
@@ -47,7 +47,7 @@ var (
 var AvailableExtraEIPs = []int64{1344, 1884, 2200, 2929, 3198, 3529}
 
 // NewParams creates a new Params instance
-func NewParams(evmDenom string, allowUnprotectedTxs, enableCreate, enableCall bool, config ChainConfig, extraEIPs ExtraEIPs) Params {
+func NewParams(evmDenom string, allowUnprotectedTxs, enableCreate, enableCall bool, config ChainConfig, extraEIPs []int64) Params {
 	return Params{
 		EvmDenom:            evmDenom,
 		AllowUnprotectedTxs: allowUnprotectedTxs,
@@ -77,7 +77,7 @@ func (p Params) Validate() error {
 		return err
 	}
 
-	if err := validateEIPs(p.ExtraEIPs.EIPs); err != nil {
+	if err := validateEIPs(p.ExtraEIPs); err != nil {
 		return err
 	}
 
@@ -98,8 +98,8 @@ func (p Params) Validate() error {
 
 // EIPs returns the ExtraEIPS as a int slice
 func (p Params) EIPs() []int {
-	eips := make([]int, len(p.ExtraEIPs.EIPs))
-	for i, eip := range p.ExtraEIPs.EIPs {
+	eips := make([]int, len(p.ExtraEIPs))
+	for i, eip := range p.ExtraEIPs {
 		eips[i] = int(eip)
 	}
 	return eips

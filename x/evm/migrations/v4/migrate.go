@@ -16,12 +16,13 @@ func MigrateStore(
 	legacySubspace types.Subspace,
 	cdc codec.BinaryCodec,
 ) error {
-	var (
-		store  = ctx.KVStore(storeKey)
-		params types.Params
-	)
-
+	var params types.Params
 	legacySubspace.GetParamSetIfExists(ctx, &params)
+
+	err := params.Validate()
+	if err != nil {
+		return err
+	}
 
 	if err := params.Validate(); err != nil {
 		return err
@@ -32,6 +33,7 @@ func MigrateStore(
 		return err
 	}
 
+	store := ctx.KVStore(storeKey)
 	store.Set(types.KeyPrefixParams, bz)
 
 	return nil

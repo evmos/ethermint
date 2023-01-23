@@ -15,22 +15,12 @@ message Params {
   // enable_call toggles state transitions that use the vm.Call function
   bool enable_call = 3 [(gogoproto.moretags) = "yaml:\"enable_call\""];
   // extra_eips defines the additional EIPs for the vm.Config
-  ExtraEIPs extra_eips = 4 [
-    (gogoproto.customname) = "ExtraEIPs",
-    (gogoproto.moretags) = "yaml:\"extra_eips\"",
-    (gogoproto.nullable) = false
-  ];
+  repeated int64 extra_eips = 4 [(gogoproto.customname) = "ExtraEIPs", (gogoproto.moretags) = "yaml:\"extra_eips\""];
   // chain_config defines the EVM chain configuration parameters
   ChainConfig chain_config = 5 [(gogoproto.moretags) = "yaml:\"chain_config\"", (gogoproto.nullable) = false];
   // allow_unprotected_txs defines if replay-protected (i.e non EIP155
   // signed) transactions can be executed on the state machine.
   bool allow_unprotected_txs = 6;
-}
-
-// ExtraEIPs represents extra EIPs for the vm.Config
-message ExtraEIPs {
-  // eips defines the additional EIPs for the vm.Config
-  repeated int64 eips = 1 [(gogoproto.customname) = "EIPs", (gogoproto.moretags) = "yaml:\"eips\""];
 }
 
 // ChainConfig defines the Ethereum ChainConfig parameters using *sdk.Int values
