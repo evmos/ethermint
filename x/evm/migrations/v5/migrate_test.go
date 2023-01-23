@@ -5,6 +5,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/testutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/require"
 
 	"github.com/evmos/ethermint/app"
 	"github.com/evmos/ethermint/encoding"
@@ -31,13 +32,30 @@ func TestMigrate(t *testing.T) {
 	kvStore.Set(v5.ParamStoreKeyEVMDenom, []byte("aphoton"))
 	kvStore.Set(v5.ParamStoreKeyEnableCreate, []byte{0x01})
 	kvStore.Set(v5.ParamStoreKeyEnableCall, []byte{0x01})
+	kvStore.Set(v5.ParamStoreKeyAllowUnprotectedTxs, []byte{0x01})
 	kvStore.Set(v5.ParamStoreKeyExtraEIPs, extraEIPsBz)
 	kvStore.Set(v5.ParamStoreKeyChainConfig, chainConfigBz)
+
+	err := v5.MigrateStore(ctx, storeKey, cdc)
+	require.NoError(t, err)
 
 	paramsBz := kvStore.Get(types.KeyPrefixParams)
 	var params types.Params
 	cdc.MustUnmarshal(paramsBz, &params)
 
-	// TODO: test
-	// require.Equal(t, params, legacySubspace.ps)
+	// test that the params have been migrated correctly
+	require.Equal(t, "aphoton", params.EvmDenom)
+	require.True(t, params.EnableCreate)
+	require.True(t, params.EnableCall)
+	require.True(t, params.AllowUnprotectedTxs)
+	require.Equal(t, chainConfig, params.ChainConfig)
+	require.Equal(t, extraEIPs.EIPs, params.ExtraEIPs)
+
+	// check that the keys are deleted
+	require.False(t, kvStore.Has(v5.ParamStoreKeyEVMDenom))
+	require.False(t, kvStore.Has(v5.ParamStoreKeyEnableCreate))
+	require.False(t, kvStore.Has(v5.ParamStoreKeyEnableCall))
+	require.False(t, kvStore.Has(v5.ParamStoreKeyAllowUnprotectedTxs))
+	require.False(t, kvStore.Has(v5.ParamStoreKeyExtraEIPs))
+	require.False(t, kvStore.Has(v5.ParamStoreKeyChainConfig))
 }
