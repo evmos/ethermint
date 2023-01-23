@@ -20,7 +20,8 @@ var (
 
 // MigrateStore migrates the x/evm module state from the consensus version 4 to
 // version 5. Specifically, it takes the parameters that are currently stored
-// and managed by the Cosmos SDK params module and stores them directly into the x/evm module state.
+// in separate keys and stores them directly into the x/evm module state using
+// a single params key.
 func MigrateStore(
 	ctx sdk.Context,
 	storeKey storetypes.StoreKey,
