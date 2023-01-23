@@ -9,15 +9,6 @@ import (
 	v5types "github.com/evmos/ethermint/x/evm/migrations/v5/types"
 )
 
-var (
-	ParamStoreKeyEVMDenom            = []byte("EVMDenom")
-	ParamStoreKeyEnableCreate        = []byte("EnableCreate")
-	ParamStoreKeyEnableCall          = []byte("EnableCall")
-	ParamStoreKeyExtraEIPs           = []byte("EnableExtraEIPs")
-	ParamStoreKeyChainConfig         = []byte("ChainConfig")
-	ParamStoreKeyAllowUnprotectedTxs = []byte("AllowUnprotectedTxs")
-)
-
 // MigrateStore migrates the x/evm module state from the consensus version 4 to
 // version 5. Specifically, it takes the parameters that are currently stored
 // in separate keys and stores them directly into the x/evm module state using
@@ -35,27 +26,27 @@ func MigrateStore(
 
 	store := ctx.KVStore(storeKey)
 
-	denom := string(store.Get(ParamStoreKeyEVMDenom))
+	denom := string(store.Get(types.ParamStoreKeyEVMDenom))
 
-	extraEIPsBz := store.Get(ParamStoreKeyExtraEIPs)
+	extraEIPsBz := store.Get(types.ParamStoreKeyExtraEIPs)
 	cdc.MustUnmarshal(extraEIPsBz, &extraEIPs)
 
-	chainCfgBz := store.Get(ParamStoreKeyChainConfig)
+	chainCfgBz := store.Get(types.ParamStoreKeyChainConfig)
 	cdc.MustUnmarshal(chainCfgBz, &chainConfig)
 
 	params.EvmDenom = denom
 	params.ExtraEIPs = extraEIPs.EIPs
 	params.ChainConfig = chainConfig
-	params.EnableCreate = store.Has(ParamStoreKeyEnableCreate)
-	params.EnableCall = store.Has(ParamStoreKeyEnableCall)
-	params.AllowUnprotectedTxs = store.Has(ParamStoreKeyAllowUnprotectedTxs)
+	params.EnableCreate = store.Has(types.ParamStoreKeyEnableCreate)
+	params.EnableCall = store.Has(types.ParamStoreKeyEnableCall)
+	params.AllowUnprotectedTxs = store.Has(types.ParamStoreKeyAllowUnprotectedTxs)
 
-	store.Delete(ParamStoreKeyChainConfig)
-	store.Delete(ParamStoreKeyExtraEIPs)
-	store.Delete(ParamStoreKeyEVMDenom)
-	store.Delete(ParamStoreKeyEnableCreate)
-	store.Delete(ParamStoreKeyEnableCall)
-	store.Delete(ParamStoreKeyAllowUnprotectedTxs)
+	store.Delete(types.ParamStoreKeyChainConfig)
+	store.Delete(types.ParamStoreKeyExtraEIPs)
+	store.Delete(types.ParamStoreKeyEVMDenom)
+	store.Delete(types.ParamStoreKeyEnableCreate)
+	store.Delete(types.ParamStoreKeyEnableCall)
+	store.Delete(types.ParamStoreKeyAllowUnprotectedTxs)
 
 	if err := params.Validate(); err != nil {
 		return err

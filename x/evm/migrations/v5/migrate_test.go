@@ -29,12 +29,12 @@ func TestMigrate(t *testing.T) {
 	chainConfigBz := cdc.MustMarshal(&chainConfig)
 
 	// Set the params in the store
-	kvStore.Set(v5.ParamStoreKeyEVMDenom, []byte("aphoton"))
-	kvStore.Set(v5.ParamStoreKeyEnableCreate, []byte{0x01})
-	kvStore.Set(v5.ParamStoreKeyEnableCall, []byte{0x01})
-	kvStore.Set(v5.ParamStoreKeyAllowUnprotectedTxs, []byte{0x01})
-	kvStore.Set(v5.ParamStoreKeyExtraEIPs, extraEIPsBz)
-	kvStore.Set(v5.ParamStoreKeyChainConfig, chainConfigBz)
+	kvStore.Set(types.ParamStoreKeyEVMDenom, []byte("aphoton"))
+	kvStore.Set(types.ParamStoreKeyEnableCreate, []byte{0x01})
+	kvStore.Set(types.ParamStoreKeyEnableCall, []byte{0x01})
+	kvStore.Set(types.ParamStoreKeyAllowUnprotectedTxs, []byte{0x01})
+	kvStore.Set(types.ParamStoreKeyExtraEIPs, extraEIPsBz)
+	kvStore.Set(types.ParamStoreKeyChainConfig, chainConfigBz)
 
 	err := v5.MigrateStore(ctx, storeKey, cdc)
 	require.NoError(t, err)
@@ -52,10 +52,10 @@ func TestMigrate(t *testing.T) {
 	require.Equal(t, extraEIPs.EIPs, params.ExtraEIPs)
 
 	// check that the keys are deleted
-	require.False(t, kvStore.Has(v5.ParamStoreKeyEVMDenom))
-	require.False(t, kvStore.Has(v5.ParamStoreKeyEnableCreate))
-	require.False(t, kvStore.Has(v5.ParamStoreKeyEnableCall))
-	require.False(t, kvStore.Has(v5.ParamStoreKeyAllowUnprotectedTxs))
-	require.False(t, kvStore.Has(v5.ParamStoreKeyExtraEIPs))
-	require.False(t, kvStore.Has(v5.ParamStoreKeyChainConfig))
+	require.False(t, kvStore.Has(types.ParamStoreKeyEVMDenom))
+	require.False(t, kvStore.Has(types.ParamStoreKeyEnableCreate))
+	require.False(t, kvStore.Has(types.ParamStoreKeyEnableCall))
+	require.False(t, kvStore.Has(types.ParamStoreKeyAllowUnprotectedTxs))
+	require.False(t, kvStore.Has(types.ParamStoreKeyExtraEIPs))
+	require.False(t, kvStore.Has(types.ParamStoreKeyChainConfig))
 }
