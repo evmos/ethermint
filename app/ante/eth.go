@@ -149,7 +149,8 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 		return next(newCtx, tx, simulate)
 	}
 
-	chainCfg := egcd.evmKeeper.GetChainConfig(ctx)
+	evmParams := egcd.evmKeeper.GetParams(ctx)
+	chainCfg := evmParams.GetChainConfig()
 	ethCfg := chainCfg.EthereumConfig(egcd.evmKeeper.ChainID())
 
 	blockHeight := big.NewInt(ctx.BlockHeight())
@@ -183,7 +184,7 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 			gasWanted += txData.GetGas()
 		}
 
-		evmDenom := egcd.evmKeeper.GetEVMDenom(ctx)
+		evmDenom := evmParams.GetEvmDenom()
 
 		fees, err := keeper.VerifyFee(txData, evmDenom, baseFee, homestead, istanbul, ctx.IsCheckTx())
 		if err != nil {
