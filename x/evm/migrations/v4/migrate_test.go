@@ -32,7 +32,7 @@ func TestMigrate(t *testing.T) {
 	cdc := encCfg.Codec
 
 	storeKey := sdk.NewKVStoreKey(types.ModuleName)
-	tKey := sdk.NewTransientStoreKey("transient_test")
+	tKey := sdk.NewTransientStoreKey(types.TransientKey)
 	ctx := testutil.DefaultContext(storeKey, tKey)
 	kvStore := ctx.KVStore(storeKey)
 
