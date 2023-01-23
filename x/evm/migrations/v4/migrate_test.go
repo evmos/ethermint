@@ -5,13 +5,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/evmos/ethermint/x/evm/types"
+
 	"github.com/cosmos/cosmos-sdk/testutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/evmos/ethermint/app"
 	"github.com/evmos/ethermint/encoding"
 	v4 "github.com/evmos/ethermint/x/evm/migrations/v4"
-	"github.com/evmos/ethermint/x/evm/types"
+	v4types "github.com/evmos/ethermint/x/evm/migrations/v4/types"
 )
 
 type mockSubspace struct {
@@ -31,16 +32,43 @@ func TestMigrate(t *testing.T) {
 	cdc := encCfg.Codec
 
 	storeKey := sdk.NewKVStoreKey(types.ModuleName)
-	tKey := sdk.NewTransientStoreKey(types.TransientKey)
+	tKey := sdk.NewTransientStoreKey("transient_test")
 	ctx := testutil.DefaultContext(storeKey, tKey)
 	kvStore := ctx.KVStore(storeKey)
 
 	legacySubspace := newMockSubspace(types.DefaultParams())
 	require.NoError(t, v4.MigrateStore(ctx, storeKey, legacySubspace, cdc))
 
-	paramsBz := kvStore.Get(types.KeyPrefixParams)
-	var params types.Params
-	cdc.MustUnmarshal(paramsBz, &params)
+	// Get all the new parameters from the kvStore
+	var evmDenom string
+	bz := kvStore.Get(types.ParamStoreKeyEVMDenom)
+	evmDenom = string(bz)
 
-	require.Equal(t, params, legacySubspace.ps)
+	allowUnprotectedTx := kvStore.Has(types.ParamStoreKeyAllowUnprotectedTxs)
+	enableCreate := kvStore.Has(types.ParamStoreKeyEnableCreate)
+	enableCall := kvStore.Has(types.ParamStoreKeyEnableCall)
+
+	var chainCfg v4types.ChainConfig
+	bz = kvStore.Get(types.ParamStoreKeyChainConfig)
+	cdc.MustUnmarshal(bz, &chainCfg)
+
+	var extraEIPs v4types.ExtraEIPs
+	bz = kvStore.Get(types.ParamStoreKeyExtraEIPs)
+	cdc.MustUnmarshal(bz, &extraEIPs)
+	require.Equal(t, types.AvailableExtraEIPs, extraEIPs.EIPs)
+
+	params := v4types.V4Params{
+		EvmDenom:            evmDenom,
+		AllowUnprotectedTxs: allowUnprotectedTx,
+		EnableCreate:        enableCreate,
+		EnableCall:          enableCall,
+		ChainConfig:         chainCfg,
+		ExtraEIPs:           extraEIPs,
+	}
+
+	require.Equal(t, legacySubspace.ps.EnableCall, params.EnableCall)
+	require.Equal(t, legacySubspace.ps.EnableCreate, params.EnableCreate)
+	require.Equal(t, legacySubspace.ps.AllowUnprotectedTxs, params.AllowUnprotectedTxs)
+	require.Equal(t, legacySubspace.ps.ExtraEIPs, params.ExtraEIPs.EIPs)
+	require.EqualValues(t, legacySubspace.ps.ChainConfig, params.ChainConfig)
 }
