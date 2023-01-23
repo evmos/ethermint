@@ -23,7 +23,7 @@ var (
 	DefaultAllowUnprotectedTxs = false
 	DefaultEnableCreate        = true
 	DefaultEnableCall          = true
-	DefaultExtraEIPs           = ExtraEIPs{AvailableExtraEIPs}
+	DefaultExtraEIPs           = AvailableExtraEIPs
 )
 
 // Parameter keys
@@ -49,7 +49,7 @@ func ParamKeyTable() paramtypes.KeyTable {
 }
 
 // NewParams creates a new Params instance
-func NewParams(evmDenom string, allowUnprotectedTxs, enableCreate, enableCall bool, config ChainConfig, extraEIPs ExtraEIPs) V4Params {
+func NewParams(evmDenom string, allowUnprotectedTxs, enableCreate, enableCall bool, config ChainConfig, extraEIPs []int64) V4Params {
 	return V4Params{
 		EvmDenom:            evmDenom,
 		AllowUnprotectedTxs: allowUnprotectedTxs,
@@ -100,8 +100,8 @@ func (p V4Params) Validate() error {
 
 // EIPs returns the ExtraEIPS as a int slice
 func (p V4Params) EIPs() []int {
-	eips := make([]int, len(p.ExtraEIPs.EIPs))
-	for i, eip := range p.ExtraEIPs.EIPs {
+	eips := make([]int, len(p.ExtraEIPs))
+	for i, eip := range p.ExtraEIPs {
 		eips[i] = int(eip)
 	}
 	return eips
@@ -125,12 +125,12 @@ func validateBool(i interface{}) error {
 }
 
 func validateEIPs(i interface{}) error {
-	eips, ok := i.(ExtraEIPs)
+	eips, ok := i.([]int64)
 	if !ok {
 		return fmt.Errorf("invalid EIP slice type: %T", i)
 	}
 
-	for _, eip := range eips.EIPs {
+	for _, eip := range eips {
 		if !vm.ValidEip(int(eip)) {
 			return fmt.Errorf("EIP %d is not activateable, valid EIPS are: %s", eip, vm.ActivateableEips())
 		}

@@ -4,6 +4,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	v4types "github.com/evmos/ethermint/x/evm/migrations/v4/types"
 	"github.com/evmos/ethermint/x/evm/types"
 )
 
@@ -25,12 +27,46 @@ func MigrateStore(
 	legacySubspace types.Subspace,
 	cdc codec.BinaryCodec,
 ) error {
-	var params types.Params
+	var (
+		v4Params v4types.V4Params
+		params   types.Params
+	)
 
-	legacySubspace.GetParamSetIfExists(ctx, &params)
+	legacySubspace.GetParamSetIfExists(ctx, &v4Params)
+
+	err := v4Params.Validate()
+	if err != nil {
+		params = migratevRC1(cdc, ctx, storeKey)
+	} else {
+		params.AllowUnprotectedTxs = v4Params.AllowUnprotectedTxs
+		params.EnableCall = v4Params.EnableCall
+		params.EnableCreate = v4Params.EnableCreate
+		params.EvmDenom = v4Params.EvmDenom
+		params.ExtraEIPs.EIPs = v4Params.ExtraEIPs
+		params.ChainConfig = types.ChainConfig{
+			HomesteadBlock:      v4Params.ChainConfig.HomesteadBlock,
+			DAOForkBlock:        v4Params.ChainConfig.DAOForkBlock,
+			DAOForkSupport:      v4Params.ChainConfig.DAOForkSupport,
+			EIP150Block:         v4Params.ChainConfig.EIP150Block,
+			EIP150Hash:          v4Params.ChainConfig.EIP150Hash,
+			EIP155Block:         v4Params.ChainConfig.EIP155Block,
+			EIP158Block:         v4Params.ChainConfig.EIP158Block,
+			ByzantiumBlock:      v4Params.ChainConfig.ByzantiumBlock,
+			ConstantinopleBlock: v4Params.ChainConfig.ConstantinopleBlock,
+			PetersburgBlock:     v4Params.ChainConfig.PetersburgBlock,
+			IstanbulBlock:       v4Params.ChainConfig.IstanbulBlock,
+			MuirGlacierBlock:    v4Params.ChainConfig.MuirGlacierBlock,
+			BerlinBlock:         v4Params.ChainConfig.BerlinBlock,
+			LondonBlock:         v4Params.ChainConfig.LondonBlock,
+			ArrowGlacierBlock:   v4Params.ChainConfig.ArrowGlacierBlock,
+			MergeNetsplitBlock:  v4Params.ChainConfig.MergeNetsplitBlock,
+			ShanghaiBlock:       v4Params.ChainConfig.ShanghaiBlock,
+			CancunBlock:         v4Params.ChainConfig.CancunBlock,
+		}
+	}
 
 	if err := params.Validate(); err != nil {
-		params = migratevRC1(cdc, ctx, storeKey)
+		return err
 	}
 
 	bz, err := cdc.Marshal(&params)
