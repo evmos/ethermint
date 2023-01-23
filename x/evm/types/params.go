@@ -35,8 +35,6 @@ var (
 	DefaultEnableCreate = true
 	// DefaultEnableCall enables contract calls (i.e true)
 	DefaultEnableCall = true
-	// DefaultExtraEIPs  defines the set of activateable Ethereum Improvement Proposals
-	DefaultExtraEIPs = AvailableExtraEIPs
 )
 
 // AvailableExtraEIPs define the list of all EIPs that can be enabled by the
@@ -66,7 +64,7 @@ func DefaultParams() Params {
 		EnableCreate:        DefaultEnableCreate,
 		EnableCall:          DefaultEnableCall,
 		ChainConfig:         DefaultChainConfig(),
-		ExtraEIPs:           DefaultExtraEIPs,
+		ExtraEIPs:           nil,
 		AllowUnprotectedTxs: DefaultAllowUnprotectedTxs,
 	}
 }
