@@ -36,9 +36,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 # Changelog
 
-<<<<<<< HEAD
-## [v0.21.0-rc2] - 2022-01-20
-=======
+## [v0.21.0-rc2] - 2022-01-23
 ## Unreleased
 
 ### Bug Fixes
@@ -50,9 +48,6 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Improvements
 
 * (cli) [#1615](https://github.com/evmos/ethermint/pull/1615) Support customize db opener in `StartCmd`.
-
-## [v0.21.0-rc1] - 2022-1-13
->>>>>>> f07b14f1 (refactor(params): store all params under one key in evm module (#1617))
 
 ### State Machine Breaking
 
