@@ -25,8 +25,7 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.KeyPrefixParams)
 	if len(bz) == 0 {
-		params = k.GetLegacyParams(ctx)
-		return
+		return k.GetLegacyParams(ctx)
 	}
 	k.cdc.MustUnmarshal(bz, &params)
 	return
