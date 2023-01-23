@@ -48,7 +48,7 @@ func TestMigrate(t *testing.T) {
 	enableCreate := kvStore.Has(types.ParamStoreKeyEnableCreate)
 	enableCall := kvStore.Has(types.ParamStoreKeyEnableCall)
 
-	var chainCfg v4types.ChainConfig
+	var chainCfg v4types.V4ChainConfig
 	bz = kvStore.Get(types.ParamStoreKeyChainConfig)
 	cdc.MustUnmarshal(bz, &chainCfg)
 
@@ -62,7 +62,7 @@ func TestMigrate(t *testing.T) {
 		AllowUnprotectedTxs: allowUnprotectedTx,
 		EnableCreate:        enableCreate,
 		EnableCall:          enableCall,
-		ChainConfig:         chainCfg,
+		V4ChainConfig:       chainCfg,
 		ExtraEIPs:           extraEIPs,
 	}
 
@@ -70,5 +70,5 @@ func TestMigrate(t *testing.T) {
 	require.Equal(t, legacySubspace.ps.EnableCreate, params.EnableCreate)
 	require.Equal(t, legacySubspace.ps.AllowUnprotectedTxs, params.AllowUnprotectedTxs)
 	require.Equal(t, legacySubspace.ps.ExtraEIPs, params.ExtraEIPs.EIPs)
-	require.EqualValues(t, legacySubspace.ps.ChainConfig, params.ChainConfig)
+	require.EqualValues(t, legacySubspace.ps.ChainConfig, params.V4ChainConfig)
 }
