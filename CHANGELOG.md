@@ -53,6 +53,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (deps) [#1532](https://github.com/evmos/ethermint/pull/1532) Upgrade Go-Ethereum version to [`v1.10.26`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.26).
 
 ### Bug Fixes
+
 * (upgrade) [#1617](https://github.com/evmos/ethermint/pull/1617) Refactor `evm` module's parameters to store them under a single store key
 * (rpc) [#1600](https://github.com/evmos/ethermint/pull/1600) Revert changes from `TypedEvents`
 * (rpc) [#1613](https://github.com/evmos/ethermint/pull/1613) Change the default json-rpc listen address to localhost.
