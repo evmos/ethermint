@@ -31,9 +31,11 @@ def test_basic(cluster):
     )
     method = "eth_getProof"
     storage_keys = ["0x0", "0x1"]
-    proof = (cluster.w3.provider.make_request(
-        method, [res["contractAddress"], storage_keys, hex(res["blockNumber"])]
-    ))["result"]
+    proof = (
+        cluster.w3.provider.make_request(
+            method, [res["contractAddress"], storage_keys, hex(res["blockNumber"])]
+        )
+    )["result"]
     for proof in proof["storageProof"]:
         if proof["key"] == storage_keys[0]:
             assert proof["value"] != "0x0"
