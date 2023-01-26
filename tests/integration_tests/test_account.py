@@ -38,36 +38,36 @@ def derive_new_address(n=1):
     mnemonic = os.getenv("COMMUNITY_MNEMONIC")
     return (Account.from_mnemonic(mnemonic, account_path=account_path)).address
 
-def test_get_transaction_count(ethermint_rpc_ws, geth):
-    for p in [ethermint_rpc_ws, geth]:
-        w3 = p.w3
-        blk = hex(w3.eth.block_number)
-        sender = ADDRS["validator"]
 
-        receiver = derive_new_address()
-        n0 = w3.eth.get_transaction_count(receiver, blk)
-        # ensure transaction send in new block
-        w3_wait_for_new_blocks(w3, 1, sleep=0.1)
-        txhash = w3.eth.send_transaction(
-            {
-                "from": sender,
-                "to": receiver,
-                "value": 1000,
-            }
-        )
-        receipt = w3.eth.wait_for_transaction_receipt(txhash)
-        assert receipt.status == 1
-        [n1, n2] = [w3.eth.get_transaction_count(receiver, b) for b in [blk, "latest"]]
-        assert n0 == n1
-        assert n0 == n2
+def test_get_transaction_count(cluster):
+    w3: Web3 = cluster.w3
+    blk = hex(w3.eth.block_number)
+    sender = ADDRS["validator"]
+
+    receiver = derive_new_address()
+    n0 = w3.eth.get_transaction_count(receiver, blk)
+    # ensure transaction send in new block
+    w3_wait_for_new_blocks(w3, 1, sleep=0.1)
+    txhash = w3.eth.send_transaction(
+        {
+            "from": sender,
+            "to": receiver,
+            "value": 1000,
+        }
+    )
+    receipt = w3.eth.wait_for_transaction_receipt(txhash)
+    assert receipt.status == 1
+    [n1, n2] = [w3.eth.get_transaction_count(receiver, b) for b in [blk, "latest"]]
+    assert n0 == n1
+    assert n0 == n2
 
 
 def test_query_future_blk(cluster):
     w3: Web3 = cluster.w3
-        acc = derive_new_address(2)
-        current = w3.eth.block_number
-        future = current + 1000
-        with pytest.raises(ValueError) as exc:
-            w3.eth.get_transaction_count(acc, hex(future))
-        print(acc, str(exc))
-        assert "-32000" in str(exc)
+    acc = derive_new_address(2)
+    current = w3.eth.block_number
+    future = current + 1000
+    with pytest.raises(ValueError) as exc:
+        w3.eth.get_transaction_count(acc, hex(future))
+    print(acc, str(exc))
+    assert "-32000" in str(exc)
