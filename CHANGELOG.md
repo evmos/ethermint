@@ -59,6 +59,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [#1613](https://github.com/evmos/ethermint/pull/1613) Change the default json-rpc listen address to localhost.
 * (rpc) [#1611](https://github.com/evmos/ethermint/pull/1611) Add missing next fee in fee history, fix wrong oldestBlock and align earliest input as ethereum.
 * (proto) [#1586](https://github.com/evmos/ethermint/pull/1586) Avoid duplicate register proto type in `evm` & `feemarket`
+* (rpc) [#1638](https://github.com/evmos/ethermint/pull/1638) Align query result of future block for `eth_getTransactionCount`.
 
 ## [v0.20.0] - 2022-12-28
 
