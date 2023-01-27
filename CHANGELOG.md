@@ -40,10 +40,15 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### State Machine Breaking
 
+* (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to [`v0.46.6`]
+
+## [v0.21.0] - 2023-01-26
+
+### State Machine Breaking
+
 * (feemarket) [#1509](https://github.com/evmos/ethermint/pull/1509) Deprecate usage of x/params in x/feemarket
 * (evm) [#1472](https://github.com/evmos/ethermint/pull/1472) Deprecate usage of x/params in x/evm
 * (deps) [#1575](https://github.com/evmos/ethermint/pull/1575) Bump ibc-go to [`v6.1.0`](https://github.com/cosmos/ibc-go/releases/tag/v6.1.0)
-* (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to [`v0.46.6`]
 
 ### Improvements
 
