@@ -129,20 +129,20 @@ func (suite *BackendTestSuite) TestGetProof() {
 				RegisterAccount(queryClient, addr, bn.Int64())
 
 				// Use the IAVL height if a valid tendermint height is passed in.
-				ivalHeight := bn.Int64() - 1
+				iavlHeight := bn.Int64()
 				RegisterABCIQueryWithOptions(
 					client,
 					bn.Int64(),
 					"store/evm/key",
 					evmtypes.StateKey(address1, common.HexToHash("0x0").Bytes()),
-					tmrpcclient.ABCIQueryOptions{Height: ivalHeight, Prove: true},
+					tmrpcclient.ABCIQueryOptions{Height: iavlHeight, Prove: true},
 				)
 				RegisterABCIQueryWithOptions(
 					client,
 					bn.Int64(),
 					"store/acc/key",
 					authtypes.AddressStoreKey(sdk.AccAddress(address1.Bytes())),
-					tmrpcclient.ABCIQueryOptions{Height: ivalHeight, Prove: true},
+					tmrpcclient.ABCIQueryOptions{Height: iavlHeight, Prove: true},
 				)
 			},
 			true,
