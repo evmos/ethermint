@@ -54,11 +54,11 @@ schema = 3
     version = "v0.0.0-20140422174119-9fd32a8b3d3d"
     hash = "sha256-NDxQzO5C5M/aDz5/pjUHfZUh4VwIXovbb3irtxWCwjY="
   [mod."github.com/bgentry/speakeasy"]
-    version = "v0.1.0"
-    hash = "sha256-Gt1vj6CFovLnO6wX5u2O4UfecY9V2J9WGw1ez4HMrgk="
+    version = "v0.1.1-0.20220910012023-760eaf8b6816"
+    hash = "sha256-Tx3sPuhsoVwrCfJdIwf4ipn7pD92OQNYvpCxl1Z9Wt0="
   [mod."github.com/btcsuite/btcd"]
-    version = "v0.22.1"
-    hash = "sha256-hBU+roIELcmbW2Gz7eGZzL9qNA1bakq5wNxqCgs4TKc="
+    version = "v0.22.2"
+    hash = "sha256-TPX7GIArd+bwOdwgPnkHyptpEVGhpkqiAydsO4srOCQ="
   [mod."github.com/btcsuite/btcd/btcec/v2"]
     version = "v2.3.2"
     hash = "sha256-natWs+yIAuD1UI07iZtjPilroQLfXizFn3lNOiOT83U="
@@ -96,8 +96,8 @@ schema = 3
     version = "v1.0.0-beta.1"
     hash = "sha256-oATkuj+fM5eBn+ywO+w/tL0AFSIEkx0J3Yz+VhVe0QA="
   [mod."github.com/cosmos/cosmos-sdk"]
-    version = "v0.46.7"
-    hash = "sha256-54DCF8lrnA1oUmBJlbUlWXOP5UbenRInUROn5P5I9qI="
+    version = "v0.46.8"
+    hash = "sha256-jETbixsZq5XJ1pl1XaVJvD5jkcygBrEcHRK/L0+XI68="
   [mod."github.com/cosmos/go-bip39"]
     version = "v1.0.0"
     hash = "sha256-Qm2aC2vaS8tjtMUbHmlBSagOSqbduEEDwc51qvQaBmA="
@@ -114,8 +114,8 @@ schema = 3
     version = "v6.1.0"
     hash = "sha256-mHYCqLedcveDjfm1EiO2EMMNJqLm9u4WHwQTy1muOoc="
   [mod."github.com/cosmos/ledger-cosmos-go"]
-    version = "v0.12.1"
-    hash = "sha256-9+nr+/r4MyiogddS0JcXOuriPqXP4nxln8ts+mYQRcg="
+    version = "v0.12.2"
+    hash = "sha256-fLkveUWxn0nZzvgsY0KTU/T1TUUQ8Ap6XTYSnJs6XXo="
   [mod."github.com/creachadair/taskgroup"]
     version = "v0.3.2"
     hash = "sha256-Y261IO/d9xjV0UScqHvo31broxvnKn4IQQC9Mu6jNkE="
@@ -361,8 +361,8 @@ schema = 3
     version = "v2.7.0"
     hash = "sha256-BKqQKCsPA73FaQwYpAY+QsWFHIncrG5jgRhC2IiNmCk="
   [mod."github.com/onsi/gomega"]
-    version = "v1.25.0"
-    hash = "sha256-knaJppfBzKSMD4Gsqzx22SGrti7G5UyDBYrothAqsrs="
+    version = "v1.26.0"
+    hash = "sha256-B18jsoJHK/oE+wudT0dOsUb41s5+ZIAu/ZBzQ5djOLE="
   [mod."github.com/pelletier/go-toml/v2"]
     version = "v2.0.6"
     hash = "sha256-BxAeApnn5H+OLlH3TXGvIbtC6LmbRnjwbcfT1qMZ4PE="
@@ -447,12 +447,6 @@ schema = 3
   [mod."github.com/syndtr/goleveldb"]
     version = "v1.0.1-0.20210819022825-2ae1ddf74ef7"
     hash = "sha256-36a4hgVQfwtS2zhylKpQuFhrjdc/Y8pF0dxc26jcZIU="
-  [mod."github.com/tendermint/btcd"]
-    version = "v0.1.1"
-    hash = "sha256-QQl2GWZaKQtd+LQrgx2unkTLI1qye57fCWwJcmCXT/0="
-  [mod."github.com/tendermint/crypto"]
-    version = "v0.0.0-20191022145703-50d29ede1e15"
-    hash = "sha256-NkoZ3hKWZt5Hca49I+1g81x1m6aQGELZ/QGLdb3uHm4="
   [mod."github.com/tendermint/go-amino"]
     version = "v0.16.0"
     hash = "sha256-JW4zO/0vMzf1dXLePOqaMtiLUZgNbuIseh9GV+jQlf0="
@@ -462,6 +456,9 @@ schema = 3
   [mod."github.com/tendermint/tm-db"]
     version = "v0.6.7"
     hash = "sha256-hl/3RrBrpkk2zA6dmrNlIYKs1/GfqegSscDSkA5Pjlo="
+  [mod."github.com/tidwall/btree"]
+    version = "v1.5.0"
+    hash = "sha256-iWll4/+ADLVse3VAHxXYLprILugX/+3u0ZIk0YlLv/Q="
   [mod."github.com/tklauser/go-sysconf"]
     version = "v0.3.10"
     hash = "sha256-Zf2NsgM9+HeM949vCce4HQtSbfUiFpeiQ716yKcFyx4="
@@ -478,8 +475,8 @@ schema = 3
     version = "v0.9.1"
     hash = "sha256-hSVmN/f/lQHFhF60o6ej78ELC0MMoqQgqIX2hHjdTXg="
   [mod."github.com/zondax/ledger-go"]
-    version = "v0.14.0"
-    hash = "sha256-RozTPSNs4RerZ4DQMBcGmvREjoRtH1G69xjhccYjIOk="
+    version = "v0.14.1"
+    hash = "sha256-iQmShSaty50yYTbYPNd4fnOyrcEG7P2fWmj+fLJQW4s="
   [mod."go.etcd.io/bbolt"]
     version = "v1.3.6"
     hash = "sha256-DenVAmyN22xUiivk6fdJp4C9ZnUJXCMDUf8E0goRRV4="
@@ -523,8 +520,8 @@ schema = 3
     version = "v0.0.0-20221227171554-f9683d7f8bef"
     hash = "sha256-vvYjJcG73odJwPUb3sZIz4MSHnzK1Jj2uo0CwZ8S8rQ="
   [mod."google.golang.org/grpc"]
-    version = "v1.52.0"
-    hash = "sha256-wYJ/ysugKxz1O9u6BxECTIGFJ3sv0XmxOfM+Y0jW3KQ="
+    version = "v1.52.3"
+    hash = "sha256-vVkuG0kKgnh62f63unpk4JDa9rIu6kk0qtnPJOiew2M="
   [mod."google.golang.org/protobuf"]
     version = "v1.28.2-0.20220831092852-f930b1dc76e8"
     hash = "sha256-li5hXlXwTJ5LIZ8bVki1AZ6UFI2gXHl33JwdX1dOrtM="

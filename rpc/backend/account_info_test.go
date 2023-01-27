@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	tmrpcclient "github.com/tendermint/tendermint/rpc/client"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/evmos/ethermint/rpc/backend/mocks"
 	rpctypes "github.com/evmos/ethermint/rpc/types"
@@ -359,8 +360,24 @@ func (suite *BackendTestSuite) TestGetTransactionCount() {
 			"pass - account doesn't exist",
 			false,
 			rpctypes.NewBlockNumber(big.NewInt(1)),
-			func(addr common.Address, bn rpctypes.BlockNumber) {},
+			func(addr common.Address, bn rpctypes.BlockNumber) {
+				var header metadata.MD
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
+				RegisterParams(queryClient, &header, 1)
+			},
 			true,
+			hexutil.Uint64(0),
+		},
+		{
+			"fail - block height is in the future",
+			false,
+			rpctypes.NewBlockNumber(big.NewInt(10000)),
+			func(addr common.Address, bn rpctypes.BlockNumber) {
+				var header metadata.MD
+				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
+				RegisterParams(queryClient, &header, 1)
+			},
+			false,
 			hexutil.Uint64(0),
 		},
 		// TODO: Error mocking the GetAccount call - problem with Any type
