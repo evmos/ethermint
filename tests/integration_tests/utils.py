@@ -31,6 +31,7 @@ TEST_CONTRACTS = {
     "BurnGas": "BurnGas.sol",
     "TestChainID": "ChainID.sol",
     "Mars": "Mars.sol",
+    "StateContract": "StateContract.sol",
 }
 
 
