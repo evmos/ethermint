@@ -196,9 +196,10 @@ func (b *Backend) GetTransactionCount(address common.Address, blockNum rpctypes.
 	height := blockNum.Int64()
 	currentHeight := int64(bn)
 	if height > currentHeight {
-		return &n, sdkerrors.Wrap(
+		return &n, sdkerrors.Wrapf(
 			sdkerrors.ErrInvalidHeight,
-			"cannot query with height in the future; please provide a valid height",
+			"cannot query with height in the future (current: %d, queried: %d); please provide a valid height",
+			currentHeight, height,
 		)
 	}
 	// Get nonce (sequence) from account
