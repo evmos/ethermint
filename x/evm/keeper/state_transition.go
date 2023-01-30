@@ -16,9 +16,7 @@
 package keeper
 
 import (
-	"bytes"
 	"math/big"
-	"sort"
 
 	tmtypes "github.com/tendermint/tendermint/types"
 
@@ -341,23 +339,11 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 
 	// construct precompiles
 	contracts := make(map[common.Address]statedb.StatefulPrecompiledContract, len(k.precompiles))
-	sortedContracts := make([]common.Address, 0, len(k.precompiles))
 	for addr, creator := range k.precompiles {
 		c := creator(ctx)
 		contracts[addr] = c
-		sortedContracts = append(sortedContracts, addr)
 	}
-
-	sort.Slice(sortedContracts, func(i, j int) bool {
-		return bytes.Compare(sortedContracts[i].Bytes(), sortedContracts[j].Bytes()) < 0
-	})
-
-	extStates := make([]statedb.ExtState, len(sortedContracts))
-	for i, addr := range sortedContracts {
-		extStates[i] = contracts[addr]
-	}
-
-	stateDB := k.StateDB(ctx, txConfig, extStates)
+	stateDB := k.StateDB(ctx, txConfig)
 	evm := k.NewEVM(ctx, msg, cfg, tracer, stateDB, contracts)
 
 	leftoverGas := msg.Gas()
@@ -433,7 +419,7 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 			return nil, errorsmod.Wrap(err, "failed to commit stateDB")
 		}
 
-		ctx.MultiStore().Restore(dbCtx.MultiStore())
+		ctx.MultiStore().Restore(dbCtx.MultiStore()) // set top stack to store
 	}
 
 	// calculate a minimum amount of gas to be charged to sender if GasLimit

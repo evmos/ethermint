@@ -65,13 +65,10 @@ type StateDB struct {
 
 	// Per-transaction access list
 	accessList *accessList
-
-	// extended states
-	extStates []ExtState
 }
 
 // New creates a new state from a given trie.
-func New(ctx sdk.Context, keeper Keeper, txConfig TxConfig, extStates []ExtState) *StateDB {
+func New(ctx sdk.Context, keeper Keeper, txConfig TxConfig) *StateDB {
 	statedb := &StateDB{
 		keeper:       keeper,
 		ctx:          ctx,
@@ -79,8 +76,7 @@ func New(ctx sdk.Context, keeper Keeper, txConfig TxConfig, extStates []ExtState
 		journal:      newJournal(),
 		accessList:   newAccessList(),
 
-		txConfig:  txConfig,
-		extStates: extStates,
+		txConfig: txConfig,
 	}
 
 	return statedb
@@ -314,7 +310,7 @@ func (s *StateDB) restoreNativeState(ms sdk.CacheMultiStore) {
 	s.ctx = s.ctx.WithMultiStore(ms)
 }
 
-func (s *StateDB) executeNativeAction(action func(ctx sdk.Context) error) error {
+func (s *StateDB) ExecuteNativeAction(action func(ctx sdk.Context) error) error {
 	snapshot := s.ctx.MultiStore().Clone()
 	err := action(s.ctx)
 	if err != nil {
@@ -499,12 +495,6 @@ func (s *StateDB) Commit() (sdk.Context, error) {
 				}
 				s.keeper.SetState(s.ctx, obj.Address(), key, value.Bytes())
 			}
-		}
-	}
-	// commit the extended states
-	for _, ext := range s.extStates {
-		if err := ext.Commit(s.ctx); err != nil {
-			return s.ctx, err
 		}
 	}
 	return s.ctx, nil

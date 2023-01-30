@@ -295,7 +295,7 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 			}
 		}
 
-		stateDB := ctd.evmKeeper.StateDB(ctx, statedb.NewEmptyTxConfig(common.BytesToHash(ctx.HeaderHash().Bytes())), nil)
+		stateDB := ctd.evmKeeper.StateDB(ctx, statedb.NewEmptyTxConfig(common.BytesToHash(ctx.HeaderHash().Bytes())))
 		// check that caller has enough balance to cover asset transfer for **topmost** call
 		// NOTE: here the gas consumed is from the context with the infinite gas meter
 		if coreMsg.Value().Sign() > 0 && !core.CanTransfer(stateDB, coreMsg.From(), coreMsg.Value()) {

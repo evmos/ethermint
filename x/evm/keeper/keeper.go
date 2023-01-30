@@ -400,6 +400,6 @@ func (k Keeper) AddTransientGasUsed(ctx sdk.Context, gasUsed uint64) (uint64, er
 }
 
 // StateDB creates a StateDB instance
-func (k Keeper) StateDB(ctx sdk.Context, txConfig statedb.TxConfig, extStates []statedb.ExtState) *statedb.StateDB {
-	return statedb.New(ctx, &k, txConfig, extStates)
+func (k Keeper) StateDB(ctx sdk.Context, txConfig statedb.TxConfig) *statedb.StateDB {
+	return statedb.New(ctx, &k, txConfig)
 }
