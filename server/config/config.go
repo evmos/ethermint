@@ -139,7 +139,7 @@ type JSONRPCConfig struct {
 	MetricsAddress string `mapstructure:"metrics-address"`
 	// FixRevertGasRefundHeight defines the upgrade height for fix of revert gas refund logic when transaction reverted
 	FixRevertGasRefundHeight int64 `mapstructure:"fix-revert-gas-refund-height"`
-	// Deprecate height for usage of x/params.
+	// A list of grpc address with block range
 	BackupGRPCBlockAddressBlockRange map[[2]int]string `mapstructure:"backup-grpc-address-block-range"`
 }
 

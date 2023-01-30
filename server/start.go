@@ -487,7 +487,6 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 			ctx.Logger.Debug("gRPC client assigned to client context", "address", grpcAddress)
 
 			grpcBlockAddresses := config.JSONRPC.BackupGRPCBlockAddressBlockRange
-			fmt.Printf("mm-grpcBlockAddresses: %+v\n", grpcBlockAddresses)
 			for k, address := range grpcBlockAddresses {
 				grpcAddr, err := parseGrpcAddress(address)
 				if err != nil {

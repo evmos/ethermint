@@ -211,8 +211,6 @@ def test_cosmovisor_upgrade(custom_ethermint: Ethermint):
 
         # check json-rpc query on older blocks works
         assert old_balance == w3.eth.get_balance(validator, block_identifier=old_height)
-        assert receipt.status == 1
-        assert old_balance == w3.eth.get_balance(validator, block_identifier=old_height)
         assert old_base_fee == w3.eth.get_block(old_height).baseFeePerGas
 
         # check eth_call on older blocks works

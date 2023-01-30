@@ -92,7 +92,7 @@ enable-indexer = {{ .JSONRPC.EnableIndexer }}
 # Prometheus metrics path: /debug/metrics/prometheus
 metrics-address = "{{ .JSONRPC.MetricsAddress }}"
 
-# A list of grpc address with block range
+# A list of backup grpc address with block range
 # Example: "0.0.0.0:26113" = [0, 20]
 [json-rpc.backup-grpc-address-block-range]
 {{ range $k, $v := .JSONRPC.BackupGRPCBlockAddressBlockRange }}
