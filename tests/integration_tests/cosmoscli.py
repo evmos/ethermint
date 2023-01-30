@@ -839,3 +839,15 @@ class CosmosCLI:
 
     def migrate_keystore(self):
         return self.raw("keys", "migrate", home=self.data_dir)
+
+    def query_params(self, height: int):
+        "query evm params"
+        return json.loads(
+            self.raw(
+                "q",
+                "evm",
+                "params",
+                height,
+                home=self.data_dir,
+            )
+        )

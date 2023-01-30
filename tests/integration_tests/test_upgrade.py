@@ -217,7 +217,8 @@ def test_cosmovisor_upgrade(custom_ethermint: Ethermint):
         assert old_erc20_balance == contract.caller(
             block_identifier=target_height - 2
         ).balanceOf(validator)
-
+        # check we could fetch the right params before and after migration
+        assert cli.query_params(old_height) == cli.query_params(w3.eth.block_number - 1)
     finally:
         for proc in procs:
             proc.terminate()

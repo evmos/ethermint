@@ -16,6 +16,8 @@
 package cli
 
 import (
+	"strconv"
+
 	rpctypes "github.com/evmos/ethermint/rpc/types"
 	"github.com/spf13/cobra"
 
@@ -120,22 +122,28 @@ func GetCodeCmd() *cobra.Command {
 	return cmd
 }
 
-// GetParamsCmd queries the fee market params
+// GetParamsCmd queries the evm params
 func GetParamsCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "params",
-		Short: "Get the evm params",
-		Long:  "Get the evm parameter values.",
-		Args:  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, _ []string) error {
+		Use:   "params [height]",
+		Short: "Get the evm params associated with a specific blockheight",
+		Long:  "Get the evm parameter values associated with a specific blockheight, 0 or negative means the latest blockheight.",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
-
+			height, err := strconv.ParseInt(args[0], 10, 64)
+			if err != nil {
+				return err
+			}
+			if height <= 0 {
+				height = clientCtx.Height
+			}
 			queryClient := types.NewQueryClient(clientCtx)
 
-			res, err := queryClient.Params(cmd.Context(), &types.QueryParamsRequest{})
+			res, err := queryClient.Params(rpctypes.ContextWithHeight(height), &types.QueryParamsRequest{})
 			if err != nil {
 				return err
 			}
