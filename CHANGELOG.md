@@ -42,30 +42,34 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (rpc) [#1603](https://github.com/evmos/ethermint/pull/1603) Support multi gRPC query clients serve with old binary.
 
-### Bug Fixes
+### State Machine Breaking
 
-* (rpc) [#1613](https://github.com/evmos/ethermint/pull/1613) Change the default json-rpc listen address to localhost.
-* (rpc) [#1611](https://github.com/evmos/ethermint/pull/1611) Add missing next fee in fee history, fix wrong oldestBlock and align earliest input as ethereum.
+* (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to [`v0.46.6`]
 
-## [v0.21.0-rc1] - 2022-1-13
+## [v0.21.0] - 2023-01-26
 
 ### State Machine Breaking
 
 * (feemarket) [#1509](https://github.com/evmos/ethermint/pull/1509) Deprecate usage of x/params in x/feemarket
-* (evm) [#1472](https://github.com/evmos/ethermint/pull/1472) Deprecate x/params usage in x/evm
-* (deps) [#1575](https://github.com/evmos/ethermint/pull/1575) bump ibc-go to [`v6.1.0`]
-* (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to [`v0.46.6`]
+* (evm) [#1472](https://github.com/evmos/ethermint/pull/1472) Deprecate usage of x/params in x/evm
+* (deps) [#1575](https://github.com/evmos/ethermint/pull/1575) Bump ibc-go to [`v6.1.0`](https://github.com/cosmos/ibc-go/releases/tag/v6.1.0)
 
 ### Improvements
 
-* (evm) [#1582](https://github.com/evmos/ethermint/pull/1582) cleanup `evm` files
-* (evm) [#1544](https://github.com/evmos/ethermint/pull/1544) Migrate deprecated event emitting to new TypedEvent
+* (cli) [#1615](https://github.com/evmos/ethermint/pull/1615) Support customize db opener in `StartCmd`.
+* (evm) [#1582](https://github.com/evmos/ethermint/pull/1582) Cleanup `evm` files
+* (evm) [#1544](https://github.com/evmos/ethermint/pull/1544) Migrate deprecated event emitting to new `TypedEvent`
 * (deps) [#1532](https://github.com/evmos/ethermint/pull/1532) Upgrade Go-Ethereum version to [`v1.10.26`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.26).
 
 ### Bug Fixes
-* (rpc) [#1600](https://github.com/evmos/ethermint/pull/1600) Revert changes from `TypedEvents`
-* (proto) [#1586](https://github.com/evmos/ethermint/pull/1586) Avoid duplicate register proto type in `evm` & `feemarket`
 
+* (upgrade) [#1617](https://github.com/evmos/ethermint/pull/1617) Refactor `evm` module's parameters to store them under a single store key
+* (rpc) [#1600](https://github.com/evmos/ethermint/pull/1600) Revert changes from `TypedEvents`
+* (rpc) [#1613](https://github.com/evmos/ethermint/pull/1613) Change the default json-rpc listen address to localhost.
+* (rpc) [#1611](https://github.com/evmos/ethermint/pull/1611) Add missing next fee in fee history, fix wrong oldestBlock and align earliest input as ethereum.
+* (proto) [#1586](https://github.com/evmos/ethermint/pull/1586) Avoid duplicate register proto type in `evm` & `feemarket`
+* (rpc) [#1638](https://github.com/evmos/ethermint/pull/1638) Align results when querying `eth_getTransactionCount` for future blocks for accounts with zero and non-zero transaction counts.
+* (rpc) [#1639](https://github.com/evmos/ethermint/pull/1639) Align block number input behaviour for `eth_getProof` as Ethereum.
 
 ## [v0.20.0] - 2022-12-28
 
@@ -142,6 +146,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [#1503](https://github.com/evmos/ethermint/pull/1503) Fix block hashes returned on JSON-RPC filter `eth_newBlockFilter`.
 * (rpc) [#1557](https://github.com/evmos/ethermint/pull/1557) Patch GasUsed before the fix of revert gas refund logic when transaction reverted for `eth_getTransactionReceipt`.
 * (ante) [#1566](https://github.com/evmos/ethermint/pull/1566) Fix `gasWanted` on `EthGasConsumeDecorator` ante handler when running transaction in `ReCheckMode`
+* (rpc) [#1591](https://github.com/evmos/ethermint/pull/1591) Fix block number returned in opcode for debug trace related api.
 
 ## [v0.19.3] - 2022-10-14
 

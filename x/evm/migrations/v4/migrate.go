@@ -4,6 +4,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	v4types "github.com/evmos/ethermint/x/evm/migrations/v4/types"
 	"github.com/evmos/ethermint/x/evm/types"
 )
 
@@ -16,10 +18,7 @@ func MigrateStore(
 	legacySubspace types.Subspace,
 	cdc codec.BinaryCodec,
 ) error {
-	var (
-		store  = ctx.KVStore(storeKey)
-		params types.Params
-	)
+	var params types.Params
 
 	legacySubspace.GetParamSetIfExists(ctx, &params)
 
@@ -28,7 +27,9 @@ func MigrateStore(
 	}
 
 	chainCfgBz := cdc.MustMarshal(&params.ChainConfig)
-	extraEIPsBz := cdc.MustMarshal(&types.ExtraEIPs{EIPs: types.AvailableExtraEIPs})
+	extraEIPsBz := cdc.MustMarshal(&v4types.ExtraEIPs{EIPs: params.ExtraEIPs})
+
+	store := ctx.KVStore(storeKey)
 
 	store.Set(types.ParamStoreKeyEVMDenom, []byte(params.EvmDenom))
 	store.Set(types.ParamStoreKeyExtraEIPs, extraEIPsBz)

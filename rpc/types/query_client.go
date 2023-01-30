@@ -62,9 +62,6 @@ func (QueryClient) GetProof(clientCtx client.Context, storeKey string, key []byt
 		return nil, nil, fmt.Errorf("proof queries at height <= 2 are not supported")
 	}
 
-	// Use the IAVL height if a valid tendermint height is passed in.
-	height--
-
 	abciReq := abci.RequestQuery{
 		Path:   fmt.Sprintf("store/%s/key", storeKey),
 		Data:   key,

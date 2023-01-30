@@ -3,15 +3,16 @@ package v4_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/evmos/ethermint/x/evm/types"
-	gogotypes "github.com/gogo/protobuf/types"
 
 	"github.com/cosmos/cosmos-sdk/testutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/evmos/ethermint/app"
 	"github.com/evmos/ethermint/encoding"
 	v4 "github.com/evmos/ethermint/x/evm/migrations/v4"
-	"github.com/stretchr/testify/require"
+	v4types "github.com/evmos/ethermint/x/evm/migrations/v4/types"
 )
 
 type mockSubspace struct {
@@ -31,7 +32,7 @@ func TestMigrate(t *testing.T) {
 	cdc := encCfg.Codec
 
 	storeKey := sdk.NewKVStoreKey(types.ModuleName)
-	tKey := sdk.NewTransientStoreKey("transient_test")
+	tKey := sdk.NewTransientStoreKey(types.TransientKey)
 	ctx := testutil.DefaultContext(storeKey, tKey)
 	kvStore := ctx.KVStore(storeKey)
 
@@ -43,22 +44,31 @@ func TestMigrate(t *testing.T) {
 	bz := kvStore.Get(types.ParamStoreKeyEVMDenom)
 	evmDenom = string(bz)
 
-	var allowUnprotectedTx gogotypes.BoolValue
-	bz = kvStore.Get(types.ParamStoreKeyAllowUnprotectedTxs)
-	cdc.MustUnmarshal(bz, &allowUnprotectedTx)
-
+	allowUnprotectedTx := kvStore.Has(types.ParamStoreKeyAllowUnprotectedTxs)
 	enableCreate := kvStore.Has(types.ParamStoreKeyEnableCreate)
 	enableCall := kvStore.Has(types.ParamStoreKeyEnableCall)
 
-	var chainCfg types.ChainConfig
+	var chainCfg v4types.V4ChainConfig
 	bz = kvStore.Get(types.ParamStoreKeyChainConfig)
 	cdc.MustUnmarshal(bz, &chainCfg)
 
-	var extraEIPs types.ExtraEIPs
+	var extraEIPs v4types.ExtraEIPs
 	bz = kvStore.Get(types.ParamStoreKeyExtraEIPs)
 	cdc.MustUnmarshal(bz, &extraEIPs)
-	require.Equal(t, types.AvailableExtraEIPs, extraEIPs.EIPs)
+	require.Equal(t, []int64(nil), extraEIPs.EIPs)
 
-	params := types.NewParams(evmDenom, allowUnprotectedTx.Value, enableCreate, enableCall, chainCfg, extraEIPs)
-	require.Equal(t, legacySubspace.ps, params)
+	params := v4types.V4Params{
+		EvmDenom:            evmDenom,
+		AllowUnprotectedTxs: allowUnprotectedTx,
+		EnableCreate:        enableCreate,
+		EnableCall:          enableCall,
+		V4ChainConfig:       chainCfg,
+		ExtraEIPs:           extraEIPs,
+	}
+
+	require.Equal(t, legacySubspace.ps.EnableCall, params.EnableCall)
+	require.Equal(t, legacySubspace.ps.EnableCreate, params.EnableCreate)
+	require.Equal(t, legacySubspace.ps.AllowUnprotectedTxs, params.AllowUnprotectedTxs)
+	require.Equal(t, legacySubspace.ps.ExtraEIPs, params.ExtraEIPs.EIPs)
+	require.EqualValues(t, legacySubspace.ps.ChainConfig, params.V4ChainConfig)
 }
