@@ -7,7 +7,6 @@ import (
 	sdkmath "cosmossdk.io/math"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/vm"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -59,14 +58,28 @@ func EVMDenom(token common.Address) string {
 type BankContract struct {
 	ctx        sdk.Context
 	bankKeeper types.BankKeeper
+	stateDB    evm.ExtStateDB
+	caller     common.Address
+	value      *big.Int
+	readonly   bool
 }
 
 // NewBankContractCreator creates the precompiled contract to manage native tokens
 func NewBankContractCreator(bankKeeper types.BankKeeper) evm.PrecompiledContractCreator {
-	return func(ctx sdk.Context) evm.StatefulPrecompiledContract {
+	return func(
+		ctx sdk.Context,
+		stateDB evm.ExtStateDB,
+		caller common.Address,
+		value *big.Int,
+		readonly bool,
+	) evm.StatefulPrecompiledContract {
 		return &BankContract{
 			ctx:        ctx,
 			bankKeeper: bankKeeper,
+			stateDB:    stateDB,
+			caller:     caller,
+			value:      value,
+			readonly:   readonly,
 		}
 	}
 }
@@ -77,17 +90,12 @@ func (bc *BankContract) RequiredGas(input []byte) uint64 {
 	return 0
 }
 
-func (bc *BankContract) Run(evm *vm.EVM, input []byte, caller common.Address, value *big.Int, readonly bool) ([]byte, error) {
-	stateDB, ok := evm.StateDB.(ExtStateDB)
-	if !ok {
-		return nil, errors.New("not run in ethermint")
-	}
-
+func (bc *BankContract) Run(input []byte) ([]byte, error) {
 	// parse input
 	methodID := input[:4]
 	switch string(methodID) {
 	case string(MintMethod.ID):
-		if readonly {
+		if bc.readonly {
 			return nil, errors.New("the method is not readonly")
 		}
 		args, err := MintMethod.Inputs.Unpack(input[4:])
@@ -99,8 +107,8 @@ func (bc *BankContract) Run(evm *vm.EVM, input []byte, caller common.Address, va
 		if amount.Sign() <= 0 {
 			return nil, errors.New("invalid amount")
 		}
-		denom := EVMDenom(caller)
-		err = stateDB.ExecuteNativeAction(func(ctx sdk.Context) error {
+		denom := EVMDenom(bc.caller)
+		err = bc.stateDB.ExecuteNativeAction(func(ctx sdk.Context) error {
 			addr := sdk.AccAddress(recipient.Bytes())
 			amt := sdk.NewCoins(sdk.NewCoin(denom, sdkmath.NewIntFromBigInt(amount)))
 			if err := bc.bankKeeper.MintCoins(ctx, types.ModuleName, amt); err != nil {

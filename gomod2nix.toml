@@ -160,9 +160,8 @@ schema = 3
     version = "v1.0.0"
     hash = "sha256-k1DYvCqO3BKNcGEve/nMW0RxzMkK2tGfXbUbycqcVSo="
   [mod."github.com/ethereum/go-ethereum"]
-    version = "v1.10.26-0.20230131012941-1ed879b1a4a9"
-    hash = "sha256-5m+CG3syk9no51Okj0tSHJKCkvKGYDtpunF+SDqxhnc="
-    replaced = "github.com/mmsqe/go-ethereum"
+    version = "v1.10.26"
+    hash = "sha256-gkMEwJ4rOgn12amD4QpZ4th/10uyTTeoFmpseuKDQPs="
   [mod."github.com/felixge/httpsnoop"]
     version = "v1.0.1"
     hash = "sha256-TNXnnC/ZGNY9lInAcES1cBGqIdEljKuh5LH/khVFjVk="

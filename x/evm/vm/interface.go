@@ -28,11 +28,22 @@ import (
 // PrecompiledContracts defines a map of address -> precompiled contract
 type PrecompiledContracts map[common.Address]vm.PrecompiledContract
 
-type PrecompiledContractCreator func(sdk.Context) StatefulPrecompiledContract
+type PrecompiledContractCreator func(
+	sdk.Context,
+	ExtStateDB,
+	common.Address,
+	*big.Int,
+	bool,
+) StatefulPrecompiledContract
 
 type StatefulPrecompiledContract interface {
 	vm.PrecompiledContract
 	// RunStateful(evm EVM, addr common.Address, input []byte, value *big.Int) (ret []byte, err error)
+}
+
+// ExtStateDB defines extra methods of statedb to support stateful precompiled contracts
+type ExtStateDB interface {
+	ExecuteNativeAction(action func(ctx sdk.Context) error) error
 }
 
 // EVM defines the interface for the Ethereum Virtual Machine used by the EVM module.
@@ -64,10 +75,8 @@ type EVM interface {
 	Precompile(addr common.Address) (vm.PrecompiledContract, bool)
 	RunPrecompiledContract(
 		p StatefulPrecompiledContract,
-		addr common.Address,
 		input []byte,
-		suppliedGas uint64,
-		caller common.Address, value *big.Int, readonly bool) (
+		suppliedGas uint64) (
 		ret []byte, remainingGas uint64, err error,
 	)
 }

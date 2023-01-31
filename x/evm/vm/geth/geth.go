@@ -16,8 +16,6 @@
 package geth
 
 import (
-	"math/big"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
@@ -85,10 +83,8 @@ func (EVM) ActivePrecompiles(rules params.Rules) []common.Address {
 // value arguments. It uses the RunPrecompiledContract function from the geth vm package
 func (e EVM) RunPrecompiledContract(
 	p evm.StatefulPrecompiledContract,
-	_ common.Address, // address arg is unused
 	input []byte,
 	suppliedGas uint64,
-	caller common.Address, value *big.Int, readonly bool,
 ) (ret []byte, remainingGas uint64, err error) {
-	return vm.RunPrecompiledContract(p, e.EVM, input, suppliedGas, caller, value, readonly)
+	return vm.RunPrecompiledContract(p, input, suppliedGas)
 }

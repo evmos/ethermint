@@ -359,17 +359,20 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 		return nil, errorsmod.Wrap(types.ErrCallDisabled, "failed to call contract")
 	}
 
+	contractCreation := msg.To() == nil
+	sender := vm.AccountRef(msg.From())
+	caller := sender.Address()
+	if !contractCreation {
+		caller = *msg.To()
+	}
 	// construct precompiles
 	contracts := make(map[common.Address]evm.StatefulPrecompiledContract, len(k.customPrecompiles))
-	for addr, creator := range k.customPrecompiles {
-		c := creator(ctx)
-		contracts[addr] = c
-	}
 	stateDB := k.StateDB(ctx, txConfig)
+	for addr, creator := range k.customPrecompiles {
+		contracts[addr] = creator(ctx, stateDB, caller, msg.Value(), false)
+	}
 	evm := k.NewEVM(ctx, msg, cfg, tracer, stateDB, contracts)
-
 	leftoverGas := msg.Gas()
-
 	// Allow the tracer captures the tx level events, mainly the gas consumption.
 	vmCfg := evm.Config
 	if vmCfg.Debug {
@@ -379,8 +382,6 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 		}()
 	}
 
-	sender := vm.AccountRef(msg.From())
-	contractCreation := msg.To() == nil
 	isLondon := cfg.ChainConfig.IsLondon(evm.Context.BlockNumber)
 
 	intrinsicGas, err := k.GetEthIntrinsicGas(ctx, msg, cfg.ChainConfig, contractCreation)
