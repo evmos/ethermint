@@ -718,8 +718,8 @@ github.com/mitchellh/pointerstructure v1.2.0 h1:O+i9nHnXS3l/9Wu7r4NrEdwA2VFTicjU
 github.com/mitchellh/pointerstructure v1.2.0/go.mod h1:BRAsLI5zgXmw97Lf6s25bs8ohIXc3tViBH44KcwB2g4=
 github.com/mmsqe/cosmos-sdk v0.46.6-0.20230110154545-70f48768ca49 h1:xyzaLfcVtXPuJcESBsl8FGFhgth+2YNHWyzo9a8lPnU=
 github.com/mmsqe/cosmos-sdk v0.46.6-0.20230110154545-70f48768ca49/go.mod h1:rL1mzp5+40g7djg1S1KMPoeg963PUARW9L2hC1pQqOI=
-github.com/mmsqe/go-ethereum v1.10.26-0.20230127080103-3a00e53a24bb h1:WXZVxmbB/oIpjVMzdhsxhuvXwXiJvFlUqbpQ+Na/0SI=
-github.com/mmsqe/go-ethereum v1.10.26-0.20230127080103-3a00e53a24bb/go.mod h1:EYFyF19u3ezGLD4RqOkLq+ZCXzYbLoNDdZlMt7kyKFg=
+github.com/mmsqe/go-ethereum v1.10.26-0.20230131012941-1ed879b1a4a9 h1:TQ4XAxfaSmG7AxZ4wV3X6pASA6J704pZv7NMSCIYV8g=
+github.com/mmsqe/go-ethereum v1.10.26-0.20230131012941-1ed879b1a4a9/go.mod h1:EYFyF19u3ezGLD4RqOkLq+ZCXzYbLoNDdZlMt7kyKFg=
 github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
 github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd h1:TRLaZ9cD/w8PVh93nsPXa1VrQ6jlwL5oN8l14QlcNfg=
 github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
