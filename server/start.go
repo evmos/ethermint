@@ -50,10 +50,10 @@ import (
 	srvflags "github.com/evmos/ethermint/server/flags"
 	ethermint "github.com/evmos/ethermint/types"
 
-	rollconf "github.com/celestiaorg/rollmint/config"
-	rollconv "github.com/celestiaorg/rollmint/conv"
-	rollnode "github.com/celestiaorg/rollmint/node"
-	rollrpc "github.com/celestiaorg/rollmint/rpc"
+	rollconf "github.com/rollkit/rollkit/config"
+	rollconv "github.com/rollkit/rollkit/conv"
+	rollnode "github.com/rollkit/rollkit/node"
+	rollrpc "github.com/rollkit/rollkit/rpc"
 )
 
 // StartCmd runs the service passed in, either stand-alone or in-process with
@@ -316,7 +316,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 	if err != nil {
 		return err
 	}
-	// keys in rollmint format
+	// keys in rollkit format
 	p2pKey, err := rollconv.GetNodeKey(nodeKey)
 	if err != nil {
 		return err
@@ -328,7 +328,7 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 
 	genDocProvider := node.DefaultGenesisDocProviderFunc(cfg)
 	var (
-		tmNode   *rollnode.Node
+		tmNode   rollnode.Node
 		gRPCOnly = ctx.Viper.GetBool(srvflags.GRPCOnly)
 	)
 	if gRPCOnly {
@@ -381,7 +381,6 @@ func startInProcess(ctx *server.Context, clientCtx client.Context, appCreator ty
 		}
 		logger.Info("Bye!")
 	}()
-	
 
 	// Add the tx service to the gRPC router. We only need to register this
 	// service if API or gRPC or JSONRPC is enabled, and avoid doing so in the general

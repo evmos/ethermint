@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"time"
 
-	abcicli "github.com/tendermint/tendermint/abci/client"
 	"github.com/ethereum/go-ethereum/ethclient"
+	abcicli "github.com/tendermint/tendermint/abci/client"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/node"
 	"github.com/tendermint/tendermint/p2p"
@@ -32,10 +32,9 @@ import (
 	"github.com/evmos/ethermint/server"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
-	rollconf "github.com/celestiaorg/rollmint/config"
-	rollconv "github.com/celestiaorg/rollmint/conv"
-	rollnode "github.com/celestiaorg/rollmint/node"
-	rpcclient "github.com/celestiaorg/rollmint/rpc/client"
+	rollconf "github.com/rollkit/rollkit/config"
+	rollconv "github.com/rollkit/rollkit/conv"
+	rollnode "github.com/rollkit/rollkit/node"
 )
 
 func startInProcess(cfg Config, val *Validator) error {
@@ -56,7 +55,7 @@ func startInProcess(cfg Config, val *Validator) error {
 	if err != nil {
 		return err
 	}
-	// keys in rollmint format
+	// keys in rollkit format
 	p2pKey, err := rollconv.GetNodeKey(nodeKey)
 	if err != nil {
 		return err
@@ -68,7 +67,7 @@ func startInProcess(cfg Config, val *Validator) error {
 	app := cfg.AppConstructor(*val)
 
 	genDocProvider := node.DefaultGenesisDocProviderFunc(tmCfg)
-	// node key in rollmint format
+	// node key in rollkit format
 	genesis, err := genDocProvider()
 	if err != nil {
 		return err
@@ -110,7 +109,7 @@ func startInProcess(cfg Config, val *Validator) error {
 	val.tmNode = tmNode
 
 	if val.RPCAddress != "" {
-		val.RPCClient = rpcclient.NewClient(tmNode)
+		val.RPCClient = tmNode.GetClient()
 	}
 
 	// We'll need a RPC client if the validator exposes a gRPC or REST endpoint.

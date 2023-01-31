@@ -56,7 +56,7 @@ import (
 
 	"github.com/evmos/ethermint/app"
 
-	rollnode "github.com/celestiaorg/rollmint/node"
+	rollnode "github.com/rollkit/rollkit/node"
 )
 
 // package-wide network lock to only allow one test network at a time
@@ -176,7 +176,7 @@ type (
 		RPCClient     tmclient.Client
 		JSONRPCClient *ethclient.Client
 
-		tmNode      *rollnode.Node
+		tmNode      rollnode.Node
 		api         *api.Server
 		grpc        *grpc.Server
 		grpcWeb     *http.Server
@@ -636,9 +636,9 @@ func (n *Network) Cleanup() {
 			defer cancelFn()
 
 			if err := v.jsonrpc.Shutdown(shutdownCtx); err != nil {
-				v.tmNode.Logger.Error("HTTP server shutdown produced a warning", "error", err.Error())
+				//v.tmNode.Logger.Error("HTTP server shutdown produced a warning", "error", err.Error())
 			} else {
-				v.tmNode.Logger.Info("HTTP server shut down, waiting 5 sec")
+				//v.tmNode.Logger.Info("HTTP server shut down, waiting 5 sec")
 				select {
 				case <-time.Tick(5 * time.Second):
 				case <-v.jsonrpcDone:
