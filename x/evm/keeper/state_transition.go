@@ -369,7 +369,7 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 	contracts := make(map[common.Address]evm.StatefulPrecompiledContract, len(k.customPrecompiles))
 	stateDB := k.StateDB(ctx, txConfig)
 	for addr, creator := range k.customPrecompiles {
-		contracts[addr] = creator(ctx, stateDB, caller, msg.Value(), false)
+		contracts[addr] = creator(ctx, stateDB, caller, msg.Value())
 	}
 	evm := k.NewEVM(ctx, msg, cfg, tracer, stateDB, contracts)
 	leftoverGas := msg.Gas()

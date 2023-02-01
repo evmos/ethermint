@@ -61,7 +61,6 @@ type BankContract struct {
 	stateDB    evm.ExtStateDB
 	caller     common.Address
 	value      *big.Int
-	readonly   bool
 }
 
 // NewBankContractCreator creates the precompiled contract to manage native tokens
@@ -71,7 +70,6 @@ func NewBankContractCreator(bankKeeper types.BankKeeper) evm.PrecompiledContract
 		stateDB evm.ExtStateDB,
 		caller common.Address,
 		value *big.Int,
-		readonly bool,
 	) evm.StatefulPrecompiledContract {
 		return &BankContract{
 			ctx:        ctx,
@@ -79,7 +77,6 @@ func NewBankContractCreator(bankKeeper types.BankKeeper) evm.PrecompiledContract
 			stateDB:    stateDB,
 			caller:     caller,
 			value:      value,
-			readonly:   readonly,
 		}
 	}
 }
@@ -91,11 +88,15 @@ func (bc *BankContract) RequiredGas(input []byte) uint64 {
 }
 
 func (bc *BankContract) Run(input []byte) ([]byte, error) {
+	readonly, err := CheckCaller()
+	if err != nil {
+		return nil, err
+	}
 	// parse input
 	methodID := input[:4]
 	switch string(methodID) {
 	case string(MintMethod.ID):
-		if bc.readonly {
+		if readonly {
 			return nil, errors.New("the method is not readonly")
 		}
 		args, err := MintMethod.Inputs.Unpack(input[4:])
@@ -130,8 +131,8 @@ func (bc *BankContract) Run(input []byte) ([]byte, error) {
 		token := args[0].(common.Address)
 		addr := args[1].(common.Address)
 		// query from storage
-		amount := bc.bankKeeper.GetBalance(bc.ctx, sdk.AccAddress(addr.Bytes()), EVMDenom(token)).Amount.BigInt()
-		return BalanceOfMethod.Outputs.Pack(amount)
+		balance := bc.bankKeeper.GetBalance(bc.ctx, sdk.AccAddress(addr.Bytes()), EVMDenom(token)).Amount.BigInt()
+		return BalanceOfMethod.Outputs.Pack(balance)
 	default:
 		return nil, errors.New("unknown method")
 	}

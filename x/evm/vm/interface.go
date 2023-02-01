@@ -33,7 +33,6 @@ type PrecompiledContractCreator func(
 	ExtStateDB,
 	common.Address,
 	*big.Int,
-	bool,
 ) StatefulPrecompiledContract
 
 type StatefulPrecompiledContract interface {
