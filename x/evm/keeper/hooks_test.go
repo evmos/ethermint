@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"bytes"
 	"errors"
 	"math/big"
 
@@ -31,12 +32,32 @@ func (dh FailureHook) PostTxProcessing(ctx sdk.Context, msg core.Message, receip
 	return errors.New("post tx processing failed")
 }
 
+type ReceiptChangingHook struct{}
+
+func (dh ReceiptChangingHook) PostTxProcessing(ctx sdk.Context, msg core.Message, receipt *ethtypes.Receipt) error {
+	// Change original receipt
+	receipt.BlockHash = common.BytesToHash([]byte("dirtyHash"))
+	receipt.Status = ethtypes.ReceiptStatusFailed
+	return nil
+}
+
 func (suite *KeeperTestSuite) TestEvmHooks() {
 	testCases := []struct {
-		msg       string
-		setupHook func() types.EvmHooks
-		expFunc   func(hook types.EvmHooks, result error)
+		msg            string
+		setupHook      func() types.EvmHooks
+		expFunc        func(hook types.EvmHooks, result error)
+		receiptChanged bool
 	}{
+		{
+			"receipt can be changed by EVM Hook",
+			func() types.EvmHooks {
+				return &ReceiptChangingHook{}
+			},
+			func(hook types.EvmHooks, result error) {
+				suite.Require().NoError(result)
+			},
+			true,
+		},
 		{
 			"log collect hook",
 			func() types.EvmHooks {
@@ -46,6 +67,7 @@ func (suite *KeeperTestSuite) TestEvmHooks() {
 				suite.Require().NoError(result)
 				suite.Require().Equal(1, len((hook.(*LogRecordHook).Logs)))
 			},
+			false,
 		},
 		{
 			"always fail hook",
@@ -55,6 +77,7 @@ func (suite *KeeperTestSuite) TestEvmHooks() {
 			func(hook types.EvmHooks, result error) {
 				suite.Require().Error(result)
 			},
+			false,
 		},
 	}
 
@@ -66,8 +89,10 @@ func (suite *KeeperTestSuite) TestEvmHooks() {
 		k := suite.app.EvmKeeper
 		ctx := suite.ctx
 		txHash := common.BigToHash(big.NewInt(1))
+		headerHash := common.BytesToHash(ctx.HeaderHash().Bytes())
+		originalStatus := ethtypes.ReceiptStatusSuccessful
 		vmdb := statedb.New(ctx, k, statedb.NewTxConfig(
-			common.BytesToHash(ctx.HeaderHash().Bytes()),
+			headerHash,
 			txHash,
 			0,
 			0,
@@ -79,11 +104,23 @@ func (suite *KeeperTestSuite) TestEvmHooks() {
 		})
 		logs := vmdb.Logs()
 		receipt := &ethtypes.Receipt{
-			TxHash: txHash,
-			Logs:   logs,
+			BlockHash: headerHash,
+			Status:    originalStatus,
+			TxHash:    txHash,
+			Logs:      logs,
 		}
-		result := k.PostTxProcessing(ctx, ethtypes.Message{}, receipt)
+		// Deep copy receipt to originalReceipt before PostTxProcessing
+		originalReceipt := new(ethtypes.Receipt)
+		*originalReceipt = *receipt
 
+		result := k.PostTxProcessing(ctx, ethtypes.Message{}, receipt)
 		tc.expFunc(hook, result)
+		if !tc.receiptChanged {
+			receiptBeforeHook, err := originalReceipt.MarshalBinary()
+			suite.Require().NoError(err)
+			receiptAfterHook, err := receipt.MarshalBinary()
+			suite.Require().NoError(err)
+			suite.Require().True(bytes.Equal(receiptBeforeHook, receiptAfterHook))
+		}
 	}
 }
