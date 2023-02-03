@@ -20,4 +20,21 @@ contract TestBank {
         nativeMint(amount);
         revert("test");
     }
+    function nativeMintDelegate(uint amount) public {
+        (bool result, bytes memory _data) = bankContract.delegatecall(abi.encodeWithSignature(
+            "mint(address,uint256)", msg.sender, amount
+        ));
+        require(result, "native delegatecall");
+    }
+    function nativeBalanceOfDelegate(address addr) public returns (uint) {
+        (bool result, bytes memory data) = bankContract.delegatecall(abi.encodeWithSignature(
+            "balanceOf(address,address)", address(this), addr
+        ));
+        require(result, "native delegatecall");
+        return abi.decode(data, (uint));
+    }
+    function nativeMintRevertDelegate(uint amount) public {
+        nativeMintDelegate(amount);
+        revert("test");
+    }
 }
