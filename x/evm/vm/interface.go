@@ -31,8 +31,6 @@ type PrecompiledContracts map[common.Address]vm.PrecompiledContract
 type PrecompiledContractCreator func(
 	sdk.Context,
 	ExtStateDB,
-	common.Address,
-	*big.Int,
 ) StatefulPrecompiledContract
 
 type StatefulPrecompiledContract interface {
@@ -54,7 +52,7 @@ type EVM interface {
 	Reset(txCtx vm.TxContext, statedb vm.StateDB)
 	Cancel()
 	Cancelled() bool //nolint
-	Interpreter() *vm.EVMInterpreter
+	Interpreter() vm.Interpreter
 	Call(caller vm.ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error)
 	CallCode(caller vm.ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error)
 	DelegateCall(caller vm.ContractRef, addr common.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, err error)
@@ -74,8 +72,12 @@ type EVM interface {
 	Precompile(addr common.Address) (vm.PrecompiledContract, bool)
 	RunPrecompiledContract(
 		p StatefulPrecompiledContract,
+		caller vm.ContractRef,
 		input []byte,
-		suppliedGas uint64) (
+		suppliedGas uint64,
+		value *big.Int,
+		readOnly bool,
+	) (
 		ret []byte, remainingGas uint64, err error,
 	)
 }

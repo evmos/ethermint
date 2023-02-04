@@ -7,6 +7,7 @@ import (
 	sdkmath "cosmossdk.io/math"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/vm"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -59,8 +60,6 @@ type BankContract struct {
 	ctx        sdk.Context
 	bankKeeper types.BankKeeper
 	stateDB    evm.ExtStateDB
-	caller     common.Address
-	value      *big.Int
 }
 
 // NewBankContractCreator creates the precompiled contract to manage native tokens
@@ -68,17 +67,17 @@ func NewBankContractCreator(bankKeeper types.BankKeeper) evm.PrecompiledContract
 	return func(
 		ctx sdk.Context,
 		stateDB evm.ExtStateDB,
-		caller common.Address,
-		value *big.Int,
 	) evm.StatefulPrecompiledContract {
 		return &BankContract{
 			ctx:        ctx,
 			bankKeeper: bankKeeper,
 			stateDB:    stateDB,
-			caller:     caller,
-			value:      value,
 		}
 	}
+}
+
+func (bc *BankContract) Address() common.Address {
+	return common.BytesToAddress([]byte{100})
 }
 
 // RequiredGas calculates the contract gas use
@@ -87,19 +86,19 @@ func (bc *BankContract) RequiredGas(input []byte) uint64 {
 	return 0
 }
 
-func (bc *BankContract) Run(input []byte) ([]byte, error) {
-	readonly, err := CheckCaller()
-	if err != nil {
-		return nil, err
-	}
+func (bc *BankContract) IsStateful() bool {
+	return true
+}
+
+func (bc *BankContract) Run(evm *vm.EVM, contract *vm.Contract, readonly bool) ([]byte, error) {
 	// parse input
-	methodID := input[:4]
+	methodID := contract.Input[:4]
 	switch string(methodID) {
 	case string(MintMethod.ID):
 		if readonly {
 			return nil, errors.New("the method is not readonly")
 		}
-		args, err := MintMethod.Inputs.Unpack(input[4:])
+		args, err := MintMethod.Inputs.Unpack(contract.Input[4:])
 		if err != nil {
 			return nil, errors.New("fail to unpack input arguments")
 		}
@@ -108,7 +107,7 @@ func (bc *BankContract) Run(input []byte) ([]byte, error) {
 		if amount.Sign() <= 0 {
 			return nil, errors.New("invalid amount")
 		}
-		denom := EVMDenom(bc.caller)
+		denom := EVMDenom(contract.CallerAddress)
 		err = bc.stateDB.ExecuteNativeAction(func(ctx sdk.Context) error {
 			addr := sdk.AccAddress(recipient.Bytes())
 			amt := sdk.NewCoins(sdk.NewCoin(denom, sdkmath.NewIntFromBigInt(amount)))
@@ -124,7 +123,7 @@ func (bc *BankContract) Run(input []byte) ([]byte, error) {
 			return nil, err
 		}
 	case string(BalanceOfMethod.ID):
-		args, err := BalanceOfMethod.Inputs.Unpack(input[4:])
+		args, err := BalanceOfMethod.Inputs.Unpack(contract.Input[4:])
 		if err != nil {
 			return nil, errors.New("fail to unpack input arguments")
 		}
