@@ -16,7 +16,9 @@
 package keeper
 
 import (
+	"bytes"
 	"math/big"
+	"sort"
 
 	tmtypes "github.com/tendermint/tendermint/types"
 
@@ -82,6 +84,9 @@ func (k *Keeper) NewEVM(
 		precompiles[addr] = c
 		active = append(active, addr)
 	}
+	sort.Slice(active, func(i, j int) bool {
+		return bytes.Compare(active[i].Bytes(), active[j].Bytes()) < 0
+	})
 	evm := vm.NewEVM(blockCtx, txCtx, stateDB, cfg.ChainConfig, vmConfig)
 	evm.WithPrecompiles(precompiles, active)
 	return evm
