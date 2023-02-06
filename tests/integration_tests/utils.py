@@ -34,6 +34,7 @@ TEST_CONTRACTS = {
     "StateContract": "StateContract.sol",
     "TestBank": "TestBank.sol",
     "TestBankDelegate": "TestBankDelegate.sol",
+    "TestTransfer": "TestTransfer.sol",
 }
 
 
@@ -126,7 +127,7 @@ def wait_for_block_time(cli, t):
         time.sleep(0.5)
 
 
-def deploy_contract(w3, jsonfile, args=(), key=KEYS["validator"]):
+def deploy_contract(w3, jsonfile, args=(), key=KEYS["validator"], value=None):
     """
     deploy contract and return the deployed contract instance
     """
@@ -134,6 +135,8 @@ def deploy_contract(w3, jsonfile, args=(), key=KEYS["validator"]):
     info = json.loads(jsonfile.read_text())
     contract = w3.eth.contract(abi=info["abi"], bytecode=info["bytecode"])
     tx = contract.constructor(*args).build_transaction({"from": acct.address})
+    if value:
+        tx["value"] = value
     txreceipt = send_transaction(w3, tx, key)
     assert txreceipt.status == 1
     address = txreceipt.contractAddress

@@ -422,6 +422,7 @@ func NewEthermintApp(
 	)
 	contracts := []vm.PrecompiledContractCreator{
 		precompiles.NewBankContractCreator(app.BankKeeper),
+		precompiles.NewTransferContractCreator(app.BankKeeper),
 	}
 	// Set authority to x/gov module account to only expect the module account to update params
 	evmSs := app.GetSubspace(evmtypes.ModuleName)
