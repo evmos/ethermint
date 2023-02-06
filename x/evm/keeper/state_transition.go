@@ -53,7 +53,7 @@ func (k *Keeper) NewEVM(
 	cfg *statedb.EVMConfig,
 	tracer vm.EVMLogger,
 	stateDB vm.StateDB,
-	contracts map[common.Address]evm.StatefulPrecompiledContract,
+	contracts []evm.StatefulPrecompiledContract,
 ) *vm.EVM {
 	blockCtx := vm.BlockContext{
 		CanTransfer: core.CanTransfer,
@@ -80,7 +80,8 @@ func (k *Keeper) NewEVM(
 		precompiles[addr] = c
 		active = append(active, addr)
 	}
-	for addr, c := range contracts {
+	for _, c := range contracts {
+		addr := c.Address()
 		precompiles[addr] = c
 		active = append(active, addr)
 	}
@@ -349,10 +350,10 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 	}
 
 	// construct precompiles
-	contracts := make(map[common.Address]evm.StatefulPrecompiledContract, len(k.customPrecompiles))
+	contracts := make([]evm.StatefulPrecompiledContract, len(k.customPrecompiles))
 	stateDB := k.StateDB(ctx, txConfig)
-	for addr, creator := range k.customPrecompiles {
-		contracts[addr] = creator(ctx, stateDB)
+	for i, creator := range k.customPrecompiles {
+		contracts[i] = creator(ctx, stateDB)
 	}
 	evm := k.NewEVM(ctx, msg, cfg, tracer, stateDB, contracts)
 	leftoverGas := msg.Gas()

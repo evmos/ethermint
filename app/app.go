@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math/big"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -134,7 +133,7 @@ import (
 	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
 
 	// Force-load the tracer engines to trigger registration due to Go-Ethereum v1.10.15 changes
-	"github.com/ethereum/go-ethereum/common"
+
 	_ "github.com/ethereum/go-ethereum/eth/tracers/js"
 	_ "github.com/ethereum/go-ethereum/eth/tracers/native"
 )
@@ -421,8 +420,8 @@ func NewEthermintApp(
 		appCodec, authtypes.NewModuleAddress(govtypes.ModuleName),
 		keys[feemarkettypes.StoreKey], tkeys[feemarkettypes.TransientKey], feeMarketSs,
 	)
-	contracts := map[common.Address]vm.PrecompiledContractCreator{
-		common.BigToAddress(big.NewInt(100)): precompiles.NewBankContractCreator(app.BankKeeper),
+	contracts := []vm.PrecompiledContractCreator{
+		precompiles.NewBankContractCreator(app.BankKeeper),
 	}
 	// Set authority to x/gov module account to only expect the module account to update params
 	evmSs := app.GetSubspace(evmtypes.ModuleName)

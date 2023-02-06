@@ -25,8 +25,8 @@ import (
 	"github.com/holiman/uint256"
 )
 
-// PrecompiledContracts defines a map of address -> precompiled contract
-type PrecompiledContracts map[common.Address]vm.PrecompiledContract
+// PrecompiledContracts defines list of precompiled contract
+type PrecompiledContracts []vm.PrecompiledContract
 
 type PrecompiledContractCreator func(
 	sdk.Context,

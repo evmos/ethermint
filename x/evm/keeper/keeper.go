@@ -72,7 +72,7 @@ type Keeper struct {
 	hooks types.EvmHooks
 
 	// custom precompiled smart contracts
-	customPrecompiles map[common.Address]evm.PrecompiledContractCreator
+	customPrecompiles []evm.PrecompiledContractCreator
 
 	// evm constructor function
 	evmConstructor evm.Constructor
@@ -89,7 +89,7 @@ func NewKeeper(
 	bankKeeper types.BankKeeper,
 	sk types.StakingKeeper,
 	fmk types.FeeMarketKeeper,
-	customPrecompiles map[common.Address]evm.PrecompiledContractCreator,
+	customPrecompiles []evm.PrecompiledContractCreator,
 	evmConstructor evm.Constructor,
 	tracer string,
 	ss paramstypes.Subspace,
