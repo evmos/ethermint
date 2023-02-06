@@ -35,6 +35,7 @@ TEST_CONTRACTS = {
     "TestBank": "TestBank.sol",
     "TestBankDelegate": "TestBankDelegate.sol",
     "TestTransfer": "TestTransfer.sol",
+    "TestBankCaller": "TestBankCaller.sol",
 }
 
 

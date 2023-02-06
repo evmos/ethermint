@@ -81,6 +81,21 @@ def test_delegate(ethermint):
     assert get_balance(cli, addr, denom) == amount
 
 
+def test_nested(ethermint):
+    w3 = ethermint.w3
+    addr = ADDRS["validator"]
+    amount = 100
+    _, res = deploy_contract(w3, CONTRACTS["TestBank"])
+    contract, _ = deploy_contract(w3, CONTRACTS["TestBankCaller"])
+    data = {"from": addr}
+    tx = contract.functions.mint(res["contractAddress"], amount).build_transaction(data)
+    receipt = send_transaction(w3, tx)
+    assert receipt.status == 1, "expect success"
+    assert contract.caller.getLastState() == 1
+    denom = "evm/" + contract.address
+    assert get_balance(ethermint.cosmos_cli(), addr, denom) == 0
+
+
 class Params(NamedTuple):
     address: HexAddress
     amount: int
