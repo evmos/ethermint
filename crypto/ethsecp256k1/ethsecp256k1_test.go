@@ -2,6 +2,8 @@ package ethsecp256k1
 
 import (
 	"encoding/base64"
+	cosmossecp256k1 "github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	tmcrypto "github.com/tendermint/tendermint/crypto"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -13,6 +15,39 @@ import (
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 )
+
+func TestEthermintKeyAndCosmosKey(t *testing.T) {
+	ethermintPrivKey, err := GenerateKey()
+	require.NoError(t, err)
+	require.True(t, ethermintPrivKey.Equals(ethermintPrivKey))
+	require.Implements(t, (*cryptotypes.PrivKey)(nil), ethermintPrivKey)
+
+	cosmosPrivKey := new(cosmossecp256k1.PrivKey)
+	cosmosPrivKey.Key = ethermintPrivKey.GetKey()
+
+	// Basically, cosmosKey and ethermintKey are same.
+	cosmosPubKey := cosmosPrivKey.PubKey()
+	ethermintPubKey := ethermintPrivKey.PubKey()
+	require.Equal(t, cosmosPubKey.Bytes(), ethermintPubKey.Bytes())
+
+	// Signatures from both keys using secp256k1 sign algorithm must be same.
+	msg := []byte("hello world")
+	hash := tmcrypto.Sha256(msg)
+	sig1, err := secp256k1.Sign(hash, ethermintPrivKey.GetKey())
+	require.NoError(t, err)
+	sig2, err := secp256k1.Sign(hash, cosmosPrivKey.GetKey())
+	require.NoError(t, err)
+	require.Equal(t, sig1, sig2)
+
+	// But signature mechanisms of platforms between Ethereum and Cosmos are different.
+	// Ethermint signature is 65 bytes(RSV), Cosmos signature is 64 bytes(RS).
+	res1, err := ethermintPrivKey.Sign(hash)
+	require.NoError(t, err)
+	res2, err := cosmosPrivKey.Sign(msg)
+	require.NoError(t, err)
+	// Signatures are same except v of signature from ethermintPrivKey.
+	require.Equal(t, res1[:len(res1)-1], res2)
+}
 
 func TestPrivKey(t *testing.T) {
 	// validate type and equality
