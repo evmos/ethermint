@@ -86,7 +86,7 @@ func (k *Keeper) NewEVM(
 		contracts[addr] = c
 		active = append(active, addr)
 	}
-	sort.Slice(active, func(i, j int) bool {
+	sort.SliceStable(active, func(i, j int) bool {
 		return bytes.Compare(active[i].Bytes(), active[j].Bytes()) < 0
 	})
 	evm := vm.NewEVM(blockCtx, txCtx, stateDB, cfg.ChainConfig, vmConfig)
