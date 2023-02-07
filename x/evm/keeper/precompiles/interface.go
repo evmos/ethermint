@@ -5,9 +5,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 )
 
-// PrecompiledContracts defines list of precompiled contract
-type PrecompiledContracts []vm.PrecompiledContract
-
 type StatefulPrecompiledContract interface {
 	vm.PrecompiledContract
 }
