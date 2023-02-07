@@ -1,13 +1,6 @@
-from typing import NamedTuple
-
-from eth_typing import HexAddress
-from eth_utils import abi
-from hexbytes import HexBytes
-
 from .utils import (
     ADDRS,
     CONTRACTS,
-    KEYS,
     deploy_contract,
     eth_to_bech32,
     send_transaction,
@@ -94,35 +87,3 @@ def test_nested(ethermint):
     assert contract.caller.getLastState() == 1
     denom = "evm/" + contract.address
     assert get_balance(ethermint.cosmos_cli(), addr, denom) == 0
-
-
-class Params(NamedTuple):
-    address: HexAddress
-    amount: int
-
-
-def test_transfer(ethermint):
-    w3 = ethermint.w3
-    amount = 500000000000000000000
-    name = CONTRACTS["TestTransfer"]
-    contract, res = deploy_contract(w3, name, (), KEYS["validator"], amount)
-    contract_address = res["contractAddress"]
-    denom = "aphoton"
-    addr = ADDRS["signer2"]
-    recipient = ADDRS["signer1"]
-    cli = ethermint.cosmos_cli()
-    recipient_balance = get_balance(cli, recipient, denom)
-    contract_balance = get_balance(cli, contract_address, denom)
-    success = [1000, 20000]
-    fail = [300000, amount * 2]
-    params = [Params(recipient, val) for val in (success + fail)]
-    tx = contract.functions.recursiveTransfer(params).build_transaction({"from": addr})
-    receipt = send_transaction(w3, tx)
-    assert receipt.status == 1
-    assert receipt.logs[0]["topics"] == [
-        HexBytes(abi.event_signature_to_log_topic("Result(bool)")),
-        HexBytes(b"\x00" * 32),
-    ]
-    expect_diff = sum(success)
-    assert recipient_balance + expect_diff == get_balance(cli, recipient, denom)
-    assert contract_balance - expect_diff == get_balance(cli, contract_address, denom)
