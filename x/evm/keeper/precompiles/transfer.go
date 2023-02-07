@@ -12,14 +12,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/evmos/ethermint/x/evm/types"
-	evm "github.com/evmos/ethermint/x/evm/vm"
 )
 
 var (
 	NativeTransferMethod   abi.Method
 	TransferTransferMethod abi.Method
-
-	_ evm.StatefulPrecompiledContract = (*TransferContract)(nil)
 )
 
 func init() {
@@ -40,21 +37,11 @@ func init() {
 type TransferContract struct {
 	ctx        sdk.Context
 	bankKeeper types.BankKeeper
-	stateDB    evm.ExtStateDB
+	stateDB    ExtStateDB
 }
 
-// NewTransferContractCreator creates the precompiled contract to manage native tokens
-func NewTransferContractCreator(bankKeeper types.BankKeeper) evm.PrecompiledContractCreator {
-	return func(
-		ctx sdk.Context,
-		stateDB evm.ExtStateDB,
-	) evm.StatefulPrecompiledContract {
-		return &TransferContract{
-			ctx:        ctx,
-			bankKeeper: bankKeeper,
-			stateDB:    stateDB,
-		}
-	}
+func NewTransferContract(ctx sdk.Context, bankKeeper types.BankKeeper, stateDB ExtStateDB) StatefulPrecompiledContract {
+	return &TransferContract{ctx, bankKeeper, stateDB}
 }
 
 func (tc *TransferContract) Address() common.Address {

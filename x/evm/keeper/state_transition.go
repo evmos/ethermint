@@ -26,6 +26,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	ethermint "github.com/evmos/ethermint/types"
+	"github.com/evmos/ethermint/x/evm/keeper/precompiles"
 	"github.com/evmos/ethermint/x/evm/statedb"
 	"github.com/evmos/ethermint/x/evm/types"
 
@@ -35,7 +36,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
-	evm "github.com/evmos/ethermint/x/evm/vm"
 )
 
 // NewEVM generates a go-ethereum VM from the provided Message fields and the chain parameters
@@ -53,7 +53,6 @@ func (k *Keeper) NewEVM(
 	cfg *statedb.EVMConfig,
 	tracer vm.EVMLogger,
 	stateDB vm.StateDB,
-	contracts []evm.StatefulPrecompiledContract,
 ) *vm.EVM {
 	blockCtx := vm.BlockContext{
 		CanTransfer: core.CanTransfer,
@@ -67,29 +66,32 @@ func (k *Keeper) NewEVM(
 		BaseFee:     cfg.BaseFee,
 		Random:      nil, // not supported
 	}
-
 	txCtx := core.NewEVMTxContext(msg)
 	if tracer == nil {
 		tracer = k.Tracer(ctx, msg, cfg.ChainConfig)
 	}
 	vmConfig := k.VMConfig(ctx, msg, cfg, tracer)
 	rules := cfg.ChainConfig.Rules(big.NewInt(ctx.BlockHeight()), cfg.ChainConfig.MergeNetsplitBlock != nil)
-	precompiles := make(map[common.Address]vm.PrecompiledContract)
+	contracts := make(map[common.Address]vm.PrecompiledContract)
 	active := make([]common.Address, 0)
 	for addr, c := range vm.DefaultPrecompiles(rules) {
-		precompiles[addr] = c
+		contracts[addr] = c
 		active = append(active, addr)
 	}
-	for _, c := range contracts {
+	customContracts := []precompiles.StatefulPrecompiledContract{
+		precompiles.NewBankContract(ctx, k.bankKeeper, stateDB.(precompiles.ExtStateDB)),
+		precompiles.NewTransferContract(ctx, k.bankKeeper, stateDB.(precompiles.ExtStateDB)),
+	}
+	for _, c := range customContracts {
 		addr := c.Address()
-		precompiles[addr] = c
+		contracts[addr] = c
 		active = append(active, addr)
 	}
 	sort.Slice(active, func(i, j int) bool {
 		return bytes.Compare(active[i].Bytes(), active[j].Bytes()) < 0
 	})
 	evm := vm.NewEVM(blockCtx, txCtx, stateDB, cfg.ChainConfig, vmConfig)
-	evm.WithPrecompiles(precompiles, active)
+	evm.WithPrecompiles(contracts, active)
 	return evm
 }
 
@@ -348,14 +350,8 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 	} else if !cfg.Params.EnableCall && msg.To() != nil {
 		return nil, errorsmod.Wrap(types.ErrCallDisabled, "failed to call contract")
 	}
-
-	// construct precompiles
-	contracts := make([]evm.StatefulPrecompiledContract, len(k.customPrecompiles))
 	stateDB := k.StateDB(ctx, txConfig)
-	for i, creator := range k.customPrecompiles {
-		contracts[i] = creator(ctx, stateDB)
-	}
-	evm := k.NewEVM(ctx, msg, cfg, tracer, stateDB, contracts)
+	evm := k.NewEVM(ctx, msg, cfg, tracer, stateDB)
 	leftoverGas := msg.Gas()
 	// Allow the tracer captures the tx level events, mainly the gas consumption.
 	vmCfg := evm.Config

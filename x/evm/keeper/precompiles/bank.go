@@ -12,7 +12,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/evmos/ethermint/x/evm/types"
-	evm "github.com/evmos/ethermint/x/evm/vm"
 )
 
 const EVMDenomPrefix = "evm/"
@@ -20,8 +19,6 @@ const EVMDenomPrefix = "evm/"
 var (
 	MintMethod      abi.Method
 	BalanceOfMethod abi.Method
-
-	_ evm.StatefulPrecompiledContract = (*BankContract)(nil)
 )
 
 func init() {
@@ -59,21 +56,12 @@ func EVMDenom(token common.Address) string {
 type BankContract struct {
 	ctx        sdk.Context
 	bankKeeper types.BankKeeper
-	stateDB    evm.ExtStateDB
+	stateDB    ExtStateDB
 }
 
-// NewBankContractCreator creates the precompiled contract to manage native tokens
-func NewBankContractCreator(bankKeeper types.BankKeeper) evm.PrecompiledContractCreator {
-	return func(
-		ctx sdk.Context,
-		stateDB evm.ExtStateDB,
-	) evm.StatefulPrecompiledContract {
-		return &BankContract{
-			ctx:        ctx,
-			bankKeeper: bankKeeper,
-			stateDB:    stateDB,
-		}
-	}
+// NewBankContract creates the precompiled contract to manage native tokens
+func NewBankContract(ctx sdk.Context, bankKeeper types.BankKeeper, stateDB ExtStateDB) StatefulPrecompiledContract {
+	return &BankContract{ctx, bankKeeper, stateDB}
 }
 
 func (bc *BankContract) Address() common.Address {

@@ -34,7 +34,6 @@ import (
 	ethermint "github.com/evmos/ethermint/types"
 	"github.com/evmos/ethermint/x/evm/statedb"
 	"github.com/evmos/ethermint/x/evm/types"
-	evm "github.com/evmos/ethermint/x/evm/vm"
 )
 
 // Keeper grants access to the EVM module state and implements the go-ethereum StateDB interface.
@@ -71,11 +70,6 @@ type Keeper struct {
 	// EVM Hooks for tx post-processing
 	hooks types.EvmHooks
 
-	// custom precompiled smart contracts
-	customPrecompiles []evm.PrecompiledContractCreator
-
-	// evm constructor function
-	evmConstructor evm.Constructor
 	// Legacy subspace
 	ss paramstypes.Subspace
 }
@@ -89,8 +83,6 @@ func NewKeeper(
 	bankKeeper types.BankKeeper,
 	sk types.StakingKeeper,
 	fmk types.FeeMarketKeeper,
-	customPrecompiles []evm.PrecompiledContractCreator,
-	evmConstructor evm.Constructor,
 	tracer string,
 	ss paramstypes.Subspace,
 ) *Keeper {
@@ -106,18 +98,16 @@ func NewKeeper(
 
 	// NOTE: we pass in the parameter space to the CommitStateDB in order to use custom denominations for the EVM operations
 	return &Keeper{
-		cdc:               cdc,
-		authority:         authority,
-		accountKeeper:     ak,
-		bankKeeper:        bankKeeper,
-		stakingKeeper:     sk,
-		feeMarketKeeper:   fmk,
-		storeKey:          storeKey,
-		transientKey:      transientKey,
-		customPrecompiles: customPrecompiles,
-		evmConstructor:    evmConstructor,
-		tracer:            tracer,
-		ss:                ss,
+		cdc:             cdc,
+		authority:       authority,
+		accountKeeper:   ak,
+		bankKeeper:      bankKeeper,
+		stakingKeeper:   sk,
+		feeMarketKeeper: fmk,
+		storeKey:        storeKey,
+		transientKey:    transientKey,
+		tracer:          tracer,
+		ss:              ss,
 	}
 }
 
