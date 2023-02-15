@@ -63,7 +63,8 @@ type Keeper struct {
 	feeMarketKeeper types.FeeMarketKeeper
 
 	// chain ID number obtained from the context's chain id
-	eip155ChainID *big.Int
+	eip155ChainID        *big.Int
+	eip155ChainIDCreator types.Eip155ChainIDCreator
 
 	// Tracer used to collect execution traces from the EVM transaction execution
 	tracer string
@@ -106,18 +107,19 @@ func NewKeeper(
 
 	// NOTE: we pass in the parameter space to the CommitStateDB in order to use custom denominations for the EVM operations
 	return &Keeper{
-		cdc:               cdc,
-		authority:         authority,
-		accountKeeper:     ak,
-		bankKeeper:        bankKeeper,
-		stakingKeeper:     sk,
-		feeMarketKeeper:   fmk,
-		storeKey:          storeKey,
-		transientKey:      transientKey,
-		customPrecompiles: customPrecompiles,
-		evmConstructor:    evmConstructor,
-		tracer:            tracer,
-		ss:                ss,
+		cdc:                  cdc,
+		authority:            authority,
+		accountKeeper:        ak,
+		bankKeeper:           bankKeeper,
+		stakingKeeper:        sk,
+		feeMarketKeeper:      fmk,
+		storeKey:             storeKey,
+		transientKey:         transientKey,
+		customPrecompiles:    customPrecompiles,
+		evmConstructor:       evmConstructor,
+		tracer:               tracer,
+		ss:                   ss,
+		eip155ChainIDCreator: types.DefaultEip155ChainIDCreator,
 	}
 }
 
@@ -128,16 +130,16 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 
 // WithChainID sets the chain id to the local variable in the keeper
 func (k *Keeper) WithChainID(ctx sdk.Context) {
-	chainID, err := ethermint.ParseChainID(ctx.ChainID())
-	if err != nil {
-		panic(err)
-	}
-
+	chainID := k.eip155ChainIDCreator(ctx)
 	if k.eip155ChainID != nil && k.eip155ChainID.Cmp(chainID) != 0 {
 		panic("chain id already set")
 	}
-
 	k.eip155ChainID = chainID
+}
+
+// WithEIP155ChainIDCreator overrind default eip155ChainIDCreator
+func (k *Keeper) WithEIP155ChainIDCreator(eip155ChainIDCreator types.Eip155ChainIDCreator) {
+	k.eip155ChainIDCreator = eip155ChainIDCreator
 }
 
 // ChainID returns the EIP155 chain ID for the EVM context

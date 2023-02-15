@@ -237,7 +237,7 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	chainID, err := getChainID(ctx, req.ChainId)
+	chainID, err := k.getChainID(ctx, req.ChainId)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -273,7 +273,7 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
-	chainID, err := getChainID(ctx, req.ChainId)
+	chainID, err := k.getChainID(ctx, req.ChainId)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -413,7 +413,7 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	ctx = ctx.WithBlockHeight(contextHeight)
 	ctx = ctx.WithBlockTime(req.BlockTime)
 	ctx = ctx.WithHeaderHash(common.Hex2Bytes(req.BlockHash))
-	chainID, err := getChainID(ctx, req.ChainId)
+	chainID, err := k.getChainID(ctx, req.ChainId)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -490,7 +490,7 @@ func (k Keeper) TraceBlock(c context.Context, req *types.QueryTraceBlockRequest)
 	ctx = ctx.WithBlockHeight(contextHeight)
 	ctx = ctx.WithBlockTime(req.BlockTime)
 	ctx = ctx.WithHeaderHash(common.Hex2Bytes(req.BlockHash))
-	chainID, err := getChainID(ctx, req.ChainId)
+	chainID, err := k.getChainID(ctx, req.ChainId)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -634,9 +634,9 @@ func (k Keeper) BaseFee(c context.Context, _ *types.QueryBaseFeeRequest) (*types
 }
 
 // getChainID parse chainID from current context if not provided
-func getChainID(ctx sdk.Context, chainID int64) (*big.Int, error) {
+func (k Keeper) getChainID(ctx sdk.Context, chainID int64) (*big.Int, error) {
 	if chainID == 0 {
-		return ethermint.ParseChainID(ctx.ChainID())
+		return k.eip155ChainIDCreator(ctx), nil
 	}
 	return big.NewInt(chainID), nil
 }

@@ -26,7 +26,18 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/params"
+	ethermint "github.com/evmos/ethermint/types"
 )
+
+type Eip155ChainIDCreator func(ctx sdk.Context) *big.Int
+
+func DefaultEip155ChainIDCreator(ctx sdk.Context) *big.Int {
+	chainID, err := ethermint.ParseChainID(ctx.ChainID())
+	if err != nil {
+		panic(err)
+	}
+	return chainID
+}
 
 // EthereumConfig returns an Ethereum ChainConfig for EVM state transitions.
 // All the negative or nil values are converted to nil
