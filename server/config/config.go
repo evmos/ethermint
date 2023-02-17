@@ -351,6 +351,7 @@ func GetConfig(v *viper.Viper) (Config, error) {
 			EnableIndexer:            v.GetBool("json-rpc.enable-indexer"),
 			MetricsAddress:           v.GetString("json-rpc.metrics-address"),
 			FixRevertGasRefundHeight: v.GetInt64("json-rpc.fix-revert-gas-refund-height"),
+			AllowUnprotectedTxs:      v.GetBool("json-rpc.allow-unprotected-txs"),
 		},
 		TLS: TLSConfig{
 			CertificatePath: v.GetString("tls.certificate-path"),
