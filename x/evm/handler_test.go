@@ -182,7 +182,7 @@ func (suite *EvmTestSuite) SignTx(tx *types.MsgEthereumTx) {
 }
 
 func (suite *EvmTestSuite) StateDB() *statedb.StateDB {
-	return statedb.New(suite.ctx, suite.app.EvmKeeper, statedb.NewEmptyTxConfig(common.BytesToHash(suite.ctx.HeaderHash().Bytes())))
+	return statedb.New(suite.ctx, nil, suite.app.EvmKeeper, statedb.NewEmptyTxConfig(common.BytesToHash(suite.ctx.HeaderHash().Bytes())))
 }
 
 func TestEvmTestSuite(t *testing.T) {

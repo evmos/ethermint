@@ -74,7 +74,7 @@ type AnteTestSuite struct {
 const TestGasLimit uint64 = 100000
 
 func (suite *AnteTestSuite) StateDB() *statedb.StateDB {
-	return statedb.New(suite.ctx, suite.app.EvmKeeper, statedb.NewEmptyTxConfig(common.BytesToHash(suite.ctx.HeaderHash().Bytes())))
+	return statedb.New(suite.ctx, nil, suite.app.EvmKeeper, statedb.NewEmptyTxConfig(common.BytesToHash(suite.ctx.HeaderHash().Bytes())))
 }
 
 func (suite *AnteTestSuite) SetupTest() {
