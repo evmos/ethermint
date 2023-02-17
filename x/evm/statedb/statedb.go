@@ -86,7 +86,7 @@ func New(ctx sdk.Context, keys map[string]*storetypes.KVStoreKey, keeper Keeper,
 
 // CacheMultiStore cast the multistore to *cachemulti.Store.
 // invariant: the multistore must be a `cachemulti.Store`,
-// prove: it's set in constructor and never overridden.
+// prove: it's set in constructor and only modified in `restoreNativeState` which keeps the invariant.
 func (s *StateDB) CacheMultiStore() cachemulti.Store {
 	return s.ctx.MultiStore().(cachemulti.Store)
 }
