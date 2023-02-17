@@ -21,11 +21,13 @@ import (
 	"sort"
 
 	errorsmod "cosmossdk.io/errors"
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/evmos/ethermint/store/cachemulti"
 )
 
 // revision is the identifier of a version of state.
@@ -67,8 +69,10 @@ type StateDB struct {
 	accessList *accessList
 }
 
-// New creates a new state from a given trie.
-func New(ctx sdk.Context, keeper Keeper, txConfig TxConfig) *StateDB {
+// New creates a new state from a given trie, StateDB will branch out stores for the specified keys to support
+// precompiles.
+func New(ctx sdk.Context, keys map[string]*storetypes.KVStoreKey, keeper Keeper, txConfig TxConfig) *StateDB {
+	ctx = ctx.WithMultiStore(cachemulti.NewStore(ctx.MultiStore(), keys))
 	return &StateDB{
 		keeper:       keeper,
 		ctx:          ctx,
@@ -78,6 +82,13 @@ func New(ctx sdk.Context, keeper Keeper, txConfig TxConfig) *StateDB {
 
 		txConfig: txConfig,
 	}
+}
+
+// CacheMultiStore cast the multistore to *cachemulti.Store.
+// invariant: the multistore must be a `cachemulti.Store`,
+// prove: it's set in constructor and never overridden.
+func (s *StateDB) CacheMultiStore() cachemulti.Store {
+	return s.ctx.MultiStore().(cachemulti.Store)
 }
 
 // Keeper returns the underlying `Keeper`
@@ -298,12 +309,15 @@ func (s *StateDB) setStateObject(object *stateObject) {
 	s.stateObjects[object.Address()] = object
 }
 
-func (s *StateDB) restoreNativeState(ms sdk.CacheMultiStore) {
+func (s *StateDB) restoreNativeState(ms sdk.MultiStore) {
 	s.ctx = s.ctx.WithMultiStore(ms)
 }
 
-func (s *StateDB) executeNativeAction(action func(ctx sdk.Context) error) error {
-	snapshot := s.ctx.MultiStore().Clone()
+// ExecuteNativeAction executes native action in isolate,
+// the writes will be revert when either the native action itself fail
+// or the wrapping message call reverted.
+func (s *StateDB) ExecuteNativeAction(action func(ctx sdk.Context) error) error {
+	snapshot := s.CacheMultiStore().Clone()
 	err := action(s.ctx)
 	if err != nil {
 		s.restoreNativeState(snapshot)
@@ -465,19 +479,23 @@ func (s *StateDB) RevertToSnapshot(revid int) {
 
 // Commit writes the dirty states to keeper
 // the StateDB object should be discarded after committed.
-func (s *StateDB) Commit() (sdk.Context, error) {
+func (s *StateDB) Commit() error {
+	// commit the native cache store first,
+	// the states managed by precompiles and the other part of StateDB must not overlap.
+	s.CacheMultiStore().Write()
+
 	for _, addr := range s.journal.sortedDirties() {
 		obj := s.stateObjects[addr]
 		if obj.suicided {
 			if err := s.keeper.DeleteAccount(s.ctx, obj.Address()); err != nil {
-				return s.ctx, errorsmod.Wrap(err, "failed to delete account")
+				return errorsmod.Wrap(err, "failed to delete account")
 			}
 		} else {
 			if obj.code != nil && obj.dirtyCode {
 				s.keeper.SetCode(s.ctx, obj.CodeHash(), obj.code)
 			}
 			if err := s.keeper.SetAccount(s.ctx, obj.Address(), obj.account); err != nil {
-				return s.ctx, errorsmod.Wrap(err, "failed to set account")
+				return errorsmod.Wrap(err, "failed to set account")
 			}
 			for _, key := range obj.dirtyStorage.SortedKeys() {
 				value := obj.dirtyStorage[key]
@@ -489,5 +507,5 @@ func (s *StateDB) Commit() (sdk.Context, error) {
 			}
 		}
 	}
-	return s.ctx, nil
+	return nil
 }

@@ -8,7 +8,7 @@ import (
 var _ JournalEntry = nativeChange{}
 
 type nativeChange struct {
-	snapshot types.CacheMultiStore
+	snapshot types.MultiStore
 }
 
 func (native nativeChange) Dirtied() *common.Address {
