@@ -757,6 +757,13 @@ func (app *EthermintApp) InterfaceRegistry() types.InterfaceRegistry {
 	return app.interfaceRegistry
 }
 
+// GetKeys returns the KVStoreKeys.
+//
+// NOTE: This is solely to be used for testing purposes.
+func (app *EthermintApp) GetKeys() map[string]*storetypes.KVStoreKey {
+	return app.keys
+}
+
 // GetKey returns the KVStoreKey for the provided store key.
 //
 // NOTE: This is solely to be used for testing purposes.

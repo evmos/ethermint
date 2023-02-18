@@ -690,7 +690,7 @@ func (suite *KeeperTestSuite) TestAddLog() {
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
 			suite.SetupTest()
-			vmdb := statedb.New(suite.ctx, nil, suite.app.EvmKeeper, statedb.NewTxConfig(
+			vmdb := statedb.New(suite.ctx, suite.app.GetKeys(), suite.app.EvmKeeper, statedb.NewTxConfig(
 				common.BytesToHash(suite.ctx.HeaderHash().Bytes()),
 				tc.hash,
 				0, 0,
