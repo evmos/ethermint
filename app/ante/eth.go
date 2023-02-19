@@ -22,6 +22,7 @@ import (
 	errorsmod "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -246,13 +247,12 @@ func (egcd EthGasConsumeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simula
 // context rules.
 type CanTransferDecorator struct {
 	evmKeeper EVMKeeper
+	keys      map[string]*storetypes.KVStoreKey
 }
 
 // NewCanTransferDecorator creates a new CanTransferDecorator instance.
-func NewCanTransferDecorator(evmKeeper EVMKeeper) CanTransferDecorator {
-	return CanTransferDecorator{
-		evmKeeper: evmKeeper,
-	}
+func NewCanTransferDecorator(evmKeeper EVMKeeper, keys map[string]*storetypes.KVStoreKey) CanTransferDecorator {
+	return CanTransferDecorator{evmKeeper, keys}
 }
 
 // AnteHandle creates an EVM from the message and calls the BlockContext CanTransfer function to
@@ -302,7 +302,7 @@ func (ctd CanTransferDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 			BaseFee:     baseFee,
 		}
 
-		stateDB := statedb.New(ctx, nil, ctd.evmKeeper, statedb.NewEmptyTxConfig(common.BytesToHash(ctx.HeaderHash().Bytes())))
+		stateDB := statedb.New(ctx, ctd.keys, ctd.evmKeeper, statedb.NewEmptyTxConfig(common.BytesToHash(ctx.HeaderHash().Bytes())))
 		evm := ctd.evmKeeper.NewEVM(ctx, coreMsg, cfg, evmtypes.NewNoOpTracer(), stateDB)
 
 		// check that caller has enough balance to cover asset transfer for **topmost** call
