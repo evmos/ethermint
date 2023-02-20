@@ -46,8 +46,9 @@ var _ vm.StateDB = &StateDB{}
 // * Contracts
 // * Accounts
 type StateDB struct {
-	keeper Keeper
-	ctx    sdk.Context
+	keeper   Keeper
+	ctx      sdk.Context
+	cacheCtx sdk.Context
 
 	// Journal of state modifications. This is the backbone of
 	// Snapshot and RevertToSnapshot.
@@ -72,10 +73,11 @@ type StateDB struct {
 // New creates a new state from a given trie, StateDB will branch out stores for the specified keys to support
 // precompiles.
 func New(ctx sdk.Context, keys map[string]*storetypes.KVStoreKey, keeper Keeper, txConfig TxConfig) *StateDB {
-	ctx = ctx.WithMultiStore(cachemulti.NewStore(ctx.MultiStore(), keys))
+	cacheCtx := ctx.WithMultiStore(cachemulti.NewStore(ctx.MultiStore(), keys))
 	return &StateDB{
 		keeper:       keeper,
 		ctx:          ctx,
+		cacheCtx:     cacheCtx,
 		stateObjects: make(map[common.Address]*stateObject),
 		journal:      newJournal(),
 		accessList:   newAccessList(),
@@ -88,7 +90,7 @@ func New(ctx sdk.Context, keys map[string]*storetypes.KVStoreKey, keeper Keeper,
 // invariant: the multistore must be a `cachemulti.Store`,
 // prove: it's set in constructor and only modified in `restoreNativeState` which keeps the invariant.
 func (s *StateDB) CacheMultiStore() cachemulti.Store {
-	return s.ctx.MultiStore().(cachemulti.Store)
+	return s.cacheCtx.MultiStore().(cachemulti.Store)
 }
 
 // Keeper returns the underlying `Keeper`
@@ -310,7 +312,7 @@ func (s *StateDB) setStateObject(object *stateObject) {
 }
 
 func (s *StateDB) restoreNativeState(ms sdk.MultiStore) {
-	s.ctx = s.ctx.WithMultiStore(ms)
+	s.cacheCtx = s.cacheCtx.WithMultiStore(ms)
 }
 
 // ExecuteNativeAction executes native action in isolate,
@@ -318,7 +320,7 @@ func (s *StateDB) restoreNativeState(ms sdk.MultiStore) {
 // or the wrapping message call reverted.
 func (s *StateDB) ExecuteNativeAction(action func(ctx sdk.Context) error) error {
 	snapshot := s.CacheMultiStore().Clone()
-	err := action(s.ctx)
+	err := action(s.cacheCtx)
 	if err != nil {
 		s.restoreNativeState(snapshot)
 		return err
