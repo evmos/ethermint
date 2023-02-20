@@ -20,6 +20,7 @@ import (
 	"math"
 	"math/big"
 
+	errorsmod "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -196,7 +197,7 @@ func (b *Backend) GetTransactionCount(address common.Address, blockNum rpctypes.
 	height := blockNum.Int64()
 	currentHeight := int64(bn)
 	if height > currentHeight {
-		return &n, sdkerrors.Wrapf(
+		return &n, errorsmod.Wrapf(
 			sdkerrors.ErrInvalidHeight,
 			"cannot query with height in the future (current: %d, queried: %d); please provide a valid height",
 			currentHeight, height,
