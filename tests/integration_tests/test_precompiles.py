@@ -18,17 +18,17 @@ def test_call(ethermint):
     native_denom = "aphoton"
     sender = ADDRS["signer1"]
     keys = KEYS["signer1"]
-    amount = 100
+    amt1 = 100
     contract, _ = deploy_contract(w3, CONTRACTS["TestBank"])
     denom = "evm/" + contract.address
 
-    def assert_sender_balance(tx, expect_status, amount):
+    def assert_sender_balance(tx, expect_status, amt):
         balance = get_balance(cli, sender, native_denom)
         receipt = send_transaction(w3, tx, keys)
         assert receipt.status == expect_status
         fee = receipt["cumulativeGasUsed"] * receipt["effectiveGasPrice"]
         current = get_balance(cli, sender, native_denom)
-        assert balance == current + fee + amount
+        assert balance == current + fee + amt
 
     def assert_crc20_balance(address, amt):
         # query balance through contract
@@ -37,29 +37,35 @@ def test_call(ethermint):
         assert get_balance(cli, address, denom) == amt
 
     # test mint
-    tx = contract.functions.nativeMint(amount).build_transaction({"from": sender})
-    assert_sender_balance(tx, 1, amount)
-    assert_crc20_balance(sender, amount)
+    tx = contract.functions.nativeMint(amt1).build_transaction({"from": sender})
+    assert_sender_balance(tx, 1, amt1)
+    assert_crc20_balance(sender, amt1)
 
     # test exception revert
-    tx = contract.functions.nativeMintRevert(amount).build_transaction(
+    tx = contract.functions.nativeMintRevert(amt1).build_transaction(
         {"from": sender, "gas": 210000}
     )
     assert_sender_balance(tx, 0, 0)
     # check balance don't change
-    assert_crc20_balance(sender, amount)
+    assert_crc20_balance(sender, amt1)
+
+    # test burn
+    amt2 = 50
+    tx = contract.functions.nativeBurn(amt2).build_transaction({"from": sender})
+    assert_sender_balance(tx, 1, -amt2)
+    assert_crc20_balance(sender, amt1 - amt2)
 
     # test transfer
     recipient = ADDRS["signer2"]
-    transfer_amt = 10
+    amt3 = 10
     recipient_balance = get_balance(cli, recipient, native_denom)
-    tx = contract.functions.nativeTransfer(recipient, transfer_amt).build_transaction(
+    tx = contract.functions.nativeTransfer(recipient, amt3).build_transaction(
         {"from": sender}
     )
-    assert_sender_balance(tx, 1, transfer_amt)
-    assert_crc20_balance(sender, amount - transfer_amt)
-    assert get_balance(cli, recipient, native_denom) == recipient_balance + transfer_amt
-    assert_crc20_balance(recipient, transfer_amt)
+    assert_sender_balance(tx, 1, amt3)
+    assert_crc20_balance(sender, amt1 - amt2 - amt3)
+    assert get_balance(cli, recipient, native_denom) == recipient_balance + amt3
+    assert_crc20_balance(recipient, amt3)
 
 
 def test_delegate(ethermint):

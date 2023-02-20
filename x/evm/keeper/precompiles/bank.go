@@ -18,6 +18,7 @@ const EVMDenomPrefix = "evm/"
 
 var (
 	MintMethod      abi.Method
+	BurnMethod      abi.Method
 	BalanceOfMethod abi.Method
 	TransferMethod  abi.Method
 )
@@ -27,6 +28,16 @@ func init() {
 	uint256Type, _ := abi.NewType("uint256", "", nil)
 	MintMethod = abi.NewMethod(
 		"mint", "mint", abi.Function, "", false, false, abi.Arguments{abi.Argument{
+			Name: "recipient",
+			Type: addressType,
+		}, abi.Argument{
+			Name: "amount",
+			Type: uint256Type,
+		}},
+		nil,
+	)
+	BurnMethod = abi.NewMethod(
+		"burn", "burn", abi.Function, "", false, false, abi.Arguments{abi.Argument{
 			Name: "recipient",
 			Type: addressType,
 		}, abi.Argument{
@@ -96,11 +107,22 @@ func (bc *BankContract) Run(evm *vm.EVM, contract *vm.Contract, readonly bool) (
 	// parse input
 	methodID := contract.Input[:4]
 	switch string(methodID) {
-	case string(MintMethod.ID):
+	case string(MintMethod.ID), string(BurnMethod.ID):
+		var method abi.Method
+		var mintDenom, burnDenom string
+		if string(methodID) == string(MintMethod.ID) {
+			method = MintMethod
+			mintDenom = EVMDenom(contract.CallerAddress)
+			burnDenom = types.DefaultEVMDenom
+		} else {
+			method = BurnMethod
+			burnDenom = EVMDenom(contract.CallerAddress)
+			mintDenom = types.DefaultEVMDenom
+		}
 		if readonly {
 			return nil, errors.New("the method is not readonly")
 		}
-		args, err := MintMethod.Inputs.Unpack(contract.Input[4:])
+		args, err := method.Inputs.Unpack(contract.Input[4:])
 		if err != nil {
 			return nil, errors.New("fail to unpack input arguments")
 		}
@@ -109,22 +131,21 @@ func (bc *BankContract) Run(evm *vm.EVM, contract *vm.Contract, readonly bool) (
 		if amount.Sign() <= 0 {
 			return nil, errors.New("invalid amount")
 		}
-		denom := EVMDenom(contract.CallerAddress)
 		err = bc.stateDB.ExecuteNativeAction(func(ctx sdk.Context) error {
 			addr := sdk.AccAddress(recipient.Bytes())
-			amt := sdk.NewCoins(sdk.NewCoin(denom, sdkmath.NewIntFromBigInt(amount)))
-			if err := bc.bankKeeper.MintCoins(ctx, types.ModuleName, amt); err != nil {
-				return errorsmod.Wrap(err, "fail to mint coins in precompiled contract")
-			}
-			if err := bc.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, addr, amt); err != nil {
-				return errorsmod.Wrap(err, "fail to send mint coins to account")
-			}
-			nativeAmt := sdk.NewCoins(sdk.NewCoin(types.DefaultEVMDenom, sdkmath.NewIntFromBigInt(amount)))
+			nativeAmt := sdk.NewCoins(sdk.NewCoin(burnDenom, sdkmath.NewIntFromBigInt(amount)))
 			if err := bc.bankKeeper.SendCoinsFromAccountToModule(ctx, addr, types.ModuleName, nativeAmt); err != nil {
 				return errorsmod.Wrap(err, "fail to send burn coins to module")
 			}
 			if err := bc.bankKeeper.BurnCoins(ctx, types.ModuleName, nativeAmt); err != nil {
 				return errorsmod.Wrap(err, "fail to burn coins in precompiled contract")
+			}
+			amt := sdk.NewCoins(sdk.NewCoin(mintDenom, sdkmath.NewIntFromBigInt(amount)))
+			if err := bc.bankKeeper.MintCoins(ctx, types.ModuleName, amt); err != nil {
+				return errorsmod.Wrap(err, "fail to mint coins in precompiled contract")
+			}
+			if err := bc.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, addr, amt); err != nil {
+				return errorsmod.Wrap(err, "fail to send mint coins to account")
 			}
 			return nil
 		})

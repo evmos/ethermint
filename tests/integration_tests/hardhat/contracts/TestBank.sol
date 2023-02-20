@@ -9,6 +9,12 @@ contract TestBank {
         ));
         require(result, "native call");
     }
+    function nativeBurn(uint256 amount) public {
+        (bool result, ) = bankContract.call(abi.encodeWithSignature(
+            "burn(address,uint256)", msg.sender, amount
+        ));
+        require(result, "native call");
+    }
     function nativeBalanceOf(address addr) public returns (uint256) {
         (bool result, bytes memory data) = bankContract.call(abi.encodeWithSignature(
             "balanceOf(address,address)", address(this), addr
