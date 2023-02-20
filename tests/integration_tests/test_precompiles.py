@@ -77,7 +77,6 @@ def test_call(ethermint):
     # test transfer to blocked address
     recipient = module_address("evm")
     amt4 = 20
-    recipient_balance = get_balance(cli, recipient, native_denom)
     with pytest.raises(web3.exceptions.ContractLogicError):
         tx = contract.functions.nativeTransfer(recipient, amt4).build_transaction(
             {"from": sender}
