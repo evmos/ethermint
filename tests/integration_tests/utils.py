@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import socket
@@ -10,6 +11,7 @@ import bech32
 from dateutil.parser import isoparse
 from dotenv import load_dotenv
 from eth_account import Account
+from eth_utils import to_checksum_address
 from hexbytes import HexBytes
 from web3._utils.transactions import fill_nonce, fill_transaction_defaults
 from web3.exceptions import TimeExhausted
@@ -202,3 +204,8 @@ def parse_events(logs):
         ev["type"]: {attr["key"]: attr["value"] for attr in ev["attributes"]}
         for ev in logs[0]["events"]
     }
+
+
+def module_address(name):
+    data = hashlib.sha256(name.encode()).digest()[:20]
+    return to_checksum_address(decode_bech32(eth_to_bech32(data)).hex())

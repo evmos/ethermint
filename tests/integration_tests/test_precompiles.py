@@ -1,9 +1,13 @@
+import pytest
+import web3
+
 from .utils import (
     ADDRS,
     CONTRACTS,
     KEYS,
     deploy_contract,
     eth_to_bech32,
+    module_address,
     send_transaction,
 )
 
@@ -39,21 +43,23 @@ def test_call(ethermint):
     # test mint
     tx = contract.functions.nativeMint(amt1).build_transaction({"from": sender})
     assert_sender_balance(tx, 1, amt1)
-    assert_crc20_balance(sender, amt1)
+    balance = amt1
+    assert_crc20_balance(sender, balance)
 
     # test exception revert
     tx = contract.functions.nativeMintRevert(amt1).build_transaction(
         {"from": sender, "gas": 210000}
     )
-    assert_sender_balance(tx, 0, 0)
     # check balance don't change
-    assert_crc20_balance(sender, amt1)
+    assert_sender_balance(tx, 0, 0)
+    assert_crc20_balance(sender, balance)
 
     # test burn
     amt2 = 50
     tx = contract.functions.nativeBurn(amt2).build_transaction({"from": sender})
     assert_sender_balance(tx, 1, -amt2)
-    assert_crc20_balance(sender, amt1 - amt2)
+    balance -= amt2
+    assert_crc20_balance(sender, balance)
 
     # test transfer
     recipient = ADDRS["signer2"]
@@ -63,9 +69,22 @@ def test_call(ethermint):
         {"from": sender}
     )
     assert_sender_balance(tx, 1, amt3)
-    assert_crc20_balance(sender, amt1 - amt2 - amt3)
+    balance -= amt3
+    assert_crc20_balance(sender, balance)
     assert get_balance(cli, recipient, native_denom) == recipient_balance + amt3
     assert_crc20_balance(recipient, amt3)
+
+    # test transfer to blocked address
+    recipient = module_address("evm")
+    amt4 = 20
+    recipient_balance = get_balance(cli, recipient, native_denom)
+    with pytest.raises(web3.exceptions.ContractLogicError):
+        tx = contract.functions.nativeTransfer(recipient, amt4).build_transaction(
+            {"from": sender}
+        )
+        send_transaction(w3, tx, keys)
+    # check balance don't change
+    assert_crc20_balance(sender, balance)
 
 
 def test_delegate(ethermint):

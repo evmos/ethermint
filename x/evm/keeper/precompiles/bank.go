@@ -11,6 +11,7 @@ import (
 
 	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/evmos/ethermint/x/evm/types"
 )
 
@@ -103,6 +104,17 @@ func (bc *BankContract) IsStateful() bool {
 	return true
 }
 
+func (bc *BankContract) checkBlockedAddr(addr sdk.AccAddress) error {
+	to, err := sdk.AccAddressFromBech32(addr.String())
+	if err != nil {
+		return err
+	}
+	if bc.bankKeeper.BlockedAddr(to) {
+		return errorsmod.Wrapf(errortypes.ErrUnauthorized, "%s is not allowed to receive funds", to.String())
+	}
+	return nil
+}
+
 func (bc *BankContract) Run(evm *vm.EVM, contract *vm.Contract, readonly bool) ([]byte, error) {
 	// parse input
 	methodID := contract.Input[:4]
@@ -131,20 +143,26 @@ func (bc *BankContract) Run(evm *vm.EVM, contract *vm.Contract, readonly bool) (
 		if amount.Sign() <= 0 {
 			return nil, errors.New("invalid amount")
 		}
+		addr := sdk.AccAddress(recipient.Bytes())
+		if err := bc.checkBlockedAddr(addr); err != nil {
+			return nil, err
+		}
+		nativeAmt := sdk.NewCoin(burnDenom, sdkmath.NewIntFromBigInt(amount))
+		amt := sdk.NewCoin(mintDenom, sdkmath.NewIntFromBigInt(amount))
 		err = bc.stateDB.ExecuteNativeAction(func(ctx sdk.Context) error {
-			addr := sdk.AccAddress(recipient.Bytes())
-			nativeAmt := sdk.NewCoins(sdk.NewCoin(burnDenom, sdkmath.NewIntFromBigInt(amount)))
-			if err := bc.bankKeeper.SendCoinsFromAccountToModule(ctx, addr, types.ModuleName, nativeAmt); err != nil {
+			if err := bc.bankKeeper.IsSendEnabledCoins(ctx, nativeAmt, amt); err != nil {
+				return err
+			}
+			if err := bc.bankKeeper.SendCoinsFromAccountToModule(ctx, addr, types.ModuleName, sdk.NewCoins(nativeAmt)); err != nil {
 				return errorsmod.Wrap(err, "fail to send burn coins to module")
 			}
-			if err := bc.bankKeeper.BurnCoins(ctx, types.ModuleName, nativeAmt); err != nil {
+			if err := bc.bankKeeper.BurnCoins(ctx, types.ModuleName, sdk.NewCoins(nativeAmt)); err != nil {
 				return errorsmod.Wrap(err, "fail to burn coins in precompiled contract")
 			}
-			amt := sdk.NewCoins(sdk.NewCoin(mintDenom, sdkmath.NewIntFromBigInt(amount)))
-			if err := bc.bankKeeper.MintCoins(ctx, types.ModuleName, amt); err != nil {
+			if err := bc.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(amt)); err != nil {
 				return errorsmod.Wrap(err, "fail to mint coins in precompiled contract")
 			}
-			if err := bc.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, addr, amt); err != nil {
+			if err := bc.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, addr, sdk.NewCoins(amt)); err != nil {
 				return errorsmod.Wrap(err, "fail to send mint coins to account")
 			}
 			return nil
@@ -176,16 +194,22 @@ func (bc *BankContract) Run(evm *vm.EVM, contract *vm.Contract, readonly bool) (
 		if amount.Sign() <= 0 {
 			return nil, errors.New("invalid amount")
 		}
+		from := sdk.AccAddress(sender.Bytes())
+		to := sdk.AccAddress(recipient.Bytes())
+		if err := bc.checkBlockedAddr(to); err != nil {
+			return nil, err
+		}
+		nativeAmt := sdk.NewCoin(types.DefaultEVMDenom, sdkmath.NewIntFromBigInt(amount))
+		denom := EVMDenom(contract.CallerAddress)
+		amt := sdk.NewCoin(denom, sdkmath.NewIntFromBigInt(amount))
 		err = bc.stateDB.ExecuteNativeAction(func(ctx sdk.Context) error {
-			from := sdk.AccAddress(sender.Bytes())
-			to := sdk.AccAddress(recipient.Bytes())
-			nativeAmt := sdk.NewCoins(sdk.NewCoin(types.DefaultEVMDenom, sdkmath.NewIntFromBigInt(amount)))
-			if err := bc.bankKeeper.SendCoins(ctx, from, to, nativeAmt); err != nil {
+			if err := bc.bankKeeper.IsSendEnabledCoins(ctx, nativeAmt, amt); err != nil {
+				return err
+			}
+			if err := bc.bankKeeper.SendCoins(ctx, from, to, sdk.NewCoins(nativeAmt)); err != nil {
 				return errorsmod.Wrap(err, "fail to send coins from sender to recipient")
 			}
-			denom := EVMDenom(contract.CallerAddress)
-			amt := sdk.NewCoins(sdk.NewCoin(denom, sdkmath.NewIntFromBigInt(amount)))
-			if err := bc.bankKeeper.SendCoins(ctx, from, to, amt); err != nil {
+			if err := bc.bankKeeper.SendCoins(ctx, from, to, sdk.NewCoins(amt)); err != nil {
 				return errorsmod.Wrap(err, "fail to send coins in precompiled contract")
 			}
 			return nil
