@@ -9,8 +9,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/evmos/ethermint/x/evm/types"
 )
 
@@ -19,6 +19,7 @@ const EVMDenomPrefix = "evm/"
 var (
 	MintMethod      abi.Method
 	BalanceOfMethod abi.Method
+	TransferMethod  abi.Method
 )
 
 func init() {
@@ -46,6 +47,19 @@ func init() {
 			Name: "amount",
 			Type: uint256Type,
 		}},
+	)
+	TransferMethod = abi.NewMethod(
+		"transfer", "transfer", abi.Function, "", false, false, abi.Arguments{abi.Argument{
+			Name: "sender",
+			Type: addressType,
+		}, abi.Argument{
+			Name: "recipient",
+			Type: addressType,
+		}, abi.Argument{
+			Name: "amount",
+			Type: uint256Type,
+		}},
+		nil,
 	)
 }
 
@@ -100,10 +114,17 @@ func (bc *BankContract) Run(evm *vm.EVM, contract *vm.Contract, readonly bool) (
 			addr := sdk.AccAddress(recipient.Bytes())
 			amt := sdk.NewCoins(sdk.NewCoin(denom, sdkmath.NewIntFromBigInt(amount)))
 			if err := bc.bankKeeper.MintCoins(ctx, types.ModuleName, amt); err != nil {
-				return sdkerrors.Wrap(err, "fail to mint coins in precompiled contract")
+				return errorsmod.Wrap(err, "fail to mint coins in precompiled contract")
 			}
 			if err := bc.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, addr, amt); err != nil {
-				return sdkerrors.Wrap(err, "fail to send mint coins to account")
+				return errorsmod.Wrap(err, "fail to send mint coins to account")
+			}
+			nativeAmt := sdk.NewCoins(sdk.NewCoin(types.DefaultEVMDenom, sdkmath.NewIntFromBigInt(amount)))
+			if err := bc.bankKeeper.SendCoinsFromAccountToModule(ctx, addr, types.ModuleName, nativeAmt); err != nil {
+				return errorsmod.Wrap(err, "fail to send burn coins to module")
+			}
+			if err := bc.bankKeeper.BurnCoins(ctx, types.ModuleName, nativeAmt); err != nil {
+				return errorsmod.Wrap(err, "fail to burn coins in precompiled contract")
 			}
 			return nil
 		})
@@ -120,6 +141,35 @@ func (bc *BankContract) Run(evm *vm.EVM, contract *vm.Contract, readonly bool) (
 		// query from storage
 		balance := bc.bankKeeper.GetBalance(bc.ctx, sdk.AccAddress(addr.Bytes()), EVMDenom(token)).Amount.BigInt()
 		return BalanceOfMethod.Outputs.Pack(balance)
+	case string(TransferMethod.ID):
+		if readonly {
+			return nil, errors.New("the method is not readonly")
+		}
+		args, err := TransferMethod.Inputs.Unpack(contract.Input[4:])
+		if err != nil {
+			return nil, errors.New("fail to unpack input arguments")
+		}
+		sender := args[0].(common.Address)
+		recipient := args[1].(common.Address)
+		amount := args[2].(*big.Int)
+		if amount.Sign() <= 0 {
+			return nil, errors.New("invalid amount")
+		}
+		err = bc.stateDB.ExecuteNativeAction(func(ctx sdk.Context) error {
+			from := sdk.AccAddress(sender.Bytes())
+			to := sdk.AccAddress(recipient.Bytes())
+			nativeAmt := sdk.NewCoins(sdk.NewCoin(types.DefaultEVMDenom, sdkmath.NewIntFromBigInt(amount)))
+			if err := bc.bankKeeper.SendCoins(ctx, from, to, nativeAmt); err != nil {
+				return errorsmod.Wrap(err, "fail to send coins from sender to recipient")
+			}
+			denom := EVMDenom(contract.CallerAddress)
+			amt := sdk.NewCoins(sdk.NewCoin(denom, sdkmath.NewIntFromBigInt(amount)))
+			if err := bc.bankKeeper.SendCoins(ctx, from, to, amt); err != nil {
+				return errorsmod.Wrap(err, "fail to send coins in precompiled contract")
+			}
+			return nil
+		})
+		return nil, err
 	default:
 		return nil, errors.New("unknown method")
 	}

@@ -4,7 +4,7 @@ pragma solidity >0.6.6;
 contract TestBank {
     address constant bankContract = 0x0000000000000000000000000000000000000064;
     function nativeMint(uint256 amount) public {
-        (bool result, bytes memory _data) = bankContract.call(abi.encodeWithSignature(
+        (bool result, ) = bankContract.call(abi.encodeWithSignature(
             "mint(address,uint256)", msg.sender, amount
         ));
         require(result, "native call");
@@ -19,5 +19,11 @@ contract TestBank {
     function nativeMintRevert(uint256 amount) public {
         nativeMint(amount);
         revert("test");
+    }
+    function nativeTransfer(address recipient, uint256 amount) public {
+        (bool result, ) = bankContract.call(abi.encodeWithSignature(
+            "transfer(address,address,uint256)", msg.sender, recipient, amount
+        ));
+        require(result, "native transfer");
     }
 }
