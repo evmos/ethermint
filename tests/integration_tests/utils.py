@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import socket
@@ -10,6 +11,7 @@ import bech32
 from dateutil.parser import isoparse
 from dotenv import load_dotenv
 from eth_account import Account
+from eth_utils import to_checksum_address
 from hexbytes import HexBytes
 from web3._utils.transactions import fill_nonce, fill_transaction_defaults
 from web3.exceptions import TimeExhausted
@@ -32,6 +34,9 @@ TEST_CONTRACTS = {
     "TestChainID": "ChainID.sol",
     "Mars": "Mars.sol",
     "StateContract": "StateContract.sol",
+    "TestBank": "TestBank.sol",
+    "TestBankDelegate": "TestBankDelegate.sol",
+    "TestBankCaller": "TestBankCaller.sol",
 }
 
 
@@ -124,7 +129,7 @@ def wait_for_block_time(cli, t):
         time.sleep(0.5)
 
 
-def deploy_contract(w3, jsonfile, args=(), key=KEYS["validator"]):
+def deploy_contract(w3, jsonfile, args=(), key=KEYS["validator"], value=None):
     """
     deploy contract and return the deployed contract instance
     """
@@ -132,6 +137,8 @@ def deploy_contract(w3, jsonfile, args=(), key=KEYS["validator"]):
     info = json.loads(jsonfile.read_text())
     contract = w3.eth.contract(abi=info["abi"], bytecode=info["bytecode"])
     tx = contract.constructor(*args).build_transaction({"from": acct.address})
+    if value:
+        tx["value"] = value
     txreceipt = send_transaction(w3, tx, key)
     assert txreceipt.status == 1
     address = txreceipt.contractAddress
@@ -197,3 +204,8 @@ def parse_events(logs):
         ev["type"]: {attr["key"]: attr["value"] for attr in ev["attributes"]}
         for ev in logs[0]["events"]
     }
+
+
+def module_address(name):
+    data = hashlib.sha256(name.encode()).digest()[:20]
+    return to_checksum_address(decode_bech32(eth_to_bech32(data)).hex())

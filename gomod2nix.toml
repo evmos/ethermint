@@ -97,7 +97,7 @@ schema = 3
     hash = "sha256-oATkuj+fM5eBn+ywO+w/tL0AFSIEkx0J3Yz+VhVe0QA="
   [mod."github.com/cosmos/cosmos-sdk"]
     version = "v0.46.8"
-    hash = "sha256-jETbixsZq5XJ1pl1XaVJvD5jkcygBrEcHRK/L0+XI68="
+    hash = "sha256-jjGeuviv1YvaiUQD2Ojpyivf6niEdjdKdRNhkvHAA2w="
   [mod."github.com/cosmos/go-bip39"]
     version = "v1.0.0"
     hash = "sha256-Qm2aC2vaS8tjtMUbHmlBSagOSqbduEEDwc51qvQaBmA="
@@ -159,8 +159,9 @@ schema = 3
     version = "v1.0.0"
     hash = "sha256-k1DYvCqO3BKNcGEve/nMW0RxzMkK2tGfXbUbycqcVSo="
   [mod."github.com/ethereum/go-ethereum"]
-    version = "v1.10.26"
-    hash = "sha256-gkMEwJ4rOgn12amD4QpZ4th/10uyTTeoFmpseuKDQPs="
+    version = "v1.10.26-evmos-rc1"
+    hash = "sha256-GgcReGsIIuBE2TabDYqDO9sBGogdVr9RSh4arQzdPnE="
+    replaced = "github.com/evmos/go-ethereum"
   [mod."github.com/felixge/httpsnoop"]
     version = "v1.0.1"
     hash = "sha256-TNXnnC/ZGNY9lInAcES1cBGqIdEljKuh5LH/khVFjVk="

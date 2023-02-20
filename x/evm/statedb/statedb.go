@@ -98,6 +98,12 @@ func (s *StateDB) Keeper() Keeper {
 	return s.keeper
 }
 
+// AppendJournalEntry allow external module to append journal entry,
+// to support snapshot revert for external states.
+func (s *StateDB) AppendJournalEntry(entry JournalEntry) {
+	s.journal.append(entry)
+}
+
 // AddLog adds a log, called by evm.
 func (s *StateDB) AddLog(log *ethtypes.Log) {
 	s.journal.append(addLogChange{})

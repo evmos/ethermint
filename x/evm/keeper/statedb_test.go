@@ -451,7 +451,8 @@ func (suite *KeeperTestSuite) TestSuicide() {
 		db.SetState(suite.address, common.BytesToHash([]byte(fmt.Sprintf("key%d", i))), common.BytesToHash([]byte(fmt.Sprintf("value%d", i))))
 	}
 
-	suite.Require().NoError(db.Commit())
+	_, err := db.Commit()
+	suite.Require().NoError(err)
 	db = suite.StateDB()
 
 	// Generate 2nd address
@@ -474,7 +475,8 @@ func (suite *KeeperTestSuite) TestSuicide() {
 	suite.Require().Equal(true, db.HasSuicided(suite.address))
 
 	// Commit state
-	suite.Require().NoError(db.Commit())
+	_, err = db.Commit()
+	suite.Require().NoError(err)
 	db = suite.StateDB()
 
 	// Check code is deleted
