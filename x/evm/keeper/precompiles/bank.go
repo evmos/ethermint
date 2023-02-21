@@ -120,19 +120,15 @@ func (bc *BankContract) Run(evm *vm.EVM, contract *vm.Contract, readonly bool) (
 	methodID := contract.Input[:4]
 	switch string(methodID) {
 	case string(MintMethod.ID), string(BurnMethod.ID):
-		var method abi.Method
-		var mintDenom, burnDenom string
-		if string(methodID) == string(MintMethod.ID) {
-			method = MintMethod
-			mintDenom = EVMDenom(contract.CallerAddress)
-			burnDenom = types.DefaultEVMDenom
-		} else {
-			method = BurnMethod
-			burnDenom = EVMDenom(contract.CallerAddress)
-			mintDenom = types.DefaultEVMDenom
-		}
 		if readonly {
 			return nil, errors.New("the method is not readonly")
+		}
+		mint := string(methodID) == string(MintMethod.ID)
+		var method abi.Method
+		if mint {
+			method = MintMethod
+		} else {
+			method = BurnMethod
 		}
 		args, err := method.Inputs.Unpack(contract.Input[4:])
 		if err != nil {
@@ -147,23 +143,26 @@ func (bc *BankContract) Run(evm *vm.EVM, contract *vm.Contract, readonly bool) (
 		if err := bc.checkBlockedAddr(addr); err != nil {
 			return nil, err
 		}
-		nativeAmt := sdk.NewCoin(burnDenom, sdkmath.NewIntFromBigInt(amount))
-		amt := sdk.NewCoin(mintDenom, sdkmath.NewIntFromBigInt(amount))
+		denom := EVMDenom(contract.CallerAddress)
+		amt := sdk.NewCoin(denom, sdkmath.NewIntFromBigInt(amount))
 		err = bc.stateDB.ExecuteNativeAction(func(ctx sdk.Context) error {
-			if err := bc.bankKeeper.IsSendEnabledCoins(ctx, nativeAmt, amt); err != nil {
+			if err := bc.bankKeeper.IsSendEnabledCoins(ctx, amt); err != nil {
 				return err
 			}
-			if err := bc.bankKeeper.SendCoinsFromAccountToModule(ctx, addr, types.ModuleName, sdk.NewCoins(nativeAmt)); err != nil {
-				return errorsmod.Wrap(err, "fail to send burn coins to module")
-			}
-			if err := bc.bankKeeper.BurnCoins(ctx, types.ModuleName, sdk.NewCoins(nativeAmt)); err != nil {
-				return errorsmod.Wrap(err, "fail to burn coins in precompiled contract")
-			}
-			if err := bc.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(amt)); err != nil {
-				return errorsmod.Wrap(err, "fail to mint coins in precompiled contract")
-			}
-			if err := bc.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, addr, sdk.NewCoins(amt)); err != nil {
-				return errorsmod.Wrap(err, "fail to send mint coins to account")
+			if mint {
+				if err := bc.bankKeeper.MintCoins(ctx, types.ModuleName, sdk.NewCoins(amt)); err != nil {
+					return errorsmod.Wrap(err, "fail to mint coins in precompiled contract")
+				}
+				if err := bc.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, addr, sdk.NewCoins(amt)); err != nil {
+					return errorsmod.Wrap(err, "fail to send mint coins to account")
+				}
+			} else {
+				if err := bc.bankKeeper.SendCoinsFromAccountToModule(ctx, addr, types.ModuleName, sdk.NewCoins(amt)); err != nil {
+					return errorsmod.Wrap(err, "fail to send burn coins to module")
+				}
+				if err := bc.bankKeeper.BurnCoins(ctx, types.ModuleName, sdk.NewCoins(amt)); err != nil {
+					return errorsmod.Wrap(err, "fail to burn coins in precompiled contract")
+				}
 			}
 			return nil
 		})
@@ -199,15 +198,11 @@ func (bc *BankContract) Run(evm *vm.EVM, contract *vm.Contract, readonly bool) (
 		if err := bc.checkBlockedAddr(to); err != nil {
 			return nil, err
 		}
-		nativeAmt := sdk.NewCoin(types.DefaultEVMDenom, sdkmath.NewIntFromBigInt(amount))
 		denom := EVMDenom(contract.CallerAddress)
 		amt := sdk.NewCoin(denom, sdkmath.NewIntFromBigInt(amount))
 		err = bc.stateDB.ExecuteNativeAction(func(ctx sdk.Context) error {
-			if err := bc.bankKeeper.IsSendEnabledCoins(ctx, nativeAmt, amt); err != nil {
+			if err := bc.bankKeeper.IsSendEnabledCoins(ctx, amt); err != nil {
 				return err
-			}
-			if err := bc.bankKeeper.SendCoins(ctx, from, to, sdk.NewCoins(nativeAmt)); err != nil {
-				return errorsmod.Wrap(err, "fail to send coins from sender to recipient")
 			}
 			if err := bc.bankKeeper.SendCoins(ctx, from, to, sdk.NewCoins(amt)); err != nil {
 				return errorsmod.Wrap(err, "fail to send coins in precompiled contract")
