@@ -81,7 +81,7 @@ def test_call(ethermint):
     recipient = module_address("evm")
     amt4 = 20
     with pytest.raises(web3.exceptions.ContractLogicError):
-        tx = contract.functions.nativeTransfer(recipient, amt4).build_transaction(data)
+        contract.functions.nativeTransfer(recipient, amt4).build_transaction(data)
 
 
 @pytest.mark.parametrize("suffix", ["Delegate", "Static"])
@@ -106,14 +106,13 @@ def test_readonly_call(ethermint, suffix):
     amt1 = 100
     data = {"from": addr}
     with pytest.raises(web3.exceptions.ContractLogicError):
-        tx = contract.functions["moveToNative" + suffix](amt1).build_transaction(data)
+        contract.functions["moveToNative" + suffix](amt1).build_transaction(data)
 
     # test exception revert
     tx = contract.functions["moveToNativeRevert" + suffix](amt1).build_transaction(
         {"from": addr, "gas": 210000}
     )
     receipt = send_transaction(w3, tx, keys)
-    print("receipt", receipt)
     assert receipt.status == 0
 
     # test burn
