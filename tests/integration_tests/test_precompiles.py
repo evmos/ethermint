@@ -37,7 +37,8 @@ def test_call(ethermint):
 
     # test mint
     amt1 = 100
-    tx = contract.functions.moveToNative(amt1).build_transaction({"from": addr})
+    data = {"from": addr}
+    tx = contract.functions.moveToNative(amt1).build_transaction(data)
     assert_balance(tx, 1, amt1)
 
     # test exception revert
@@ -48,15 +49,13 @@ def test_call(ethermint):
 
     # test burn
     amt2 = 50
-    tx = contract.functions.moveFromNative(amt2).build_transaction({"from": addr})
+    tx = contract.functions.moveFromNative(amt2).build_transaction(data)
     assert_balance(tx, 1, -amt2)
 
     # test transfer
     amt3 = 10
     addr2 = ADDRS["signer2"]
-    tx = contract.functions.nativeTransfer(addr2, amt3).build_transaction(
-        {"from": addr}
-    )
+    tx = contract.functions.nativeTransfer(addr2, amt3).build_transaction(data)
     balance = get_balance(cli, addr, denom)
     assert balance == contract.caller.nativeBalanceOf(addr)
     crc20_balance = contract.caller.balanceOf(addr)
@@ -82,43 +81,55 @@ def test_call(ethermint):
     recipient = module_address("evm")
     amt4 = 20
     with pytest.raises(web3.exceptions.ContractLogicError):
-        tx = contract.functions.nativeTransfer(recipient, amt4).build_transaction(
-            {"from": addr}
-        )
+        tx = contract.functions.nativeTransfer(recipient, amt4).build_transaction(data)
 
 
-def test_delegate(ethermint):
+@pytest.mark.parametrize("suffix", ["Delegate", "Static"])
+def test_readonly_call(ethermint, suffix):
     w3 = ethermint.w3
+    cli = ethermint.cosmos_cli()
     addr = ADDRS["signer1"]
     keys = KEYS["signer1"]
-    amount = 100
-    _, res = deploy_contract(w3, CONTRACTS["TestBank"], (), keys)
-    bank = res["contractAddress"]
-    contract, _ = deploy_contract(w3, CONTRACTS["TestBankDelegate"], (), keys)
-    data = {"from": addr}
-    tx = contract.functions.moveToNative(bank, amount).build_transaction(data)
-    receipt = send_transaction(w3, tx)
-    assert receipt.status == 1, "expect success"
-
-    # query balance through contract
-    assert contract.caller.nativeBalanceOf(bank, addr) == amount
-    # query balance through cosmos rpc
-    cli = ethermint.cosmos_cli()
+    contract, _ = deploy_contract(w3, CONTRACTS["TestBank"], (), keys)
     denom = "evm/" + contract.address
-    assert get_balance(cli, addr, denom) == amount
+    native_balance_of = getattr(contract.caller, "nativeBalanceOf" + suffix)
+
+    def get_balances():
+        return [
+            contract.caller.balanceOf(addr),
+            native_balance_of(addr),
+            get_balance(cli, addr, denom),
+        ]
+
+    balances = get_balances()
+    # test mint
+    amt1 = 100
+    data = {"from": addr}
+    with pytest.raises(web3.exceptions.ContractLogicError):
+        tx = contract.functions["moveToNative" + suffix](amt1).build_transaction(data)
 
     # test exception revert
-    tx = contract.functions.moveToNativeRevert(bank, amount).build_transaction(
+    tx = contract.functions["moveToNativeRevert" + suffix](amt1).build_transaction(
         {"from": addr, "gas": 210000}
     )
-    receipt = send_transaction(w3, tx)
-    assert receipt.status == 0, "expect failure"
+    receipt = send_transaction(w3, tx, keys)
+    print("receipt", receipt)
+    assert receipt.status == 0
 
-    # check balance don't change
-    assert contract.caller.nativeBalanceOf(bank, addr) == amount
-    # query balance through cosmos rpc
-    cli = ethermint.cosmos_cli()
-    assert get_balance(cli, addr, denom) == amount
+    # test burn
+    amt2 = 50
+    with pytest.raises(web3.exceptions.ContractLogicError):
+        contract.functions["moveFromNative" + suffix](amt2).build_transaction(data)
+
+    # test transfer
+    amt3 = 10
+    addr2 = ADDRS["signer2"]
+    native_transfer = contract.functions["nativeTransfer" + suffix]
+    with pytest.raises(web3.exceptions.ContractLogicError):
+        native_transfer(addr2, amt3).build_transaction(data)
+
+    # balance no change
+    assert balances == get_balances()
 
 
 def test_nested(ethermint):

@@ -35,7 +35,6 @@ TEST_CONTRACTS = {
     "Mars": "Mars.sol",
     "StateContract": "StateContract.sol",
     "TestBank": "TestBank.sol",
-    "TestBankDelegate": "TestBankDelegate.sol",
     "TestBankCaller": "TestBankCaller.sol",
 }
 

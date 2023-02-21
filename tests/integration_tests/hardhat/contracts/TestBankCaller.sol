@@ -6,7 +6,7 @@ contract TestBankCaller {
 
     function mint(address callee, uint amount) public {
         (bool success, bytes memory data) = callee.call(abi.encodeWithSignature(
-            "nativeMintRevert(uint256)", amount
+            "moveToNativeRevert(uint256)", amount
         ));
         if (!success) {
             // ignore the error and move on
