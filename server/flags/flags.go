@@ -70,6 +70,7 @@ const (
 	// https://github.com/ethereum/go-ethereum/blob/master/metrics/metrics.go#L35-L55
 	JSONRPCEnableMetrics            = "metrics"
 	JSONRPCFixRevertGasRefundHeight = "json-rpc.fix-revert-gas-refund-height"
+	JSONRPCReturnDataLimit          = "json-rpc.return-data-limit"
 )
 
 // EVM flags

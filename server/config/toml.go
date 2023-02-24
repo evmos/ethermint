@@ -95,6 +95,9 @@ metrics-address = "{{ .JSONRPC.MetricsAddress }}"
 # Upgrade height for fix of revert gas refund logic when transaction reverted.
 fix-revert-gas-refund-height = {{ .JSONRPC.FixRevertGasRefundHeight }}
 
+# Maximum number of bytes returned from eth_call or similar invocations.
+return-data-limit = {{ .JSONRPC.ReturnDataLimit }}
+
 ###############################################################################
 ###                             TLS Configuration                           ###
 ###############################################################################

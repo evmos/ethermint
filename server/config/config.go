@@ -75,6 +75,9 @@ const (
 
 	// DefaultMaxOpenConnections represents the amount of open connections (unlimited = 0)
 	DefaultMaxOpenConnections = 0
+
+	// DefaultReturnDataLimit is maximum number of bytes returned from eth_call or similar invocations
+	DefaultReturnDataLimit = 100000
 )
 
 var evmTracers = []string{"json", "markdown", "struct", "access_list"}
@@ -138,6 +141,8 @@ type JSONRPCConfig struct {
 	MetricsAddress string `mapstructure:"metrics-address"`
 	// FixRevertGasRefundHeight defines the upgrade height for fix of revert gas refund logic when transaction reverted
 	FixRevertGasRefundHeight int64 `mapstructure:"fix-revert-gas-refund-height"`
+	// ReturnDataLimit defines maximum number of bytes returned from `eth_call` or similar invocations
+	ReturnDataLimit int64 `mapstructure:"return-data-limit"`
 }
 
 // TLSConfig defines the certificate and matching private key for the server.
@@ -241,6 +246,7 @@ func DefaultJSONRPCConfig() *JSONRPCConfig {
 		EnableIndexer:            false,
 		MetricsAddress:           DefaultJSONRPCMetricsAddress,
 		FixRevertGasRefundHeight: DefaultFixRevertGasRefundHeight,
+		ReturnDataLimit:          DefaultReturnDataLimit,
 	}
 }
 
@@ -351,6 +357,7 @@ func GetConfig(v *viper.Viper) (Config, error) {
 			EnableIndexer:            v.GetBool("json-rpc.enable-indexer"),
 			MetricsAddress:           v.GetString("json-rpc.metrics-address"),
 			FixRevertGasRefundHeight: v.GetInt64("json-rpc.fix-revert-gas-refund-height"),
+			ReturnDataLimit:          v.GetInt64("json-rpc.return-data-limit"),
 		},
 		TLS: TLSConfig{
 			CertificatePath: v.GetString("tls.certificate-path"),
