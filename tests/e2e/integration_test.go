@@ -7,7 +7,6 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/cosmos/cosmos-sdk/client/flags"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	"github.com/evmos/ethermint/rpc/types"
@@ -826,7 +825,8 @@ func (s *IntegrationTestSuite) TestBatchETHTransactions() {
 	txBytes, err := txEncoder(tx)
 	s.Require().NoError(err)
 
-	syncCtx := s.network.Validators[0].ClientCtx.WithBroadcastMode(flags.FlagBroadcastMode)
+	broadcastMode := "sync"
+	syncCtx := s.network.Validators[0].ClientCtx.WithBroadcastMode(broadcastMode)
 	txResponse, err := syncCtx.BroadcastTx(txBytes)
 	s.Require().NoError(err)
 	s.Require().Equal(uint32(0), txResponse.Code)
