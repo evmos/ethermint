@@ -6,8 +6,13 @@ package types
 import (
 	fmt "fmt"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
+<<<<<<< HEAD
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
+=======
+	proto "github.com/cosmos/gogoproto/proto"
+	_ "github.com/gogo/protobuf/gogoproto"
+>>>>>>> cfcb0f8c (update proto-gen and proto files)
 	io "io"
 	math "math"
 	math_bits "math/bits"
