@@ -16,7 +16,6 @@
 package codec
 
 import (
-	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/codec/legacy"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
@@ -39,5 +38,4 @@ func RegisterCrypto(cdc *codec.LegacyAmino) {
 	// NOTE: update SDK's amino codec to include the ethsecp256k1 keys.
 	// DO NOT REMOVE unless deprecated on the SDK.
 	legacy.Cdc = cdc
-	keys.KeysCdc = cdc
 }

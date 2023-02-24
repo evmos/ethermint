@@ -144,6 +144,7 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 	}
 }
 
+<<<<<<< HEAD
 // Route returns the message routing key for the fee market module.
 func (am AppModule) Route() sdk.Route {
 	return sdk.NewRoute(types.RouterKey, NewHandler(&am.keeper))
@@ -158,6 +159,8 @@ func (am AppModule) LegacyQuerierHandler(_ *codec.LegacyAmino) sdk.Querier {
 	return nil
 }
 
+=======
+>>>>>>> 745f3d52 (integrate with sdk V47 & ibc-go V7)
 // BeginBlock returns the begin block for the fee market module.
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	am.keeper.BeginBlock(ctx, req)
@@ -188,7 +191,11 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 }
 
 // RandomizedParams creates randomized fee market param changes for the simulator.
+<<<<<<< HEAD
 func (AppModule) RandomizedParams(_ *rand.Rand) []simtypes.ParamChange {
+=======
+func (AppModule) RandomizedParams(r *rand.Rand) []simtypes.LegacyParamChange {
+>>>>>>> 745f3d52 (integrate with sdk V47 & ibc-go V7)
 	return nil
 }
 
