@@ -42,6 +42,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to [`v0.46.6`]
 
+### Bug Fixes
+
+* (rpc) [#1685](https://github.com/evmos/ethermint/pull/1685) Fix parse for websocket connID.
+
 ## [v0.21.0] - 2023-01-26
 
 ### State Machine Breaking
