@@ -36,7 +36,6 @@ import (
 
 	"github.com/evmos/ethermint/x/evm/client/cli"
 	"github.com/evmos/ethermint/x/evm/keeper"
-	"github.com/evmos/ethermint/x/evm/simulation"
 	"github.com/evmos/ethermint/x/evm/types"
 )
 
@@ -181,8 +180,8 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.Raw
 }
 
 // RandomizedParams creates randomized evm param changes for the simulator.
-func (AppModule) RandomizedParams(r *rand.Rand) []simtypes.LegacyParamChange {
-	return simulation.ParamChanges(r)
+func (am AppModule) RandomizedParams(_ *rand.Rand) []simtypes.LegacyParamChange {
+	return nil
 }
 
 // RegisterStoreDecoder registers a decoder for evm module's types

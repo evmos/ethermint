@@ -184,8 +184,8 @@ func RegisterBlockResultsWithEventLog(client *mocks.Client, height int64) (*tmrp
 			{Code: 0, GasUsed: 0, Events: []abci.Event{{
 				Type: evmtypes.EventTypeTxLog,
 				Attributes: []abci.EventAttribute{{
-					Key:   []byte(evmtypes.AttributeKeyTxLog),
-					Value: []byte{0x7b, 0x22, 0x74, 0x65, 0x73, 0x74, 0x22, 0x3a, 0x20, 0x22, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x22, 0x7d}, // Represents {"test": "hello"}
+					Key:   evmtypes.AttributeKeyTxLog,
+					Value: "{\"test\": \"hello\"}",
 					Index: true,
 				}},
 			}}},
