@@ -49,6 +49,7 @@ import (
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 
 	//"github.com/cosmos/cosmos-sdk/runtime"
+	"github.com/cosmos/cosmos-sdk/store/streaming"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -267,6 +268,14 @@ type EthermintApp struct {
 
 	// the configurator
 	configurator module.Configurator
+
+	// simulation manager
+	sm *module.SimulationManager
+}
+
+// SimulationManager implements runtime.AppI
+func (*EthermintApp) SimulationManager() *module.SimulationManager {
+	panic("unimplemented")
 }
 
 // NewEthermintApp returns a reference to a new initialized Ethermint application.
@@ -322,7 +331,7 @@ func NewEthermintApp(
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 
 	// load state streaming if enabled
-	if _, _, err := streaming.LoadStreamingServices(bApp, appOpts, appCodec, keys); err != nil {
+	if _, _, err := streaming.LoadStreamingServices(bApp, appOpts, appCodec, logger, keys); err != nil {
 		fmt.Printf("failed to load state streaming: %s", err)
 		os.Exit(1)
 	}

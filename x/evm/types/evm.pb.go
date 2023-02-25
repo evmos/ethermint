@@ -6,13 +6,8 @@ package types
 import (
 	fmt "fmt"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
-<<<<<<< HEAD
 	_ "github.com/cosmos/gogoproto/gogoproto"
-	proto "github.com/gogo/protobuf/proto"
-=======
 	proto "github.com/cosmos/gogoproto/proto"
-	_ "github.com/gogo/protobuf/gogoproto"
->>>>>>> cfcb0f8c (update proto-gen and proto files)
 	io "io"
 	math "math"
 	math_bits "math/bits"
@@ -156,11 +151,7 @@ type ChainConfig struct {
 	LondonBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,17,opt,name=london_block,json=londonBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"london_block,omitempty" yaml:"london_block"`
 	// arrow_glacier_block: Eip-4345 (bomb delay) switch block (nil = no fork, 0 = already activated)
 	ArrowGlacierBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,18,opt,name=arrow_glacier_block,json=arrowGlacierBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"arrow_glacier_block,omitempty" yaml:"arrow_glacier_block"`
-<<<<<<< HEAD
 	// gray_glacier_block: EIP-5133 (bomb delay) switch block (nil = no fork, 0 = already activated)
-=======
-	// EIP-5133 (bomb delay) switch block (nil = no fork, 0 = already activated)
->>>>>>> cfcb0f8c (update proto-gen and proto files)
 	GrayGlacierBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,20,opt,name=gray_glacier_block,json=grayGlacierBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"gray_glacier_block,omitempty" yaml:"gray_glacier_block"`
 	// merge_netsplit_block: Virtual fork after The Merge to use as a network splitter
 	MergeNetsplitBlock *github_com_cosmos_cosmos_sdk_types.Int `protobuf:"bytes,21,opt,name=merge_netsplit_block,json=mergeNetsplitBlock,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Int" json:"merge_netsplit_block,omitempty" yaml:"merge_netsplit_block"`

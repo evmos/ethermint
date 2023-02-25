@@ -8,18 +8,11 @@ import (
 	fmt "fmt"
 	github_com_cosmos_cosmos_sdk_types "github.com/cosmos/cosmos-sdk/types"
 	query "github.com/cosmos/cosmos-sdk/types/query"
-<<<<<<< HEAD
 	_ "github.com/cosmos/gogoproto/gogoproto"
-	grpc1 "github.com/gogo/protobuf/grpc"
-	proto "github.com/gogo/protobuf/proto"
-	_ "github.com/gogo/protobuf/types"
-	github_com_gogo_protobuf_types "github.com/gogo/protobuf/types"
-=======
 	grpc1 "github.com/cosmos/gogoproto/grpc"
 	proto "github.com/cosmos/gogoproto/proto"
 	github_com_cosmos_gogoproto_types "github.com/cosmos/gogoproto/types"
-	_ "github.com/gogo/protobuf/gogoproto"
->>>>>>> cfcb0f8c (update proto-gen and proto files)
+	_ "github.com/gogo/protobuf/types"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -2561,7 +2554,6 @@ func (m *QueryTraceTxRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-<<<<<<< HEAD
 	if m.ChainId != 0 {
 		i = encodeVarintQuery(dAtA, i, uint64(m.ChainId))
 		i--
@@ -2574,10 +2566,7 @@ func (m *QueryTraceTxRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x42
 	}
-	n4, err4 := github_com_gogo_protobuf_types.StdTimeMarshalTo(m.BlockTime, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdTime(m.BlockTime):])
-=======
 	n4, err4 := github_com_cosmos_gogoproto_types.StdTimeMarshalTo(m.BlockTime, dAtA[i-github_com_cosmos_gogoproto_types.SizeOfStdTime(m.BlockTime):])
->>>>>>> cfcb0f8c (update proto-gen and proto files)
 	if err4 != nil {
 		return 0, err4
 	}
@@ -2688,7 +2677,6 @@ func (m *QueryTraceBlockRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	_ = i
 	var l int
 	_ = l
-<<<<<<< HEAD
 	if m.ChainId != 0 {
 		i = encodeVarintQuery(dAtA, i, uint64(m.ChainId))
 		i--
@@ -2701,10 +2689,7 @@ func (m *QueryTraceBlockRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 		i--
 		dAtA[i] = 0x42
 	}
-	n7, err7 := github_com_gogo_protobuf_types.StdTimeMarshalTo(m.BlockTime, dAtA[i-github_com_gogo_protobuf_types.SizeOfStdTime(m.BlockTime):])
-=======
 	n7, err7 := github_com_cosmos_gogoproto_types.StdTimeMarshalTo(m.BlockTime, dAtA[i-github_com_cosmos_gogoproto_types.SizeOfStdTime(m.BlockTime):])
->>>>>>> cfcb0f8c (update proto-gen and proto files)
 	if err7 != nil {
 		return 0, err7
 	}

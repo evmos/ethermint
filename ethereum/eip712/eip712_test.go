@@ -5,8 +5,8 @@ import (
 
 	"cosmossdk.io/math"
 
+	"cosmossdk.io/simapp/params"
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/evmos/ethermint/ethereum/eip712"
 

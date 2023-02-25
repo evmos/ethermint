@@ -11,11 +11,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	authsims "github.com/cosmos/cosmos-sdk/x/auth/simulation"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 
-	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 	ethermint "github.com/evmos/ethermint/types"
 
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
@@ -38,7 +39,7 @@ func TestRandomGenesisAccounts(t *testing.T) {
 	accountKeeper := authkeeper.NewAccountKeeper(
 		appCodec, sdk.NewKVStoreKey(authtypes.StoreKey), ethermint.ProtoAccount, maccPerms, sdk.GetConfig().GetBech32AccountAddrPrefix(), "",
 	)
-	authModule := auth.NewAppModule(appCodec, accountKeeper, RandomGenesisAccounts, nil)
+	authModule := auth.NewAppModule(appCodec, accountKeeper, authsims.RandomGenesisAccounts, nil)
 
 	genesisState := ModuleBasics.DefaultGenesis(appCodec)
 	simState := &module.SimulationState{Accounts: accs, Cdc: appCodec, Rand: r, GenState: genesisState}
