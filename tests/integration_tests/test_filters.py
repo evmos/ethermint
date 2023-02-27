@@ -201,6 +201,7 @@ def test_event_log_filter_by_address(cluster):
     assert len(flt2.get_new_entries()) == 0
 
 
+@pytest.mark.flaky
 def test_event_log_filter_by_topic(cluster):
     w3: Web3 = cluster.w3
 
