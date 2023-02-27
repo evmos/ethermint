@@ -5,7 +5,7 @@ PACKAGES_SIMTEST=$(shell go list ./... | grep '/simulation')
 VERSION ?= $(shell echo $(shell git describe --tags `git rev-list --tags="v*" --max-count=1`) | sed 's/^v//')
 TMVERSION := $(shell go list -m github.com/tendermint/tendermint | sed 's:.* ::')
 COMMIT := $(shell git log -1 --format='%H')
-LEDGER_ENABLED ?= false
+LEDGER_ENABLED ?= true
 BINDIR ?= $(GOPATH)/bin
 ETHERMINT_BINARY = ethermintd
 ETHERMINT_DIR = ethermint
@@ -16,7 +16,7 @@ PROJECT_NAME = $(shell git remote get-url origin | xargs basename -s .git)
 DOCKER := $(shell which docker)
 # RocksDB is a native dependency, so we don't assume the library is installed.
 # Instead, it must be explicitly enabled and we warn when it is not.
-ENABLE_ROCKSDB ?= true
+ENABLE_ROCKSDB ?= false
 
 export GO111MODULE = on
 
