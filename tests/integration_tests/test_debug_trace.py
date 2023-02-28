@@ -21,7 +21,6 @@ def test_trace_blk(ethermint):
     assert w3.eth.get_balance(sender, "latest") == fund
     nonce = w3.eth.get_transaction_count(sender)
     blk = wait_for_new_blocks(cli, 1, sleep=0.1)
-    print(f"block number start: {blk}")
     txhashes = []
     total = 3
     for n in range(total):
@@ -35,9 +34,8 @@ def test_trace_blk(ethermint):
         }
         signed = sign_transaction(w3, tx, acc.key)
         txhash = w3.eth.send_raw_transaction(signed.rawTransaction)
-        print("txhash", txhash.hex())
         txhashes.append(txhash)
-    for txhash in txhashes[0:total - 1]:
+    for txhash in txhashes[0 : total - 1]:
         res = w3.eth.wait_for_transaction_receipt(txhash)
         assert res.status == 1
 
