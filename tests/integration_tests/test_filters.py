@@ -119,7 +119,6 @@ def test_pending_transaction_filter(cluster):
     txhashes = wait_filter(flt)
     assert txhash in txhashes
 
-
     # check if tx_hash is valid
     tx = w3.eth.get_transaction(txhash)
     assert tx.hash == txhash

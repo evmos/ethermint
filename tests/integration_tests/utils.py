@@ -4,6 +4,7 @@ import socket
 import subprocess
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import bech32
@@ -32,6 +33,7 @@ TEST_CONTRACTS = {
     "TestChainID": "ChainID.sol",
     "Mars": "Mars.sol",
     "StateContract": "StateContract.sol",
+    "TestMessageCall": "TestMessageCall.sol",
 }
 
 
@@ -197,3 +199,12 @@ def parse_events(logs):
         ev["type"]: {attr["key"]: attr["value"] for attr in ev["attributes"]}
         for ev in logs[0]["events"]
     }
+
+
+def send_raw_transactions(w3, raw_transactions):
+    with ThreadPoolExecutor(len(raw_transactions)) as exec:
+        tasks = [
+            exec.submit(w3.eth.send_raw_transaction, raw) for raw in raw_transactions
+        ]
+        sended_hash_set = {future.result() for future in as_completed(tasks)}
+    return sended_hash_set
