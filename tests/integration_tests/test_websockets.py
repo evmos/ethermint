@@ -3,7 +3,6 @@ import json
 from collections import defaultdict
 
 import websockets
-from pystarport import ports
 
 
 def test_single_request_netversion(ethermint):
@@ -27,7 +26,6 @@ def test_single_request_netversion(ethermint):
 class Client:
     def __init__(self, ws):
         self._ws = ws
-        self._subs = defaultdict(asyncio.Queue)
         self._rsps = defaultdict(asyncio.Queue)
 
     async def receive_loop(self):
@@ -53,12 +51,10 @@ class Client:
 def test_web3_client_version(ethermint):
     ethermint_ws = ethermint.copy()
     ethermint_ws.use_websocket()
-    port = ethermint_ws.base_port(0)
-    url = f"ws://127.0.0.1:{ports.evmrpc_ws_port(port)}"
     loop = asyncio.get_event_loop()
 
     async def async_test():
-        async with websockets.connect(url) as ws:
+        async with websockets.connect(ethermint.w3_ws_endpoint) as ws:
             c = Client(ws)
             t = asyncio.create_task(c.receive_loop())
             # run send concurrently
