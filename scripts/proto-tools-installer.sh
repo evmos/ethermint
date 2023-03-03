@@ -86,7 +86,7 @@ f_install_buf() {
 f_install_protoc_gen_gocosmos() {
     f_print_installing_with_padding protoc-gen-gocosmos
     
-    go install github.com/cosmos/gogoproto/protoc-gen-gocosmos@latest  2>/dev/null
+    go install github.com/cosmos/gogoproto/protoc-gen-gocosmos@latest
     f_print_done
 }
 
