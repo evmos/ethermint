@@ -78,8 +78,8 @@ schema = 3
     version = "v1.0.1"
     hash = "sha256-vix0j/KGNvoKjhlKgVeSLY6un2FHeIEoZWMC4z3yvZ4="
   [mod."github.com/btcsuite/btcutil"]
-    version = "v1.1.2"
-    hash = "sha256-c58dV4r6iXM/0uBQjVq9eyJPrEOK8keQxGzMInnk71g="
+    version = "v1.1.1"
+    hash = "sha256-peLk4qnmYSSEI6Qya81W2r3TzW17CwJZ7likYleYsRM="
     replaced = "github.com/btcsuite/btcd/btcutil"
   [mod."github.com/cenkalti/backoff/v4"]
     version = "v4.1.3"
