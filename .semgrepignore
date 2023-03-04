@@ -17,6 +17,7 @@ vendor/
 # Common test paths
 test/
 tests/
+testutil/
 *_test.go
 
 # Semgrep rules folder
