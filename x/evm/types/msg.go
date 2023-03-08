@@ -331,7 +331,8 @@ func (msg MsgEthereumTx) AsMessage(signer ethtypes.Signer, baseFee *big.Int) (co
 // GetSender extracts the sender address from the signature values using the latest signer for the given chainID.
 func (msg *MsgEthereumTx) GetSender(chainID *big.Int) (common.Address, error) {
 	signer := ethtypes.LatestSignerForChainID(chainID)
-	from, err := signer.Sender(msg.AsTransaction())
+	tx := msg.AsTransaction()
+	from, err := ethtypes.Sender(signer, tx)
 	if err != nil {
 		return common.Address{}, err
 	}
