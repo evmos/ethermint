@@ -40,10 +40,15 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### State Machine Breaking
 
+* (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to [`v0.46.6`]
+
+## [v0.21.0] - 2023-01-26
+
+### State Machine Breaking
+
 * (feemarket) [#1509](https://github.com/evmos/ethermint/pull/1509) Deprecate usage of x/params in x/feemarket
 * (evm) [#1472](https://github.com/evmos/ethermint/pull/1472) Deprecate usage of x/params in x/evm
 * (deps) [#1575](https://github.com/evmos/ethermint/pull/1575) Bump ibc-go to [`v6.1.0`](https://github.com/cosmos/ibc-go/releases/tag/v6.1.0)
-* (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to [`v0.46.6`]
 
 ### Improvements
 
@@ -59,6 +64,8 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (rpc) [#1613](https://github.com/evmos/ethermint/pull/1613) Change the default json-rpc listen address to localhost.
 * (rpc) [#1611](https://github.com/evmos/ethermint/pull/1611) Add missing next fee in fee history, fix wrong oldestBlock and align earliest input as ethereum.
 * (proto) [#1586](https://github.com/evmos/ethermint/pull/1586) Avoid duplicate register proto type in `evm` & `feemarket`
+* (rpc) [#1638](https://github.com/evmos/ethermint/pull/1638) Align results when querying `eth_getTransactionCount` for future blocks for accounts with zero and non-zero transaction counts.
+* (rpc) [#1639](https://github.com/evmos/ethermint/pull/1639) Align block number input behaviour for `eth_getProof` as Ethereum.
 
 ## [v0.20.0] - 2022-12-28
 
