@@ -37,7 +37,7 @@ require (
 	github.com/tendermint/tm-db v0.6.7
 	github.com/tyler-smith/go-bip39 v1.1.0
 	golang.org/x/net v0.7.0
-	golang.org/x/text v0.7.0
+	golang.org/x/text v0.8.0
 	google.golang.org/genproto v0.0.0-20221227171554-f9683d7f8bef
 	google.golang.org/grpc v1.52.3
 	sigs.k8s.io/yaml v1.3.0
