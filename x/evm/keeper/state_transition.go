@@ -146,7 +146,7 @@ func (k Keeper) GetHashFn(ctx sdk.Context) vm.GetHashFunc {
 // returning.
 //
 // For relevant discussion see: https://github.com/cosmos/cosmos-sdk/discussions/9072
-func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*types.MsgEthereumTxResponse, error) {
+func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *types.MsgEthereumTx) (*types.MsgEthereumTxResponse, error) {
 	var (
 		bloom        *big.Int
 		bloomReceipt ethtypes.Bloom
@@ -156,7 +156,8 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "failed to load evm config")
 	}
-	txConfig := k.TxConfig(ctx, tx.Hash())
+	ethTx := tx.AsTransaction()
+	txConfig := k.TxConfig(ctx, ethTx.Hash())
 
 	// get the signer according to the chain rules from the config and block height
 	signer := ethtypes.MakeSigner(cfg.ChainConfig, big.NewInt(ctx.BlockHeight()))
@@ -206,7 +207,7 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 	}
 
 	receipt := &ethtypes.Receipt{
-		Type:              tx.Type(),
+		Type:              ethTx.Type(),
 		PostState:         nil, // TODO: intermediate state root
 		CumulativeGasUsed: cumulativeGasUsed,
 		Bloom:             bloomReceipt,
