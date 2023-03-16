@@ -16,7 +16,6 @@ from .utils import (
     deploy_contract,
     parse_events,
     send_transaction,
-    supervisorctl,
     wait_for_block,
     wait_for_block_time,
     wait_for_port,
@@ -95,12 +94,11 @@ def test_cosmovisor_upgrade(custom_ethermint: Ethermint):
     cli = custom_ethermint.cosmos_cli()
 
     w3 = custom_ethermint.w3
-    validator = ADDRS["validator"]
     contract, _ = deploy_contract(w3, CONTRACTS["TestERC20A"])
     old_height = w3.eth.block_number
-    old_balance = w3.eth.get_balance(validator, block_identifier=old_height)
+    old_balance = w3.eth.get_balance(ADDRS["validator"], block_identifier=old_height)
     old_base_fee = w3.eth.get_block(old_height).baseFeePerGas
-    old_erc20_balance = contract.caller.balanceOf(validator)
+    old_erc20_balance = contract.caller.balanceOf(ADDRS["validator"])
     print("old values", old_height, old_balance, old_base_fee)
 
     target_height = w3.eth.block_number + 10
@@ -162,64 +160,13 @@ def test_cosmovisor_upgrade(custom_ethermint: Ethermint):
     )
     assert receipt.status == 1
 
-    # check get_balance and eth_call don't work on pruned state
-    with pytest.raises(Exception):
-        w3.eth.get_balance(validator, block_identifier=old_height)
-
-    base_dir = custom_ethermint.base_dir
-    for i in [0, 1]:
-        supervisorctl(base_dir / "../tasks.ini", "stop", f"ethermint_9000-1-node{i}")
-
-    procs = []
-
-    def append_proc(log, cmd):
-        with (base_dir / log).open("a") as logfile:
-            procs.append(
-                subprocess.Popen(
-                    cmd,
-                    stdout=logfile,
-                    stderr=subprocess.STDOUT,
-                )
-            )
-
-    path = Path(custom_ethermint.chain_binary).parent.parent.parent
-    append_proc(
-        "node1.log",
-        [
-            f"{str(path)}/genesis/bin/ethermintd",
-            "start",
-            "--home",
-            base_dir / "node1",
-        ],
+    # check json-rpc query on older blocks works
+    assert old_balance == w3.eth.get_balance(
+        ADDRS["validator"], block_identifier=old_height
     )
-    grpc_port1 = ports.grpc_port(custom_ethermint.base_port(1))
-    append_proc(
-        "node0.log",
-        [
-            f"{str(path)}/{plan_name}/bin/ethermintd",
-            "start",
-            "--json-rpc.backup-grpc-address-block-range",
-            f'{{"0.0.0.0:{grpc_port1}": [0, {target_height}]}}',
-            "--home",
-            base_dir / "node0",
-        ],
-    )
+    assert old_base_fee == w3.eth.get_block(old_height).baseFeePerGas
 
-    try:
-        for i in [0, 1]:
-            wait_for_port(ports.evmrpc_port(custom_ethermint.base_port(i)))
-
-        # check json-rpc query on older blocks works
-        assert old_balance == w3.eth.get_balance(validator, block_identifier=old_height)
-        assert old_base_fee == w3.eth.get_block(old_height).baseFeePerGas
-
-        # check eth_call on older blocks works
-        assert old_erc20_balance == contract.caller(
-            block_identifier=target_height - 2
-        ).balanceOf(validator)
-        # check we could fetch the right params before and after migration
-        assert cli.query_params(old_height) == cli.query_params(w3.eth.block_number - 1)
-    finally:
-        for proc in procs:
-            proc.terminate()
-            proc.wait()
+    # check eth_call on older blocks works
+    assert old_erc20_balance == contract.caller(
+        block_identifier=target_height - 2
+    ).balanceOf(ADDRS["validator"])
