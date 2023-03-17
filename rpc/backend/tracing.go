@@ -123,7 +123,8 @@ func (b *Backend) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfi
 		// 0 is a special value in `ContextWithHeight`
 		contextHeight = 1
 	}
-	traceResult, err := b.queryClient.TraceTx(rpctypes.ContextWithHeight(contextHeight), &traceTxRequest)
+	queryClient := b.getGrpcClient(contextHeight)
+	traceResult, err := queryClient.TraceTx(rpctypes.ContextWithHeight(contextHeight), &traceTxRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -191,8 +192,8 @@ func (b *Backend) TraceBlock(height rpctypes.BlockNumber,
 		ProposerAddress: sdk.ConsAddress(block.Block.ProposerAddress),
 		ChainId:         b.chainID.Int64(),
 	}
-
-	res, err := b.queryClient.TraceBlock(ctxWithHeight, traceBlockRequest)
+	queryClient := b.getGrpcClient(int64(contextHeight))
+	res, err := queryClient.TraceBlock(ctxWithHeight, traceBlockRequest)
 	if err != nil {
 		return nil, err
 	}
