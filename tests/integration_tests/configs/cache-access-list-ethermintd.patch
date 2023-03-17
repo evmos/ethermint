@@ -1,0 +1,218 @@
+diff --git a/x/evm/keeper/grpc_query.go b/x/evm/keeper/grpc_query.go
+index 59a367871..55d49a098 100644
+--- a/x/evm/keeper/grpc_query.go
++++ b/x/evm/keeper/grpc_query.go
+@@ -390,6 +390,34 @@ func (k Keeper) EstimateGas(c context.Context, req *types.EthCallRequest) (*type
+ 	return &types.EstimateGasResponse{Gas: hi}, nil
+ }
+ 
++// GetTxTraceResultForTx returns statedb with cached address list when need patch
++func (k Keeper) GetTxTraceResultForTx(
++	ctx sdk.Context,
++	tx *types.MsgEthereumTx,
++	signer ethtypes.Signer,
++	cfg *statedb.EVMConfig,
++	txConfig statedb.TxConfig,
++	lastDB *statedb.StateDB,
++) (*statedb.StateDB, error) {
++	ethTx := tx.AsTransaction()
++	msg, err := ethTx.AsMessage(signer, cfg.BaseFee)
++	if err != nil {
++		return lastDB, err
++	}
++	txConfig.TxHash = ethTx.Hash()
++	stateDB := statedb.New(ctx, &k, txConfig)
++	if lastDB != nil {
++		stateDB.SetAddressToAccessList(lastDB.GetAddressToAccessList())
++	}
++	lastDB = stateDB
++	rsp, err := k.ApplyMessageWithStateDB(ctx, msg, types.NewNoOpTracer(), true, cfg, txConfig, stateDB)
++	if err != nil {
++		return lastDB, err
++	}
++	txConfig.LogIndex += uint(len(rsp.Logs))
++	return lastDB, nil
++}
++
+ // TraceTx configures a new tracer according to the provided configuration, and
+ // executes the given message in the provided environment. The return value will
+ // be tracer dependent.
+@@ -421,22 +449,13 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
+ 	if err != nil {
+ 		return nil, status.Errorf(codes.Internal, "failed to load evm config: %s", err.Error())
+ 	}
+-	signer := ethtypes.MakeSigner(cfg.ChainConfig, big.NewInt(ctx.BlockHeight()))
+-
++	height := ctx.BlockHeight()
++	signer := ethtypes.MakeSigner(cfg.ChainConfig, big.NewInt(height))
+ 	txConfig := statedb.NewEmptyTxConfig(common.BytesToHash(ctx.HeaderHash().Bytes()))
++	var lastDB *statedb.StateDB
+ 	for i, tx := range req.Predecessors {
+-		ethTx := tx.AsTransaction()
+-		msg, err := ethTx.AsMessage(signer, cfg.BaseFee)
+-		if err != nil {
+-			continue
+-		}
+-		txConfig.TxHash = ethTx.Hash()
+ 		txConfig.TxIndex = uint(i)
+-		rsp, err := k.ApplyMessageWithConfig(ctx, msg, types.NewNoOpTracer(), true, cfg, txConfig)
+-		if err != nil {
+-			continue
+-		}
+-		txConfig.LogIndex += uint(len(rsp.Logs))
++		lastDB, _ = k.GetTxTraceResultForTx(ctx, tx, signer, cfg, txConfig, lastDB)
+ 	}
+ 
+ 	tx := req.Msg.AsTransaction()
+@@ -450,8 +469,11 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
+ 		// ignore error. default to no traceConfig
+ 		_ = json.Unmarshal([]byte(req.TraceConfig.TracerJsonConfig), &tracerConfig)
+ 	}
+-
+-	result, _, err := k.traceTx(ctx, cfg, txConfig, signer, tx, req.TraceConfig, false, tracerConfig)
++	stateDB := statedb.New(ctx, &k, txConfig)
++	if lastDB != nil {
++		stateDB.SetAddressToAccessList(lastDB.GetAddressToAccessList())
++	}
++	result, _, err := k.traceTx(ctx, cfg, txConfig, stateDB, signer, tx, req.TraceConfig, false, tracerConfig)
+ 	if err != nil {
+ 		// error will be returned with detail status from traceTx
+ 		return nil, err
+@@ -467,6 +489,35 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
+ 	}, nil
+ }
+ 
++// GetTxTraceResultForBlock returns TxTraceResult and
++// statedb with cached address list when need patch and
++func (k Keeper) GetTxTraceResultForBlock(
++	ctx sdk.Context,
++	tx *types.MsgEthereumTx,
++	signer ethtypes.Signer,
++	cfg *statedb.EVMConfig,
++	txConfig statedb.TxConfig,
++	traceConfig *types.TraceConfig,
++	lastDB *statedb.StateDB,
++) (*statedb.StateDB, *types.TxTraceResult) {
++	result := new(types.TxTraceResult)
++	ethTx := tx.AsTransaction()
++	txConfig.TxHash = ethTx.Hash()
++	stateDB := statedb.New(ctx, &k, txConfig)
++	if lastDB != nil {
++		stateDB.SetAddressToAccessList(lastDB.GetAddressToAccessList())
++	}
++	lastDB = stateDB
++	traceResult, logIndex, err := k.traceTx(ctx, cfg, txConfig, stateDB, signer, ethTx, traceConfig, true, nil)
++	if err != nil {
++		result.Error = err.Error()
++	} else {
++		txConfig.LogIndex = logIndex
++		result.Result = traceResult
++	}
++	return lastDB, result
++}
++
+ // TraceBlock configures a new tracer according to the provided configuration, and
+ // executes the given message in the provided environment for all the transactions in the queried block.
+ // The return value will be tracer dependent.
+@@ -499,24 +550,18 @@ func (k Keeper) TraceBlock(c context.Context, req *types.QueryTraceBlockRequest)
+ 	if err != nil {
+ 		return nil, status.Error(codes.Internal, "failed to load evm config")
+ 	}
+-	signer := ethtypes.MakeSigner(cfg.ChainConfig, big.NewInt(ctx.BlockHeight()))
++	height := ctx.BlockHeight()
++	signer := ethtypes.MakeSigner(cfg.ChainConfig, big.NewInt(height))
+ 	txsLength := len(req.Txs)
+ 	results := make([]*types.TxTraceResult, 0, txsLength)
+ 
+ 	txConfig := statedb.NewEmptyTxConfig(common.BytesToHash(ctx.HeaderHash().Bytes()))
++	var lastDB *statedb.StateDB
+ 	for i, tx := range req.Txs {
+-		result := types.TxTraceResult{}
+-		ethTx := tx.AsTransaction()
+-		txConfig.TxHash = ethTx.Hash()
+ 		txConfig.TxIndex = uint(i)
+-		traceResult, logIndex, err := k.traceTx(ctx, cfg, txConfig, signer, ethTx, req.TraceConfig, true, nil)
+-		if err != nil {
+-			result.Error = err.Error()
+-		} else {
+-			txConfig.LogIndex = logIndex
+-			result.Result = traceResult
+-		}
+-		results = append(results, &result)
++		var result *types.TxTraceResult
++		lastDB, result = k.GetTxTraceResultForBlock(ctx, tx, signer, cfg, txConfig, req.TraceConfig, lastDB)
++		results = append(results, result)
+ 	}
+ 
+ 	resultData, err := json.Marshal(results)
+@@ -534,6 +579,7 @@ func (k *Keeper) traceTx(
+ 	ctx sdk.Context,
+ 	cfg *statedb.EVMConfig,
+ 	txConfig statedb.TxConfig,
++	stateDB *statedb.StateDB,
+ 	signer ethtypes.Signer,
+ 	tx *ethtypes.Transaction,
+ 	traceConfig *types.TraceConfig,
+@@ -602,7 +648,7 @@ func (k *Keeper) traceTx(
+ 		}
+ 	}()
+ 
+-	res, err := k.ApplyMessageWithConfig(ctx, msg, tracer, commitMessage, cfg, txConfig)
++	res, err := k.ApplyMessageWithStateDB(ctx, msg, tracer, commitMessage, cfg, txConfig, stateDB)
+ 	if err != nil {
+ 		return nil, 0, status.Error(codes.Internal, err.Error())
+ 	}
+diff --git a/x/evm/keeper/state_transition.go b/x/evm/keeper/state_transition.go
+index ad90dba5f..894498b86 100644
+--- a/x/evm/keeper/state_transition.go
++++ b/x/evm/keeper/state_transition.go
+@@ -316,6 +316,17 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
+ 	commit bool,
+ 	cfg *statedb.EVMConfig,
+ 	txConfig statedb.TxConfig,
++) (*types.MsgEthereumTxResponse, error) {
++	return k.ApplyMessageWithStateDB(ctx, msg, tracer, commit, cfg, txConfig, nil)
++}
++
++func (k *Keeper) ApplyMessageWithStateDB(ctx sdk.Context,
++	msg core.Message,
++	tracer vm.EVMLogger,
++	commit bool,
++	cfg *statedb.EVMConfig,
++	txConfig statedb.TxConfig,
++	stateDB *statedb.StateDB,
+ ) (*types.MsgEthereumTxResponse, error) {
+ 	var (
+ 		ret   []byte // return bytes from evm execution
+@@ -329,7 +340,9 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
+ 		return nil, errorsmod.Wrap(types.ErrCallDisabled, "failed to call contract")
+ 	}
+ 
+-	stateDB := statedb.New(ctx, k, txConfig)
++	if stateDB == nil {
++		stateDB = statedb.New(ctx, k, txConfig)
++	}
+ 	evm := k.NewEVM(ctx, msg, cfg, tracer, stateDB)
+ 
+ 	leftoverGas := msg.Gas()
+diff --git a/x/evm/statedb/statedb.go b/x/evm/statedb/statedb.go
+index 753ec7616..911a44e1f 100644
+--- a/x/evm/statedb/statedb.go
++++ b/x/evm/statedb/statedb.go
+@@ -396,6 +396,16 @@ func (s *StateDB) AddAddressToAccessList(addr common.Address) {
+ 	}
+ }
+ 
++// GetAddressToAccessList return full access list
++func (s *StateDB) GetAddressToAccessList() *accessList {
++	return s.accessList
++}
++
++// SetAddressToAccessList overwrite with new access list
++func (s *StateDB) SetAddressToAccessList(accessList *accessList) {
++	s.accessList = accessList
++}
++
+ // AddSlotToAccessList adds the given (address, slot)-tuple to the access list
+ func (s *StateDB) AddSlotToAccessList(addr common.Address, slot common.Hash) {
+ 	addrMod, slotMod := s.accessList.AddSlot(addr, slot)

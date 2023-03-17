@@ -26,26 +26,25 @@ class Ethermint:
     def copy(self):
         return Ethermint(self.base_dir)
 
-    @property
     def w3_http_endpoint(self, i=0):
         port = ports.evmrpc_port(self.base_port(i))
         return f"http://localhost:{port}"
 
-    @property
     def w3_ws_endpoint(self, i=0):
         port = ports.evmrpc_ws_port(self.base_port(i))
         return f"ws://localhost:{port}"
 
     @property
-    def w3(self, i=0):
+    def w3(self):
         if self._w3 is None:
-            if self._use_websockets:
-                self._w3 = web3.Web3(
-                    web3.providers.WebsocketProvider(self.w3_ws_endpoint)
-                )
-            else:
-                self._w3 = web3.Web3(web3.providers.HTTPProvider(self.w3_http_endpoint))
+            self._w3 = self.node_w3(0)
         return self._w3
+
+    def node_w3(self, i=0):
+        if self._use_websockets:
+            return web3.Web3(web3.providers.WebsocketProvider(self.w3_ws_endpoint(i)))
+        else:
+            return web3.Web3(web3.providers.HTTPProvider(self.w3_http_endpoint(i)))
 
     def base_port(self, i):
         return self.config["validators"][i]["base_port"]
