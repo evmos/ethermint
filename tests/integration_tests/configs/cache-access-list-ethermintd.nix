@@ -1,8 +1,13 @@
-{ pkgs ? import ../../../nix { } }:
-let ethermintd = (pkgs.callPackage ../../../. { });
+let 
+  pkgs = import ../../../nix { };
+  current = pkgs.callPackage ../../../. { };
+  patched = current.overrideAttrs (oldAttrs: rec {
+    patches = oldAttrs.patches or [ ] ++ [
+      ./cache-access-list-ethermintd.patch
+    ];
+  });
 in
-ethermintd.overrideAttrs (oldAttrs: {
-  patches = oldAttrs.patches or [ ] ++ [
-    ./cache-access-list-ethermintd.patch
-  ];
-})
+pkgs.linkFarm "cache-access-list-ethermintd" [
+  { name = "genesis"; path = patched; }
+  { name = "integration-test-patch"; path = current; }
+]
