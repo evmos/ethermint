@@ -88,10 +88,12 @@ def multi_transfer(w3, contract, sender, key, receiver):
     txhashes = []
     nonce = w3.eth.get_transaction_count(sender)
     for i in range(2):
-        tx = contract.functions.transfer(sender, amt).build_transaction({
-            "from": receiver,
-            "nonce": nonce + i,
-        })
+        tx = contract.functions.transfer(sender, amt).build_transaction(
+            {
+                "from": receiver,
+                "nonce": nonce + i,
+            }
+        )
         signed = sign_transaction(w3, tx, key)
         txhash = w3.eth.send_raw_transaction(signed.rawTransaction)
         txhashes.append(txhash)
