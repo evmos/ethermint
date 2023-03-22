@@ -134,11 +134,6 @@ func (b *Backend) processBlock(
 	// set basefee
 	targetOneFeeHistory.BaseFee = blockBaseFee
 	cfg := b.ChainConfig()
-	if cfg.IsLondon(big.NewInt(blockHeight + 1)) {
-		targetOneFeeHistory.NextBaseFee = misc.CalcBaseFee(cfg, b.CurrentHeader())
-	} else {
-		targetOneFeeHistory.NextBaseFee = new(big.Int)
-	}
 	// set gas used ratio
 	gasLimitUint64, ok := (*ethBlock)["gasLimit"].(hexutil.Uint64)
 	if !ok {
@@ -148,6 +143,22 @@ func (b *Backend) processBlock(
 	gasUsedBig, ok := (*ethBlock)["gasUsed"].(*hexutil.Big)
 	if !ok {
 		return fmt.Errorf("invalid gas used type: %T", (*ethBlock)["gasUsed"])
+	}
+
+	baseFee, ok := (*ethBlock)["baseFeePerGas"].(*hexutil.Big)
+	if !ok {
+		return fmt.Errorf("invalid baseFee: %T", (*ethBlock)["baseFeePerGas"])
+	}
+
+	if cfg.IsLondon(big.NewInt(blockHeight + 1)) {
+		var header ethtypes.Header
+		header.Number = new(big.Int).SetInt64(blockHeight)
+		header.BaseFee = baseFee.ToInt()
+		header.GasLimit = uint64(gasLimitUint64)
+		header.GasUsed = gasUsedBig.ToInt().Uint64()
+		targetOneFeeHistory.NextBaseFee = misc.CalcBaseFee(cfg, &header)
+	} else {
+		targetOneFeeHistory.NextBaseFee = new(big.Int)
 	}
 
 	gasusedfloat, _ := new(big.Float).SetInt(gasUsedBig.ToInt()).Float64()
