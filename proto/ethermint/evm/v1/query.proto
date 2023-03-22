@@ -231,6 +231,11 @@ message EthCallRequest {
 message EstimateGasResponse {
   // gas returns the estimated gas
   uint64 gas = 1;
+  // ret is the returned data from evm function (result or data supplied with revert
+  // opcode)
+  bytes ret = 2;
+  // vm_error is the error returned by vm execution
+  string vm_error = 3;
 }
 
 // QueryTraceTxRequest defines TraceTx request
