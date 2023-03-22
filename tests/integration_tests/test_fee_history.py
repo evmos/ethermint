@@ -4,7 +4,7 @@ import pytest
 from web3 import Web3
 
 from .network import setup_ethermint
-from .utils import ADDRS, send_transaction
+from .utils import ADDRS, send_transaction, w3_wait_for_new_blocks
 
 
 @pytest.fixture(scope="module")
@@ -71,3 +71,22 @@ def test_basic(cluster):
         assert len(res[field]) == target
         oldest = i + min - max
         assert res["oldestBlock"] == hex(oldest if oldest > 0 else 0)
+
+
+def test_change(cluster):
+    w3: Web3 = cluster.w3
+    call = w3.provider.make_request
+    tx = {"to": ADDRS["community"], "value": 10, "gasPrice": w3.eth.gas_price}
+    send_transaction(w3, tx)
+    size = 4
+    method = "eth_feeHistory"
+    field = "baseFeePerGas"
+    percentiles = [100]
+    for b in ["latest", hex(w3.eth.block_number)]:
+        history0 = call(method, [size, b, percentiles])["result"][field]
+        w3_wait_for_new_blocks(w3, 2, 0.1)
+        history1 = call(method, [size, b, percentiles])["result"][field]
+        if b == "latest":
+            assert history1 != history0
+        else:
+            assert history1 == history0
