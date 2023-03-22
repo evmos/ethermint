@@ -340,6 +340,9 @@ func (b *Backend) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *rp
 		if res.VmError != vm.ErrExecutionReverted.Error() {
 			return 0, status.Error(codes.Internal, res.VmError)
 		}
+		if len(res.Ret) == 0 {
+			return 0, errors.New(res.VmError)
+		}
 		return 0, evmtypes.NewExecErrorWithReason(res.Ret)
 	}
 	return hexutil.Uint64(res.Gas), nil
