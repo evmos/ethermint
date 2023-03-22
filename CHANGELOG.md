@@ -38,6 +38,11 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### Bug Fixes
+
+* (rpc) [#1722](https://github.com/evmos/ethermint/pull/1722) Align revert response for `eth_estimateGas` and `eth_call` as Ethereum.
+
+
 ### State Machine Breaking
 
 * (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to [`v0.46.6`]
