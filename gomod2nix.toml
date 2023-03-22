@@ -20,8 +20,8 @@ schema = 3
     version = "v1.0.0-beta.7"
     hash = "sha256-XblGvIx6Wvvq6wggXjp+KbeJGXoe7AZH7hXEdauCezU="
   [mod."cosmossdk.io/math"]
-    version = "v1.0.0-beta.6"
-    hash = "sha256-u7oA14c9o3kVNKFaoTQJBOWFX4rJHf+884qG+4ocBfM="
+    version = "v1.0.0-rc.0"
+    hash = "sha256-bQ2hxg1dwVxbyBzbdepCz8nFGx6dfr63syqDNQ8AFQc="
   [mod."filippo.io/edwards25519"]
     version = "v1.0.0-rc.1"
     hash = "sha256-3DboBqby2ejRU33FG96Z8JF5AJ8HP2rC/v++VyoQ2LQ="
@@ -364,11 +364,11 @@ schema = 3
     version = "v0.0.5"
     hash = "sha256-/5i70IkH/qSW5KjGzv8aQNKh9tHoz98tqtL0K2DMFn4="
   [mod."github.com/onsi/ginkgo/v2"]
-    version = "v2.9.0"
-    hash = "sha256-mA85ECIXYSFc60wIfbKpcE/VKC4PZC24fwouqY51kxA="
+    version = "v2.9.1"
+    hash = "sha256-7yMsN5CMJS/4VU9/Z27/xdbKzZac6/R1JRJDXxGmwiQ="
   [mod."github.com/onsi/gomega"]
-    version = "v1.27.2"
-    hash = "sha256-w2pKmh0tra4bsFoIWOhH3z+WNEndOcjQ4DGGjwlcoss="
+    version = "v1.27.4"
+    hash = "sha256-Fhltm/e6KVXdwfUl65cE8PD1MLyXJa7OH0lg4Bvewv0="
   [mod."github.com/pelletier/go-toml/v2"]
     version = "v2.0.6"
     hash = "sha256-BxAeApnn5H+OLlH3TXGvIbtC6LmbRnjwbcfT1qMZ4PE="
@@ -518,8 +518,8 @@ schema = 3
     version = "v0.8.0"
     hash = "sha256-hgWFnT01DRmywBEXKYEVaOee7i6z8Ydz7zGbjcWwOgI="
   [mod."golang.org/x/tools"]
-    version = "v0.6.0"
-    hash = "sha256-J0q+C3WDTK9yyHX90FV6qr6n9H07YglYg1p4H3MqyH4="
+    version = "v0.7.0"
+    hash = "sha256-ZEjfFulQd6U9r4mEJ5RZOnW49NZnQnrCFLMKCgLg7go="
   [mod."golang.org/x/xerrors"]
     version = "v0.0.0-20220907171357-04be3eba64a2"
     hash = "sha256-6+zueutgefIYmgXinOflz8qGDDDj0Zhv+2OkGhBTKno="
