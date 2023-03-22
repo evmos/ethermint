@@ -37,6 +37,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### Bug Fixes
+
+* (rpc) [#1720](https://github.com/evmos/ethermint/pull/1720) Add missing next fee in fee history, fix wrong oldestBlock and align earliest input as ethereum.
+
 ### State Machine Breaking
 
 - (deps) [#1168](https://github.com/evmos/ethermint/pull/1716) Bump Cosmos-SDK to v0.46.11, Tendermint to v0.34.27, IAVL v0.19.5 and btcd to v0.23.4
