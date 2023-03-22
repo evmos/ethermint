@@ -22,7 +22,6 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/holiman/uint256 v1.2.1
 	github.com/improbable-eng/grpc-web v0.15.0
-	github.com/miguelmota/go-ethereum-hdwallet v0.1.1
 	github.com/onsi/ginkgo/v2 v2.9.0
 	github.com/onsi/gomega v1.27.2
 	github.com/pkg/errors v0.9.1
@@ -201,6 +200,5 @@ replace (
 	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.7.0
 	// use cosmos flavored protobufs
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
-	github.com/miguelmota/go-ethereum-hdwallet => github.com/crypto-org-chain/go-ethereum-hdwallet v0.1.2
 	github.com/tendermint/tendermint => github.com/cometbft/cometbft v0.34.27
 )
