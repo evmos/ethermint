@@ -30,7 +30,7 @@ def test_revert(cluster):
     validator = ADDRS["validator"]
     erc20, _ = deploy_contract(
         w3,
-        CONTRACTS["TestERC20A"],
+        CONTRACTS["TestRevert"],
     )
     method = "eth_estimateGas"
 
@@ -42,7 +42,7 @@ def test_revert(cluster):
     error = do_call("0x9ffb86a5")
     assert error["code"] == 3
     assert error["message"] == "execution reverted: Function has been reverted"
-    assert error["data"] == "0x08c379a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001a46756e6374696f6e20686173206265656e207265766572746564000000000000"  # noqa: E501
+    assert (error["data"] == "0x08c379a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001a46756e6374696f6e20686173206265656e207265766572746564000000000000")  # noqa: E501
 
     # revertWithoutMsg
     error = do_call("0x3246485d")
