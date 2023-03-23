@@ -292,8 +292,8 @@ schema = 3
     version = "v2.0.3"
     hash = "sha256-5VsJMQzJSNd4F7yAl3iF/q6JodWOlE4dUvTQ0UGPe+k="
   [mod."github.com/holiman/uint256"]
-    version = "v1.2.1"
-    hash = "sha256-1N+MvvzTIegV1UPEGUVyxBZaxczId/Z/BUVcnx7ckHE="
+    version = "v1.2.2"
+    hash = "sha256-mM0aeaqIwaNG7X3THx0HOCMPLKYK1DIvvuMLXClPAZg="
   [mod."github.com/huin/goupnp"]
     version = "v1.0.3"
     hash = "sha256-EMGmTdoQhP2bVbCPX37hes5krqXn6NFexfnKr9E5u8I="
