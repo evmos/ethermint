@@ -224,6 +224,8 @@ func (suite *BackendTestSuite) TestTraceBlock() {
 			func() {
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
 				RegisterTraceBlock(queryClient, []*evmtypes.MsgEthereumTx{msgEthTx})
+				client := suite.backend.clientCtx.Client.(*mocks.Client)
+				RegisterBlockResults(client, 1)
 			},
 			[]*evmtypes.TxTraceResult{},
 			&resBlockFilled,
