@@ -90,3 +90,39 @@ def test_change(cluster):
             assert history1 != history0
         else:
             assert history1 == history0
+
+
+def adjust_base_fee(parent_fee, gas_limit, gas_used):
+    "spec: https://eips.ethereum.org/EIPS/eip-1559#specification"
+    change_denominator = 8
+    elasticity_multiplier = 2
+    gas_target = gas_limit // elasticity_multiplier
+    delta = parent_fee * (gas_target - gas_used) // gas_target // change_denominator
+    return parent_fee - delta
+
+
+def test_next(cluster):
+    w3: Web3 = cluster.w3
+    call = w3.provider.make_request
+    tx = {"to": ADDRS["community"], "value": 10, "gasPrice": w3.eth.gas_price}
+    send_transaction(w3, tx)
+    method = "eth_feeHistory"
+    field = "baseFeePerGas"
+    percentiles = [100]
+    blocks = []
+    histories = []
+    for _ in range(3):
+        b = w3.eth.block_number
+        blocks.append(b)
+        histories.append(tuple(call(method, [1, hex(b), percentiles])["result"][field]))
+        w3_wait_for_new_blocks(w3, 1, 0.1)
+    blocks.append(w3.eth.block_number)
+    expected = []
+    for b in blocks:
+        next_base_price = w3.eth.get_block(b).baseFeePerGas
+        blk = w3.eth.get_block(b - 1)
+        assert next_base_price == adjust_base_fee(
+            blk.baseFeePerGas, blk.gasLimit, blk.gasUsed
+        )
+        expected.append(hex(next_base_price))
+    assert histories == list(zip(expected, expected[1:]))
