@@ -1,16 +1,19 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 
 import pytest
 from web3 import Web3
 
-from .network import setup_ethermint
+from .network import setup_custom_ethermint
 from .utils import ADDRS, send_transaction, w3_wait_for_new_blocks
 
 
 @pytest.fixture(scope="module")
 def custom_ethermint(tmp_path_factory):
     path = tmp_path_factory.mktemp("fee-history")
-    yield from setup_ethermint(path, 26500, long_timeout_commit=True)
+    yield from setup_custom_ethermint(
+        path, 26500, Path(__file__).parent / "configs/fee-history.jsonnet"
+    )
 
 
 @pytest.fixture(scope="module", params=["ethermint", "geth"])
@@ -92,17 +95,21 @@ def test_change(cluster):
             assert history1 == history0
 
 
-def adjust_base_fee(parent_fee, gas_limit, gas_used):
+def adjust_base_fee(parent_fee, gas_limit, gas_used, denominator, multiplier):
     "spec: https://eips.ethereum.org/EIPS/eip-1559#specification"
-    change_denominator = 8
-    elasticity_multiplier = 2
-    gas_target = gas_limit // elasticity_multiplier
-    delta = parent_fee * (gas_target - gas_used) // gas_target // change_denominator
+    gas_target = gas_limit // multiplier
+    delta = parent_fee * (gas_target - gas_used) // gas_target // denominator
     return parent_fee - delta
 
 
-def test_next(cluster):
+def test_next(cluster, custom_ethermint):
     w3: Web3 = cluster.w3
+    # geth default
+    elasticity_multiplier = 2
+    change_denominator = 8
+    if cluster == custom_ethermint:
+        elasticity_multiplier = 3
+        change_denominator = 100000000
     call = w3.provider.make_request
     tx = {"to": ADDRS["community"], "value": 10, "gasPrice": w3.eth.gas_price}
     send_transaction(w3, tx)
@@ -122,7 +129,11 @@ def test_next(cluster):
         next_base_price = w3.eth.get_block(b).baseFeePerGas
         blk = w3.eth.get_block(b - 1)
         assert next_base_price == adjust_base_fee(
-            blk.baseFeePerGas, blk.gasLimit, blk.gasUsed
+            blk.baseFeePerGas,
+            blk.gasLimit,
+            blk.gasUsed,
+            change_denominator,
+            elasticity_multiplier,
         )
         expected.append(hex(next_base_price))
     assert histories == list(zip(expected, expected[1:]))
