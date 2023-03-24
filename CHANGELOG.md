@@ -46,6 +46,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (rpc) [#1682](https://github.com/evmos/ethermint/pull/1682) Add config for maximum number of bytes returned from eth_call.
 
+### Bug Fixes
+
+* (rpc) [#1688](https://github.com/evmos/ethermint/pull/1688) Align filter rule for `debug_traceBlockByNumber`
+
 ## [v0.21.0] - 2023-01-26
 
 ### State Machine Breaking
