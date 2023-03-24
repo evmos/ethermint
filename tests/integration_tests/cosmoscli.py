@@ -273,9 +273,9 @@ class CosmosCLI:
             )
         )["validators"]
 
-    def staking_params(self):
+    def get_params(self, module):
         return json.loads(
-            self.raw("query", "staking", "params", output="json", node=self.node_rpc)
+            self.raw("query", module, "params", output="json", node=self.node_rpc)
         )
 
     def staking_pool(self, bonded=True):

@@ -108,8 +108,9 @@ def test_next(cluster, custom_ethermint):
     elasticity_multiplier = 2
     change_denominator = 8
     if cluster == custom_ethermint:
-        elasticity_multiplier = 3
-        change_denominator = 100000000
+        params = cluster.cosmos_cli().get_params("feemarket")["params"]
+        elasticity_multiplier = params["elasticity_multiplier"]
+        change_denominator = params["base_fee_change_denominator"]
     call = w3.provider.make_request
     tx = {"to": ADDRS["community"], "value": 10, "gasPrice": w3.eth.gas_price}
     send_transaction(w3, tx)
