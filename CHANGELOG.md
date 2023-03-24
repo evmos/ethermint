@@ -45,6 +45,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Bug Fixes
 
 * (rpc) [#1685](https://github.com/evmos/ethermint/pull/1685) Fix parse for websocket connID.
+* (rpc) [#1688](https://github.com/evmos/ethermint/pull/1688) Align filter rule for `debug_traceBlockByNumber`
 
 ## [v0.21.0] - 2023-01-26
 

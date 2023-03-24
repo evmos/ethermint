@@ -57,17 +57,17 @@ schema = 3
     version = "v0.1.1-0.20220910012023-760eaf8b6816"
     hash = "sha256-Tx3sPuhsoVwrCfJdIwf4ipn7pD92OQNYvpCxl1Z9Wt0="
   [mod."github.com/btcsuite/btcd"]
-    version = "v0.22.2"
-    hash = "sha256-TPX7GIArd+bwOdwgPnkHyptpEVGhpkqiAydsO4srOCQ="
+    version = "v0.23.4"
+    hash = "sha256-xP7TLBdOoUIjg5Q3MOjbT5P9tkCWjsd4bWgZLp539Wo="
   [mod."github.com/btcsuite/btcd/btcec/v2"]
     version = "v2.3.2"
     hash = "sha256-natWs+yIAuD1UI07iZtjPilroQLfXizFn3lNOiOT83U="
+  [mod."github.com/btcsuite/btcd/btcutil"]
+    version = "v1.1.3"
+    hash = "sha256-6Y9sP1yvPBO8PhqmFVVXNV7dxsXlERDAB+TPTEfW3kI="
   [mod."github.com/btcsuite/btcd/chaincfg/chainhash"]
     version = "v1.0.1"
     hash = "sha256-vix0j/KGNvoKjhlKgVeSLY6un2FHeIEoZWMC4z3yvZ4="
-  [mod."github.com/btcsuite/btcutil"]
-    version = "v1.0.3-0.20201208143702-a53e38424cce"
-    hash = "sha256-4kasJReFcj25JRHx9dJMct3yDkHqVoHGUx5cu45Msfo="
   [mod."github.com/cenkalti/backoff/v4"]
     version = "v4.1.3"
     hash = "sha256-u6MEDopHoTWAZoVvvXOKnAg++xre53YgQx0gmf6t2KU="
@@ -86,6 +86,9 @@ schema = 3
   [mod."github.com/coinbase/rosetta-sdk-go"]
     version = "v0.7.9"
     hash = "sha256-ZWIXIXcHGjeCNgMrpXymry8/8esDDauGFfF/+gEoO1Y="
+  [mod."github.com/cometbft/cometbft-db"]
+    version = "v0.7.0"
+    hash = "sha256-EMvHp+5Hga5KkR9kkCiUBkz1HMfVhSHSxmpA5ZQ/Adw="
   [mod."github.com/confio/ics23/go"]
     version = "v0.9.0"
     hash = "sha256-guD8w7YygfUp7lpTAUyXQuCPx8F3lXkcg+yR5+JOCbk="
@@ -96,8 +99,8 @@ schema = 3
     version = "v1.0.0-beta.3"
     hash = "sha256-V0/ZhRdqK7Cqcv8X30gr33/hlI54bRXeHhI9LZKyLt8="
   [mod."github.com/cosmos/cosmos-sdk"]
-    version = "v0.46.8"
-    hash = "sha256-jETbixsZq5XJ1pl1XaVJvD5jkcygBrEcHRK/L0+XI68="
+    version = "v0.46.11"
+    hash = "sha256-RpjzVDZw5n0y4kobBCy2d1oPmDCgL5k47UaZMI67sqU="
   [mod."github.com/cosmos/go-bip39"]
     version = "v1.0.0"
     hash = "sha256-Qm2aC2vaS8tjtMUbHmlBSagOSqbduEEDwc51qvQaBmA="
@@ -108,8 +111,8 @@ schema = 3
     version = "v1.2.0"
     hash = "sha256-209TcVuXc5s/TcOvNlaQ1HEJAUDTEK3nxPhs+d8TEcY="
   [mod."github.com/cosmos/iavl"]
-    version = "v0.19.4"
-    hash = "sha256-EmpRZ48pjPFq/fIHneut9Vyo5QJATfb3ZO7KzWnqs9g="
+    version = "v0.19.5"
+    hash = "sha256-8PerCyxQrBCtr2zkhgriqauhCSoIe580dsYpZ44o+cE="
   [mod."github.com/cosmos/ibc-go/v6"]
     version = "v6.1.0"
     hash = "sha256-mHYCqLedcveDjfm1EiO2EMMNJqLm9u4WHwQTy1muOoc="
@@ -217,8 +220,8 @@ schema = 3
     version = "v0.0.4"
     hash = "sha256-Umx+5xHAQCN/Gi4HbtMhnDCSPFAXSsjVbXd8n5LhjAA="
   [mod."github.com/google/btree"]
-    version = "v1.0.1"
-    hash = "sha256-1PIeFGgUL4BK/StL/D12pg9bEQ5HfMT/fMLdus4pZTs="
+    version = "v1.1.2"
+    hash = "sha256-K7V2obq3pLM71Mg0vhhHtZ+gtaubwXPQx3xcIyZDCjM="
   [mod."github.com/google/go-cmp"]
     version = "v0.5.9"
     hash = "sha256-lQc4O00R3QSMGs9LP8Sy7A9kj0cqV5rrUdpnGeipIyg="
@@ -289,8 +292,8 @@ schema = 3
     version = "v2.0.3"
     hash = "sha256-5VsJMQzJSNd4F7yAl3iF/q6JodWOlE4dUvTQ0UGPe+k="
   [mod."github.com/holiman/uint256"]
-    version = "v1.2.1"
-    hash = "sha256-1N+MvvzTIegV1UPEGUVyxBZaxczId/Z/BUVcnx7ckHE="
+    version = "v1.2.2"
+    hash = "sha256-mM0aeaqIwaNG7X3THx0HOCMPLKYK1DIvvuMLXClPAZg="
   [mod."github.com/huin/goupnp"]
     version = "v1.0.3"
     hash = "sha256-EMGmTdoQhP2bVbCPX37hes5krqXn6NFexfnKr9E5u8I="
@@ -339,9 +342,6 @@ schema = 3
   [mod."github.com/matttproud/golang_protobuf_extensions"]
     version = "v1.0.2-0.20181231171920-c182affec369"
     hash = "sha256-uovu7OycdeZ2oYQ7FhVxLey5ZX3T0FzShaRldndyGvc="
-  [mod."github.com/miguelmota/go-ethereum-hdwallet"]
-    version = "v0.1.1"
-    hash = "sha256-SoKy4Mwkbm0J2yQLDcIcBbo/J6auTNdlZslTvJrSknM="
   [mod."github.com/mimoo/StrobeGo"]
     version = "v0.0.0-20210601165009-122bf33a46e0"
     hash = "sha256-rmw70RHsbeOnema++aFCPdswADMVKtb7KGF3msOI7ak="
@@ -382,14 +382,14 @@ schema = 3
     version = "v1.0.0"
     hash = "sha256-/FtmHnaGjdvEIKAJtrUfEhV7EVo5A/eYrtdnUkuxLDA="
   [mod."github.com/prometheus/client_golang"]
-    version = "v1.12.2"
-    hash = "sha256-d8xHyML/FImuPmFOy7UGW/y85NPLzJYL6IFhR3s7XzE="
+    version = "v1.14.0"
+    hash = "sha256-dpgGV8C30ZCn7b9mQ+Ye2AfPXTIuHLQbl2olMKzJKxA="
   [mod."github.com/prometheus/client_model"]
-    version = "v0.2.0"
-    hash = "sha256-LTHxYPRgoggl+v89ly2/RkyPIuJlmZRdGs6ZRtK3zkk="
+    version = "v0.3.0"
+    hash = "sha256-vP+miJfsoK5UG9eug8z/bhAMj3bwg66T2vIh8WHoOKU="
   [mod."github.com/prometheus/common"]
-    version = "v0.34.0"
-    hash = "sha256-M+v+7DntUBmiQNzfNmG3aLLufbl0XBQOubtYoNTzJDA="
+    version = "v0.37.0"
+    hash = "sha256-B2v0WsP8uKWYBpZcrog/sQXStIXwWZcVLmfPgnh1ZZA="
   [mod."github.com/prometheus/procfs"]
     version = "v0.8.0"
     hash = "sha256-hgrilokQsXCOCCvwgOSfuErxoFAQpXM/+zNJKcMVHyM="
@@ -453,12 +453,16 @@ schema = 3
   [mod."github.com/syndtr/goleveldb"]
     version = "v1.0.1-0.20210819022825-2ae1ddf74ef7"
     hash = "sha256-36a4hgVQfwtS2zhylKpQuFhrjdc/Y8pF0dxc26jcZIU="
+  [mod."github.com/tecbot/gorocksdb"]
+    version = "v0.0.0-20191217155057-f0fad39f321c"
+    hash = "sha256-VODgdnIxK9bhCHrt4nKfPYk/LLycTIwSRi930fws3Pk="
   [mod."github.com/tendermint/go-amino"]
     version = "v0.16.0"
     hash = "sha256-JW4zO/0vMzf1dXLePOqaMtiLUZgNbuIseh9GV+jQlf0="
   [mod."github.com/tendermint/tendermint"]
-    version = "v0.34.24"
-    hash = "sha256-3HFTv4XgN535RDaJ5OwUS+fnJHgkmLTwU7CNU2ilxEQ="
+    version = "v0.34.27"
+    hash = "sha256-BbpfLcLRf6PwB1xmgkhTm9ckZekelrDUlXDX0/FSMU8="
+    replaced = "github.com/cometbft/cometbft"
   [mod."github.com/tendermint/tm-db"]
     version = "v0.6.7"
     hash = "sha256-hl/3RrBrpkk2zA6dmrNlIYKs1/GfqegSscDSkA5Pjlo="
@@ -490,8 +494,8 @@ schema = 3
     version = "v0.24.0"
     hash = "sha256-4H+mGZgG2c9I1y0m8avF4qmt8LUKxxVsTqR8mKgP4yo="
   [mod."golang.org/x/crypto"]
-    version = "v0.3.0"
-    hash = "sha256-Un9wPqz8u/xpV98T4IqE6RMXIPhGCIm2prsNkHP3cjg="
+    version = "v0.5.0"
+    hash = "sha256-5L4rCFZ0IMT9aQIeMbfOFbhwi03nXE/EeWuXup+Aeoc="
   [mod."golang.org/x/exp"]
     version = "v0.0.0-20230131160201-f062dba9d201"
     hash = "sha256-sxLT/VOe93v0h3miChJSHS9gscTZS/B71+390ju/e20="

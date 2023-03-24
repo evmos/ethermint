@@ -197,3 +197,10 @@ def parse_events(logs):
         ev["type"]: {attr["key"]: attr["value"] for attr in ev["attributes"]}
         for ev in logs[0]["events"]
     }
+
+
+def derive_new_account(n=1):
+    # derive a new address
+    account_path = f"m/44'/60'/0'/0/{n}"
+    mnemonic = os.getenv("COMMUNITY_MNEMONIC")
+    return Account.from_mnemonic(mnemonic, account_path=account_path)
