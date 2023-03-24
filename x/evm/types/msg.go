@@ -340,7 +340,7 @@ func (msg MsgEthereumTx) AsMessage(signer ethtypes.Signer, baseFee *big.Int) (co
 		// user can't set arbitrary value in `From` field in transaction,
 		// the SigVerify ante handler will verify the signature and recover
 		// the sender address and populate the `From` field, so the other code can
-        // use it directly when available.
+		// use it directly when available.
 		from = common.HexToAddress(msg.From)
 	} else {
 		// heavy path
