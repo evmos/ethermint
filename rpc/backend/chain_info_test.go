@@ -405,9 +405,9 @@ func (suite *BackendTestSuite) TestFeeHistory() {
 		{
 			"pass - Valid FeeHistoryResults object",
 			func(validator sdk.AccAddress) {
-				var header metadata.MD
 				baseFee := sdk.NewInt(1)
 				queryClient := suite.backend.queryClient.QueryClient.(*mocks.EVMQueryClient)
+				feeMarketClient := suite.backend.queryClient.FeeMarket.(*mocks.FeeMarketQueryClient)
 				client := suite.backend.clientCtx.Client.(*mocks.Client)
 				suite.backend.cfg.JSONRPC.FeeHistoryCap = 2
 				RegisterBlock(client, ethrpc.BlockNumber(1).Int64(), nil)
@@ -415,7 +415,7 @@ func (suite *BackendTestSuite) TestFeeHistory() {
 				RegisterBaseFee(queryClient, baseFee)
 				RegisterValidatorAccount(queryClient, validator)
 				RegisterConsensusParams(client, 1)
-				RegisterParams(queryClient, &header, 1)
+				RegisterFeeMarketParams(feeMarketClient, 1)
 				RegisterParamsWithoutHeader(queryClient, 1)
 			},
 			1,
