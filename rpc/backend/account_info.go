@@ -195,6 +195,7 @@ func (b *Backend) GetTransactionCount(address common.Address, blockNum rpctypes.
 		return &n, err
 	}
 	height := blockNum.Int64()
+
 	currentHeight := int64(bn)
 	if height > currentHeight {
 		return &n, errorsmod.Wrapf(

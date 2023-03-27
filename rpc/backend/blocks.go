@@ -18,6 +18,7 @@ package backend
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"math/big"
 	"strconv"
 
@@ -55,6 +56,10 @@ func (b *Backend) BlockNumber() (hexutil.Uint64, error) {
 	height, err := strconv.ParseUint(blockHeightHeader[0], 10, 64)
 	if err != nil {
 		return 0, fmt.Errorf("failed to parse block height: %w", err)
+	}
+
+	if height > math.MaxInt64 {
+		return 0, fmt.Errorf("block height %d is greater than max uint64", height)
 	}
 
 	return hexutil.Uint64(height), nil

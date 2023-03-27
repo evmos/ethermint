@@ -51,12 +51,6 @@ func (b *Backend) SendTransaction(args evmtypes.TransactionArgs) (common.Hash, e
 		return common.Hash{}, err
 	}
 
-	msg := args.ToTransaction()
-	if err := msg.ValidateBasic(); err != nil {
-		b.logger.Debug("tx failed basic validation", "error", err.Error())
-		return common.Hash{}, err
-	}
-
 	bn, err := b.BlockNumber()
 	if err != nil {
 		b.logger.Debug("failed to fetch latest block number", "error", err.Error())
@@ -65,9 +59,18 @@ func (b *Backend) SendTransaction(args evmtypes.TransactionArgs) (common.Hash, e
 
 	signer := ethtypes.MakeSigner(b.ChainConfig(), new(big.Int).SetUint64(uint64(bn)))
 
+	// LegacyTx derives chainID from the signature. To make sure the msg.ValidateBasic makes
+	// the corresponding chainID validation, we need to sign the transaction before calling it
+
 	// Sign transaction
+	msg := args.ToTransaction()
 	if err := msg.Sign(signer, b.clientCtx.Keyring); err != nil {
 		b.logger.Debug("failed to sign tx", "error", err.Error())
+		return common.Hash{}, err
+	}
+
+	if err := msg.ValidateBasic(); err != nil {
+		b.logger.Debug("tx failed basic validation", "error", err.Error())
 		return common.Hash{}, err
 	}
 
