@@ -42,6 +42,10 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 * (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to [`v0.46.6`]
 
+### Bug Fixes
+
+* (rpc) [#1688](https://github.com/evmos/ethermint/pull/1688) Align filter rule for `debug_traceBlockByNumber`
+
 ## [v0.21.0] - 2023-01-26
 
 ### State Machine Breaking
@@ -56,6 +60,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 * (evm) [#1582](https://github.com/evmos/ethermint/pull/1582) Cleanup `evm` files
 * (evm) [#1544](https://github.com/evmos/ethermint/pull/1544) Migrate deprecated event emitting to new `TypedEvent`
 * (deps) [#1532](https://github.com/evmos/ethermint/pull/1532) Upgrade Go-Ethereum version to [`v1.10.26`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.26).
+* (ante) [#1717](https://github.com/evmos/ethermint/pull/1717) Reuse sender recovery result.
 
 ### Bug Fixes
 
