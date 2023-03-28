@@ -39,7 +39,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### Bug Fixes
 
-* (rpc) [#1720](https://github.com/evmos/ethermint/pull/1720) Add missing next fee in fee history, fix wrong oldestBlock and align earliest input as ethereum.
+* (rpc) [#1720](https://github.com/evmos/ethermint/pull/1720) Fix next block fee for historical block and calculate base fee by params.
 
 ### State Machine Breaking
 
