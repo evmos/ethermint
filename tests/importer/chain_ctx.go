@@ -139,7 +139,7 @@ func (cc *ChainContext) Seal(_ ethcons.ChainHeaderReader, _ *ethtypes.Block, _ c
 
 // SealHash implements Ethereum's consensus.Engine interface. It returns the
 // hash of a block prior to it being sealed.
-func (cc *ChainContext) SealHash(header *ethtypes.Header) common.Hash {
+func (cc *ChainContext) SealHash(_ *ethtypes.Header) common.Hash {
 	return common.Hash{}
 }
 
