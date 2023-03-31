@@ -105,8 +105,8 @@ schema = 3
     version = "v1.0.0"
     hash = "sha256-Qm2aC2vaS8tjtMUbHmlBSagOSqbduEEDwc51qvQaBmA="
   [mod."github.com/cosmos/gogoproto"]
-    version = "v1.4.6"
-    hash = "sha256-9SCEKBJyK1FHkKyeaBjDT3GURRAtsIoeiDkNwH8a9Co="
+    version = "v1.4.7"
+    hash = "sha256-JGSKV4CMgBGQYR7kZt6QQsVjgLEyAjNzKrtLalJqqVo="
   [mod."github.com/cosmos/gorocksdb"]
     version = "v1.2.0"
     hash = "sha256-209TcVuXc5s/TcOvNlaQ1HEJAUDTEK3nxPhs+d8TEcY="
@@ -195,8 +195,8 @@ schema = 3
     version = "v1.8.1"
     hash = "sha256-ixcJ2RrK1ZH3YWGQZF9QFBo02NOuLeSp9wJ7gniipgY="
   [mod."github.com/go-task/slim-sprig"]
-    version = "v0.0.0-20210107165309-348f09dbbbc0"
-    hash = "sha256-jgza4peLzeJlwmMh/c1gNkmtwA9YtSdGaBzBUDXhIZo="
+    version = "v0.0.0-20230315185526-52ccab3ef572"
+    hash = "sha256-D6NjCQbcYC53NdwzyAm4i9M1OjTJIVu4EIt3AD/Vxfg="
   [mod."github.com/godbus/dbus"]
     version = "v0.0.0-20190726142602-4481cbc300e2"
     hash = "sha256-R7Gb9+Zjy80FbQSDGketoVEqfdOQKuOVTfWRjQ5kxZY="
@@ -364,11 +364,11 @@ schema = 3
     version = "v0.0.5"
     hash = "sha256-/5i70IkH/qSW5KjGzv8aQNKh9tHoz98tqtL0K2DMFn4="
   [mod."github.com/onsi/ginkgo/v2"]
-    version = "v2.9.1"
-    hash = "sha256-7yMsN5CMJS/4VU9/Z27/xdbKzZac6/R1JRJDXxGmwiQ="
+    version = "v2.9.2"
+    hash = "sha256-+BCysb26cGinBvJkZZ9mW2BsbhpGvDXw4jJapcNuwaU="
   [mod."github.com/onsi/gomega"]
-    version = "v1.27.4"
-    hash = "sha256-Fhltm/e6KVXdwfUl65cE8PD1MLyXJa7OH0lg4Bvewv0="
+    version = "v1.27.6"
+    hash = "sha256-nQ252v7WW3UMrx5e+toOpgm5u0qSUoWq4rDyTrDiOQk="
   [mod."github.com/pelletier/go-toml/v2"]
     version = "v2.0.6"
     hash = "sha256-BxAeApnn5H+OLlH3TXGvIbtC6LmbRnjwbcfT1qMZ4PE="
@@ -536,8 +536,8 @@ schema = 3
     version = "v1.53.0"
     hash = "sha256-LkB13k1JaQ7e4nGpCoEA9q4T8oIV0KvkFIDZmHhDr08="
   [mod."google.golang.org/protobuf"]
-    version = "v1.28.2-0.20220831092852-f930b1dc76e8"
-    hash = "sha256-li5hXlXwTJ5LIZ8bVki1AZ6UFI2gXHl33JwdX1dOrtM="
+    version = "v1.29.1"
+    hash = "sha256-ZJVKkvwzFisv8IAKAmKNKwQSR+ni5pUNYPkloMjqsKA="
   [mod."gopkg.in/ini.v1"]
     version = "v1.67.0"
     hash = "sha256-V10ahGNGT+NLRdKUyRg1dos5RxLBXBk1xutcnquc/+4="
