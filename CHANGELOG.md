@@ -45,6 +45,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Bug Fixes
 
 * (rpc) [#1688](https://github.com/evmos/ethermint/pull/1688) Align filter rule for `debug_traceBlockByNumber`
+* (ibc) [#1738](https://github.com/evmos/ethermint/pull/1738) Fix no handler exists for proposal type error when update-client due to wrong ibc route.
 
 ## [v0.21.0] - 2023-01-26
 
