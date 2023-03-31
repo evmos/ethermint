@@ -23,7 +23,7 @@ require (
 	github.com/holiman/uint256 v1.2.2
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/onsi/ginkgo/v2 v2.9.2
-	github.com/onsi/gomega v1.27.5
+	github.com/onsi/gomega v1.27.6
 	github.com/pkg/errors v0.9.1
 	github.com/rakyll/statik v0.1.7
 	github.com/rs/cors v1.8.3
