@@ -119,11 +119,6 @@ func (suite *AnteTestSuite) SetupTest() {
 	suite.ctx = suite.ctx.WithBlockGasMeter(sdk.NewGasMeter(1000000000000000000))
 	suite.app.EvmKeeper.WithChainID(suite.ctx)
 
-	// set staking denomination to Evmos denom
-	params := suite.app.StakingKeeper.GetParams(suite.ctx)
-	params.BondDenom = testutil.BaseDenom
-	suite.app.StakingKeeper.SetParams(suite.ctx, params)
-
 	infCtx := suite.ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 	suite.app.AccountKeeper.SetParams(infCtx, authtypes.DefaultParams())
 
