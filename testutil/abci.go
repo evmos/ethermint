@@ -42,7 +42,7 @@ func Commit(ctx sdk.Context, app *app.EthermintApp, t time.Duration, vs *tmtypes
 		Header: header,
 	})
 
-	return app.BaseApp.NewContext(false, header), nil
+	return ctx.WithContext(app.BaseApp.NewContext(false, header)), nil
 }
 
 // applyValSetChanges takes in tmtypes.ValidatorSet and []abci.ValidatorUpdate and will return a new tmtypes.ValidatorSet which has the
