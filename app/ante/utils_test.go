@@ -114,10 +114,15 @@ func (suite *AnteTestSuite) SetupTest() {
 		return genesis
 	})
 
-	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{Height: 2, ChainID: "ethermint_9000-1", Time: time.Now().UTC()})
+	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{Height: 2, ChainID: testutil.TestnetChainID + "-1", Time: time.Now().UTC()})
 	suite.ctx = suite.ctx.WithMinGasPrices(sdk.NewDecCoins(sdk.NewDecCoin(evmtypes.DefaultEVMDenom, sdk.OneInt())))
 	suite.ctx = suite.ctx.WithBlockGasMeter(sdk.NewGasMeter(1000000000000000000))
 	suite.app.EvmKeeper.WithChainID(suite.ctx)
+
+	// set staking denomination to Evmos denom
+	params := suite.app.StakingKeeper.GetParams(suite.ctx)
+	params.BondDenom = testutil.BaseDenom
+	suite.app.StakingKeeper.SetParams(suite.ctx, params)
 
 	infCtx := suite.ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 	suite.app.AccountKeeper.SetParams(infCtx, authtypes.DefaultParams())
@@ -158,7 +163,6 @@ func (suite *AnteTestSuite) SetupTest() {
 	suite.ctx = suite.ctx.WithBlockHeight(header.Height - 1)
 	suite.ctx, err = testutil.Commit(suite.ctx, suite.app, time.Second*0, nil)
 	suite.Require().NoError(err)
-
 }
 
 func TestAnteTestSuite(t *testing.T) {

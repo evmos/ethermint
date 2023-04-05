@@ -18,8 +18,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/evmos/ethermint/testutil"
-	"github.com/evmos/ethermint/utils"
-	utiltx "github.com/evmos/ethermint/utils/tx"
+	utiltx "github.com/evmos/ethermint/testutil/tx"
 
 	"github.com/evmos/ethermint/app/ante"
 
