@@ -18,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 	"github.com/evmos/ethermint/ethereum/eip712"
+	"github.com/evmos/ethermint/testutil"
 	"github.com/evmos/ethermint/types"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -65,6 +66,7 @@ type AnteTestSuite struct {
 	app             *app.EthermintApp
 	clientCtx       client.Context
 	anteHandler     sdk.AnteHandler
+	priv            cryptotypes.PrivKey
 	ethSigner       ethtypes.Signer
 	enableFeemarket bool
 	enableLondonHF  bool
@@ -79,6 +81,9 @@ func (suite *AnteTestSuite) StateDB() *statedb.StateDB {
 
 func (suite *AnteTestSuite) SetupTest() {
 	checkTx := false
+	priv, err := ethsecp256k1.GenerateKey()
+	suite.Require().NoError(err)
+	suite.priv = priv
 
 	suite.app = app.Setup(checkTx, func(app *app.EthermintApp, genesis simapp.GenesisState) simapp.GenesisState {
 		if suite.enableFeemarket {
@@ -138,6 +143,22 @@ func (suite *AnteTestSuite) SetupTest() {
 
 	suite.anteHandler = anteHandler
 	suite.ethSigner = ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
+
+	// fund signer acc to pay for tx fees
+	amt := sdk.NewInt(int64(math.Pow10(18) * 2))
+	err = testutil.FundAccount(
+		suite.app.BankKeeper,
+		suite.ctx,
+		suite.priv.PubKey().Address().Bytes(),
+		sdk.NewCoins(sdk.NewCoin(testutil.BaseDenom, amt)),
+	)
+	suite.Require().NoError(err)
+
+	header := suite.ctx.BlockHeader()
+	suite.ctx = suite.ctx.WithBlockHeight(header.Height - 1)
+	suite.ctx, err = testutil.Commit(suite.ctx, suite.app, time.Second*0, nil)
+	suite.Require().NoError(err)
+
 }
 
 func TestAnteTestSuite(t *testing.T) {
