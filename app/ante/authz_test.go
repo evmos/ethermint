@@ -52,6 +52,24 @@ func newMsgExec(grantee sdk.AccAddress, msgs []sdk.Msg) *authz.MsgExec {
 	return &msg
 }
 
+func createNestedExecMsgSend(testAddresses []sdk.AccAddress, numMsgs int) *authz.MsgExec {
+	return createNestedMsgExec(
+		testAddresses[1],
+		numMsgs,
+		[]sdk.Msg{
+			createMsgSend(testAddresses),
+		},
+	)
+}
+
+func createMsgSend(testAddresses []sdk.AccAddress) *banktypes.MsgSend {
+	return banktypes.NewMsgSend(
+		testAddresses[0],
+		testAddresses[3],
+		sdk.NewCoins(sdk.NewInt64Coin(evmtypes.DefaultEVMDenom, 1e8)),
+	)
+}
+
 func newMsgGrant(granter sdk.AccAddress, grantee sdk.AccAddress, a authz.Authorization, expiration *time.Time) *authz.MsgGrant {
 	msg, err := authz.NewMsgGrant(granter, grantee, a, expiration)
 	if err != nil {
@@ -90,6 +108,9 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 		sdk.MsgTypeURL(&stakingtypes.MsgUndelegate{}),
 	)
 
+	testMsgSend := createMsgSend(testAddresses)
+	testMsgEthereumTx := &evmtypes.MsgEthereumTx{}
+
 	testCases := []struct {
 		name        string
 		msgs        []sdk.Msg
@@ -99,11 +120,7 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 		{
 			"enabled msg - non blocked msg",
 			[]sdk.Msg{
-				banktypes.NewMsgSend(
-					testAddresses[0],
-					testAddresses[1],
-					sdk.NewCoins(sdk.NewInt64Coin(evmtypes.DefaultEVMDenom, 100e6)),
-				),
+				testMsgSend,
 			},
 			false,
 			nil,
@@ -111,7 +128,7 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 		{
 			"enabled msg MsgEthereumTx - blocked msg not wrapped in MsgExec",
 			[]sdk.Msg{
-				&evmtypes.MsgEthereumTx{},
+				testMsgEthereumTx,
 			},
 			false,
 			nil,
@@ -181,11 +198,9 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 			[]sdk.Msg{
 				newMsgExec(
 					testAddresses[1],
-					[]sdk.Msg{banktypes.NewMsgSend(
-						testAddresses[0],
-						testAddresses[3],
-						sdk.NewCoins(sdk.NewInt64Coin(evmtypes.DefaultEVMDenom, 100e6)),
-					)}),
+					[]sdk.Msg{
+						testMsgSend,
+					}),
 			},
 			false,
 			nil,
@@ -196,7 +211,7 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 				newMsgExec(
 					testAddresses[1],
 					[]sdk.Msg{
-						&evmtypes.MsgEthereumTx{},
+						testMsgEthereumTx,
 					},
 				),
 			},
@@ -215,12 +230,8 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 				newMsgExec(
 					testAddresses[1],
 					[]sdk.Msg{
-						banktypes.NewMsgSend(
-							testAddresses[0],
-							testAddresses[3],
-							sdk.NewCoins(sdk.NewInt64Coin(evmtypes.DefaultEVMDenom, 100e6)),
-						),
-						&evmtypes.MsgEthereumTx{},
+						testMsgSend,
+						testMsgEthereumTx,
 					},
 				),
 			},
@@ -234,7 +245,7 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 					testAddresses[1],
 					2,
 					[]sdk.Msg{
-						&evmtypes.MsgEthereumTx{},
+						testMsgEthereumTx,
 					},
 				),
 			},
@@ -262,17 +273,7 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 		{
 			"disabled msg - nested MsgExec NOT containing a blocked msg but has more nesting levels than the allowed",
 			[]sdk.Msg{
-				createNestedMsgExec(
-					testAddresses[1],
-					6,
-					[]sdk.Msg{
-						banktypes.NewMsgSend(
-							testAddresses[0],
-							testAddresses[3],
-							sdk.NewCoins(sdk.NewInt64Coin(evmtypes.DefaultEVMDenom, 100e6)),
-						),
-					},
-				),
+				createNestedExecMsgSend(testAddresses, 6),
 			},
 			false,
 			sdkerrors.ErrUnauthorized,
@@ -280,28 +281,8 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 		{
 			"disabled msg - multiple two nested MsgExec messages NOT containing a blocked msg over the limit",
 			[]sdk.Msg{
-				createNestedMsgExec(
-					testAddresses[1],
-					5,
-					[]sdk.Msg{
-						banktypes.NewMsgSend(
-							testAddresses[0],
-							testAddresses[3],
-							sdk.NewCoins(sdk.NewInt64Coin(evmtypes.DefaultEVMDenom, 100e6)),
-						),
-					},
-				),
-				createNestedMsgExec(
-					testAddresses[1],
-					5,
-					[]sdk.Msg{
-						banktypes.NewMsgSend(
-							testAddresses[0],
-							testAddresses[3],
-							sdk.NewCoins(sdk.NewInt64Coin(evmtypes.DefaultEVMDenom, 100e6)),
-						),
-					},
-				),
+				createNestedExecMsgSend(testAddresses, 5),
+				createNestedExecMsgSend(testAddresses, 5),
 			},
 			false,
 			sdkerrors.ErrUnauthorized,
@@ -423,11 +404,7 @@ func (suite *AnteTestSuite) TestRejectMsgsInAuthz() {
 				newMsgExec(
 					testAddresses[1],
 					[]sdk.Msg{
-						banktypes.NewMsgSend(
-							testAddresses[0],
-							testAddresses[3],
-							sdk.NewCoins(sdk.NewInt64Coin(evmtypes.DefaultEVMDenom, 100e6)),
-						),
+						createMsgSend(testAddresses),
 						&evmtypes.MsgEthereumTx{},
 					},
 				),
@@ -450,45 +427,15 @@ func (suite *AnteTestSuite) TestRejectMsgsInAuthz() {
 		{
 			name: "a MsgExec with more nested MsgExec messages than allowed and with valid messages is blocked",
 			msgs: []sdk.Msg{
-				createNestedMsgExec(
-					testAddresses[1],
-					6,
-					[]sdk.Msg{
-						banktypes.NewMsgSend(
-							testAddresses[0],
-							testAddresses[3],
-							sdk.NewCoins(sdk.NewInt64Coin(evmtypes.DefaultEVMDenom, 100e6)),
-						),
-					},
-				),
+				createNestedExecMsgSend(testAddresses, 6),
 			},
 			expectedCode: sdkerrors.ErrUnauthorized.ABCICode(),
 		},
 		{
 			name: "two MsgExec messages NOT containing a blocked msg but between the two have more nesting than the allowed. Then, is blocked",
 			msgs: []sdk.Msg{
-				createNestedMsgExec(
-					testAddresses[1],
-					5,
-					[]sdk.Msg{
-						banktypes.NewMsgSend(
-							testAddresses[0],
-							testAddresses[3],
-							sdk.NewCoins(sdk.NewInt64Coin(evmtypes.DefaultEVMDenom, 100e6)),
-						),
-					},
-				),
-				createNestedMsgExec(
-					testAddresses[1],
-					5,
-					[]sdk.Msg{
-						banktypes.NewMsgSend(
-							testAddresses[0],
-							testAddresses[3],
-							sdk.NewCoins(sdk.NewInt64Coin(evmtypes.DefaultEVMDenom, 100e6)),
-						),
-					},
-				),
+				createNestedExecMsgSend(testAddresses, 5),
+				createNestedExecMsgSend(testAddresses, 5),
 			},
 			expectedCode: sdkerrors.ErrUnauthorized.ABCICode(),
 		},

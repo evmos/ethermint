@@ -25,24 +25,30 @@ import (
 )
 
 // maxNestedMsgs defines a cap for the number of nested messages on a MsgExec message
-const maxNestedMsgs = 7
+const maxNestedMsgs = 6
 
 // AuthzLimiterDecorator blocks certain msg types from being granted or executed
 // within the authorization module.
 type AuthzLimiterDecorator struct {
-	// disabledMsgTypes is the type urls of the msgs to block.
-	disabledMsgTypes []string
+	// disabledMsgs is a set that contains type urls of unauthorized msgs.
+	disabledMsgs map[string]struct{}
 }
 
-// NewAuthzLimiterDecorator creates a decorator to block certain msg types from being granted or executed within authz.
+// NewAuthzLimiterDecorator creates a decorator to block certain msg types
+// from being granted or executed within authz.
 func NewAuthzLimiterDecorator(disabledMsgTypes ...string) AuthzLimiterDecorator {
+	disabledMsgs := make(map[string]struct{})
+	for _, url := range disabledMsgTypes {
+		disabledMsgs[url] = struct{}{}
+	}
+
 	return AuthzLimiterDecorator{
-		disabledMsgTypes: disabledMsgTypes,
+		disabledMsgs: disabledMsgs,
 	}
 }
 
 func (ald AuthzLimiterDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next sdk.AnteHandler) (newCtx sdk.Context, err error) {
-	if err := ald.checkDisabledMsgs(tx.GetMsgs(), false, 1); err != nil {
+	if err := ald.checkDisabledMsgs(tx.GetMsgs(), false, 0); err != nil {
 		return ctx, errorsmod.Wrapf(errortypes.ErrUnauthorized, err.Error())
 	}
 	return next(ctx, tx, simulate)
@@ -50,14 +56,11 @@ func (ald AuthzLimiterDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate
 
 // checkDisabledMsgs iterates through the msgs and returns an error if it finds any unauthorized msgs.
 //
-// When searchOnlyInAuthzMsgs is enabled, only authz MsgGrant and MsgExec are blocked, if they contain unauthorized msg types.
-// Otherwise any msg matching the disabled types are blocked, regardless of being in an authz msg or not.
-//
-// This method is recursive as MsgExec's can wrap other MsgExecs. The check for nested messages is performed up to the
-// maxNestedMsgs threshold. If there are more than that limit, it returns an error
-func (ald AuthzLimiterDecorator) checkDisabledMsgs(msgs []sdk.Msg, isAuthzInnerMsg bool, nestedLvl int) error {
-	if nestedLvl >= maxNestedMsgs {
-		return fmt.Errorf("found more nested msgs than permited. Limit is : %d", maxNestedMsgs)
+// This method is recursive as MsgExec's can wrap other MsgExecs. The check for nested messages is capped at
+// maxNestedMsgs total MsgExec messages.
+func (ald AuthzLimiterDecorator) checkDisabledMsgs(msgs []sdk.Msg, isAuthzInnerMsg bool, totalMsgs int) error {
+	if totalMsgs >= maxNestedMsgs {
+		return fmt.Errorf("found more nested msgs than permitted. Limit is : %d", maxNestedMsgs)
 	}
 	for _, msg := range msgs {
 		switch msg := msg.(type) {
@@ -66,8 +69,8 @@ func (ald AuthzLimiterDecorator) checkDisabledMsgs(msgs []sdk.Msg, isAuthzInnerM
 			if err != nil {
 				return err
 			}
-			nestedLvl++
-			if err := ald.checkDisabledMsgs(innerMsgs, true, nestedLvl); err != nil {
+			totalMsgs++
+			if err := ald.checkDisabledMsgs(innerMsgs, true, totalMsgs); err != nil {
 				return err
 			}
 		case *authz.MsgGrant:
@@ -90,14 +93,9 @@ func (ald AuthzLimiterDecorator) checkDisabledMsgs(msgs []sdk.Msg, isAuthzInnerM
 	return nil
 }
 
-// isDisabledMsg returns true if the given message is in the list of restricted
+// isDisabledMsg returns true if the given message is in the set of restricted
 // messages from the AnteHandler.
 func (ald AuthzLimiterDecorator) isDisabledMsg(msgTypeURL string) bool {
-	for _, disabledType := range ald.disabledMsgTypes {
-		if msgTypeURL == disabledType {
-			return true
-		}
-	}
-
-	return false
+	_, ok := ald.disabledMsgs[msgTypeURL]
+	return ok
 }
