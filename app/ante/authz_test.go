@@ -75,7 +75,7 @@ func (suite *AnteTestSuite) TestAuthzLimiterDecorator() {
 		{
 			"enabled msg - blocked msg not wrapped in MsgExec",
 			[]sdk.Msg{
-				&stakingtypes.MsgCancelUnbondingDelegation{},
+				&stakingtypes.MsgUndelegate{},
 			},
 			nil,
 		},
@@ -104,7 +104,7 @@ func (suite *AnteTestSuite) TestAuthzLimiterDecorator() {
 			[]sdk.Msg{
 				newGenericMsgGrant(
 					testAddresses,
-					sdk.MsgTypeURL(&evmtypes.MsgEthereumTx{}),
+					sdk.MsgTypeURL(testMsgEthereumTx),
 				),
 			},
 			sdkerrors.ErrUnauthorized,
@@ -126,7 +126,8 @@ func (suite *AnteTestSuite) TestAuthzLimiterDecorator() {
 					testAddresses[1],
 					[]sdk.Msg{
 						testMsgSend,
-					}),
+					},
+				),
 			},
 			nil,
 		},
@@ -180,7 +181,7 @@ func (suite *AnteTestSuite) TestAuthzLimiterDecorator() {
 					[]sdk.Msg{
 						newGenericMsgGrant(
 							testAddresses,
-							sdk.MsgTypeURL(&evmtypes.MsgEthereumTx{}),
+							sdk.MsgTypeURL(testMsgEthereumTx),
 						),
 					},
 				),
@@ -195,7 +196,7 @@ func (suite *AnteTestSuite) TestAuthzLimiterDecorator() {
 			sdkerrors.ErrUnauthorized,
 		},
 		{
-			"disabled msg - multiple two nested MsgExec messages NOT containing a blocked msg over the limit",
+			"disabled msg - two multiple nested MsgExec messages NOT containing a blocked msg over the limit",
 			[]sdk.Msg{
 				createNestedExecMsgSend(testAddresses, 5),
 				createNestedExecMsgSend(testAddresses, 5),
@@ -417,9 +418,6 @@ func (suite *AnteTestSuite) createTx(priv cryptotypes.PrivKey, msgs ...sdk.Msg) 
 		FeeGranter: addr,
 		Msgs:       msgs,
 	}
-
-	acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr)
-	suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
 	return utiltx.PrepareCosmosTx(suite.ctx, suite.app, args)
 }

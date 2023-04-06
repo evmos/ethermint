@@ -56,10 +56,10 @@ func (ald AuthzLimiterDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate
 
 // checkDisabledMsgs iterates through the msgs and returns an error if it finds any unauthorized msgs.
 //
-// This method is recursive as MsgExec's can wrap other MsgExecs. The check for nested messages is capped at
-// maxNestedMsgs total MsgExec messages.
-func (ald AuthzLimiterDecorator) checkDisabledMsgs(msgs []sdk.Msg, isAuthzInnerMsg bool, totalMsgs int) error {
-	if totalMsgs >= maxNestedMsgs {
+// This method is recursive as MsgExec's can wrap other MsgExecs. nestedMsgs sets a reasonable limit on
+// the total messages, regardless of how they are nested.
+func (ald AuthzLimiterDecorator) checkDisabledMsgs(msgs []sdk.Msg, isAuthzInnerMsg bool, nestedMsgs int) error {
+	if nestedMsgs >= maxNestedMsgs {
 		return fmt.Errorf("found more nested msgs than permitted. Limit is : %d", maxNestedMsgs)
 	}
 	for _, msg := range msgs {
@@ -69,8 +69,8 @@ func (ald AuthzLimiterDecorator) checkDisabledMsgs(msgs []sdk.Msg, isAuthzInnerM
 			if err != nil {
 				return err
 			}
-			totalMsgs++
-			if err := ald.checkDisabledMsgs(innerMsgs, true, totalMsgs); err != nil {
+			nestedMsgs++
+			if err := ald.checkDisabledMsgs(innerMsgs, true, nestedMsgs); err != nil {
 				return err
 			}
 		case *authz.MsgGrant:
