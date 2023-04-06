@@ -151,7 +151,7 @@ func PrepareEIP712CosmosTx(
 }
 
 // createTypedData creates the TypedData object corresponding to
-// the arguments, using the legacy implementation as specified.
+// the arguments.
 func createTypedData(args typedDataArgs) (apitypes.TypedData, error) {
 	registry := codectypes.NewInterfaceRegistry()
 	types.RegisterInterfaces(registry)
