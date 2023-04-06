@@ -52,10 +52,10 @@ func newMsgExec(grantee sdk.AccAddress, msgs []sdk.Msg) *authz.MsgExec {
 	return &msg
 }
 
-func createNestedExecMsgSend(testAddresses []sdk.AccAddress, numMsgs int) *authz.MsgExec {
+func createNestedExecMsgSend(testAddresses []sdk.AccAddress, depth int) *authz.MsgExec {
 	return createNestedMsgExec(
 		testAddresses[1],
-		numMsgs,
+		depth,
 		[]sdk.Msg{
 			createMsgSend(testAddresses),
 		},
@@ -70,31 +70,35 @@ func createMsgSend(testAddresses []sdk.AccAddress) *banktypes.MsgSend {
 	)
 }
 
-func newMsgGrant(granter sdk.AccAddress, grantee sdk.AccAddress, a authz.Authorization, expiration *time.Time) *authz.MsgGrant {
-	msg, err := authz.NewMsgGrant(granter, grantee, a, expiration)
+func newMsgGrant(testAddresses []sdk.AccAddress, auth authz.Authorization) *authz.MsgGrant {
+	expiration := time.Date(9000, 1, 1, 0, 0, 0, 0, time.UTC)
+	msg, err := authz.NewMsgGrant(testAddresses[0], testAddresses[1], auth, &expiration)
 	if err != nil {
 		panic(err)
 	}
 	return msg
 }
 
-func createNestedMsgExec(a sdk.AccAddress, nestedLvl int, lastLvlMsgs []sdk.Msg) *authz.MsgExec {
-	msgs := make([]*authz.MsgExec, nestedLvl)
+func newGenericMsgGrant(testAddresses []sdk.AccAddress, typeUrl string) *authz.MsgGrant {
+	auth := authz.NewGenericAuthorization(typeUrl)
+	return newMsgGrant(testAddresses, auth)
+}
+
+func createNestedMsgExec(grantee sdk.AccAddress, numLevels int, msgsToExec []sdk.Msg) *authz.MsgExec {
+	msgs := make([]*authz.MsgExec, numLevels)
 	for i := range msgs {
 		if i == 0 {
-			msgs[i] = newMsgExec(a, lastLvlMsgs)
+			msgs[i] = newMsgExec(grantee, msgsToExec)
 			continue
 		}
-		msgs[i] = newMsgExec(a, []sdk.Msg{msgs[i-1]})
+		msgs[i] = newMsgExec(grantee, []sdk.Msg{msgs[i-1]})
 	}
-	return msgs[nestedLvl-1]
+	return msgs[numLevels-1]
 }
 
 func TestAuthzLimiterDecorator(t *testing.T) {
 	testPrivKeys, testAddresses, err := generatePrivKeyAddressPairs(5)
 	require.NoError(t, err)
-
-	distantFuture := time.Date(9000, 1, 1, 0, 0, 0, 0, time.UTC)
 
 	validator := sdk.ValAddress(testAddresses[4])
 	stakingAuthDelegate, err := stakingtypes.NewStakeAuthorization([]sdk.ValAddress{validator}, nil, stakingtypes.AuthorizationType_AUTHORIZATION_TYPE_DELEGATE, nil)
@@ -144,11 +148,9 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 		{
 			"enabled msg - MsgGrant contains a non blocked msg",
 			[]sdk.Msg{
-				newMsgGrant(
-					testAddresses[0],
-					testAddresses[1],
-					authz.NewGenericAuthorization(sdk.MsgTypeURL(&banktypes.MsgSend{})),
-					&distantFuture,
+				newGenericMsgGrant(
+					testAddresses,
+					sdk.MsgTypeURL(&banktypes.MsgSend{}),
 				),
 			},
 			false,
@@ -158,10 +160,8 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 			"enabled msg - MsgGrant contains a non blocked msg",
 			[]sdk.Msg{
 				newMsgGrant(
-					testAddresses[0],
-					testAddresses[1],
+					testAddresses,
 					stakingAuthDelegate,
-					&distantFuture,
 				),
 			},
 			false,
@@ -170,11 +170,9 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 		{
 			"disabled msg - MsgGrant contains a blocked msg",
 			[]sdk.Msg{
-				newMsgGrant(
-					testAddresses[0],
-					testAddresses[1],
-					authz.NewGenericAuthorization(sdk.MsgTypeURL(&evmtypes.MsgEthereumTx{})),
-					&distantFuture,
+				newGenericMsgGrant(
+					testAddresses,
+					sdk.MsgTypeURL(&evmtypes.MsgEthereumTx{}),
 				),
 			},
 			false,
@@ -184,10 +182,8 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 			"disabled msg - MsgGrant contains a blocked msg",
 			[]sdk.Msg{
 				newMsgGrant(
-					testAddresses[0],
-					testAddresses[1],
+					testAddresses,
 					stakingAuthUndelegate,
-					&distantFuture,
 				),
 			},
 			false,
@@ -222,10 +218,8 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 			"disabled msg - surrounded by valid msgs",
 			[]sdk.Msg{
 				newMsgGrant(
-					testAddresses[0],
-					testAddresses[1],
+					testAddresses,
 					stakingAuthDelegate,
-					&distantFuture,
 				),
 				newMsgExec(
 					testAddresses[1],
@@ -258,11 +252,9 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 				newMsgExec(
 					testAddresses[1],
 					[]sdk.Msg{
-						newMsgGrant(
-							testAddresses[0],
-							testAddresses[1],
-							authz.NewGenericAuthorization(sdk.MsgTypeURL(&evmtypes.MsgEthereumTx{})),
-							&distantFuture,
+						newGenericMsgGrant(
+							testAddresses,
+							sdk.MsgTypeURL(&evmtypes.MsgEthereumTx{}),
 						),
 					},
 				),
@@ -361,21 +353,6 @@ func (suite *AnteTestSuite) TestRejectMsgsInAuthz() {
 	_, testAddresses, err := generatePrivKeyAddressPairs(10)
 	suite.Require().NoError(err)
 
-	distantFuture := time.Date(9000, 1, 1, 0, 0, 0, 0, time.UTC)
-
-	newMsgGrant := func(msgTypeUrl string) *authz.MsgGrant {
-		msg, err := authz.NewMsgGrant(
-			testAddresses[0],
-			testAddresses[1],
-			authz.NewGenericAuthorization(msgTypeUrl),
-			&distantFuture,
-		)
-		if err != nil {
-			panic(err)
-		}
-		return msg
-	}
-
 	testcases := []struct {
 		name         string
 		msgs         []sdk.Msg
@@ -383,18 +360,33 @@ func (suite *AnteTestSuite) TestRejectMsgsInAuthz() {
 		isEIP712     bool
 	}{
 		{
-			name:         "a MsgGrant with MsgEthereumTx typeURL on the authorization field is blocked",
-			msgs:         []sdk.Msg{newMsgGrant(sdk.MsgTypeURL(&evmtypes.MsgEthereumTx{}))},
+			name: "a MsgGrant with MsgEthereumTx typeURL on the authorization field is blocked",
+			msgs: []sdk.Msg{
+				newGenericMsgGrant(
+					testAddresses,
+					sdk.MsgTypeURL(&evmtypes.MsgEthereumTx{}),
+				),
+			},
 			expectedCode: sdkerrors.ErrUnauthorized.ABCICode(),
 		},
 		{
-			name:         "a MsgGrant with MsgCreateVestingAccount typeURL on the authorization field is blocked",
-			msgs:         []sdk.Msg{newMsgGrant(sdk.MsgTypeURL(&sdkvesting.MsgCreateVestingAccount{}))},
+			name: "a MsgGrant with MsgCreateVestingAccount typeURL on the authorization field is blocked",
+			msgs: []sdk.Msg{
+				newGenericMsgGrant(
+					testAddresses,
+					sdk.MsgTypeURL(&sdkvesting.MsgCreateVestingAccount{}),
+				),
+			},
 			expectedCode: sdkerrors.ErrUnauthorized.ABCICode(),
 		},
 		{
-			name:         "a MsgGrant with MsgEthereumTx typeURL on the authorization field included on EIP712 tx is blocked",
-			msgs:         []sdk.Msg{newMsgGrant(sdk.MsgTypeURL(&evmtypes.MsgEthereumTx{}))},
+			name: "a MsgGrant with MsgEthereumTx typeURL on the authorization field included on EIP712 tx is blocked",
+			msgs: []sdk.Msg{
+				newGenericMsgGrant(
+					testAddresses,
+					sdk.MsgTypeURL(&evmtypes.MsgEthereumTx{}),
+				),
+			},
 			expectedCode: sdkerrors.ErrUnauthorized.ABCICode(),
 			isEIP712:     true,
 		},
