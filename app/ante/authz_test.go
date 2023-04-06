@@ -2,110 +2,46 @@ package ante_test
 
 import (
 	"fmt"
-	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/types/tx/signing"
-	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	sdkvesting "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	"github.com/evmos/ethermint/testutil"
 	utiltx "github.com/evmos/ethermint/testutil/tx"
 
 	"github.com/evmos/ethermint/app/ante"
 
-	"github.com/evmos/ethermint/app"
 	"github.com/evmos/ethermint/crypto/ethsecp256k1"
-	"github.com/evmos/ethermint/encoding"
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
-func generatePrivKeyAddressPairs(accCount int) ([]*ethsecp256k1.PrivKey, []sdk.AccAddress, error) {
-	var (
-		err           error
-		testPrivKeys  = make([]*ethsecp256k1.PrivKey, accCount)
-		testAddresses = make([]sdk.AccAddress, accCount)
-	)
-
-	for i := range testPrivKeys {
-		testPrivKeys[i], err = ethsecp256k1.GenerateKey()
-		if err != nil {
-			return nil, nil, err
-		}
-		testAddresses[i] = testPrivKeys[i].PubKey().Address().Bytes()
-	}
-	return testPrivKeys, testAddresses, nil
-}
-
-func newMsgExec(grantee sdk.AccAddress, msgs []sdk.Msg) *authz.MsgExec {
-	msg := authz.NewMsgExec(grantee, msgs)
-	return &msg
-}
-
-func createNestedExecMsgSend(testAddresses []sdk.AccAddress, depth int) *authz.MsgExec {
-	return createNestedMsgExec(
-		testAddresses[1],
-		depth,
-		[]sdk.Msg{
-			createMsgSend(testAddresses),
-		},
-	)
-}
-
-func createMsgSend(testAddresses []sdk.AccAddress) *banktypes.MsgSend {
-	return banktypes.NewMsgSend(
-		testAddresses[0],
-		testAddresses[3],
-		sdk.NewCoins(sdk.NewInt64Coin(evmtypes.DefaultEVMDenom, 1e8)),
-	)
-}
-
-func newMsgGrant(testAddresses []sdk.AccAddress, auth authz.Authorization) *authz.MsgGrant {
-	expiration := time.Date(9000, 1, 1, 0, 0, 0, 0, time.UTC)
-	msg, err := authz.NewMsgGrant(testAddresses[0], testAddresses[1], auth, &expiration)
-	if err != nil {
-		panic(err)
-	}
-	return msg
-}
-
-func newGenericMsgGrant(testAddresses []sdk.AccAddress, typeUrl string) *authz.MsgGrant {
-	auth := authz.NewGenericAuthorization(typeUrl)
-	return newMsgGrant(testAddresses, auth)
-}
-
-func createNestedMsgExec(grantee sdk.AccAddress, numLevels int, msgsToExec []sdk.Msg) *authz.MsgExec {
-	msgs := make([]*authz.MsgExec, numLevels)
-	for i := range msgs {
-		if i == 0 {
-			msgs[i] = newMsgExec(grantee, msgsToExec)
-			continue
-		}
-		msgs[i] = newMsgExec(grantee, []sdk.Msg{msgs[i-1]})
-	}
-	return msgs[numLevels-1]
-}
-
-func TestAuthzLimiterDecorator(t *testing.T) {
-	testPrivKeys, testAddresses, err := generatePrivKeyAddressPairs(5)
-	require.NoError(t, err)
+func (suite *AnteTestSuite) TestAuthzLimiterDecorator() {
+	_, testAddresses, err := generatePrivKeyAddressPairs(5)
+	suite.Require().NoError(err)
 
 	validator := sdk.ValAddress(testAddresses[4])
-	stakingAuthDelegate, err := stakingtypes.NewStakeAuthorization([]sdk.ValAddress{validator}, nil, stakingtypes.AuthorizationType_AUTHORIZATION_TYPE_DELEGATE, nil)
-	require.NoError(t, err)
+	stakingAuthDelegate, err := stakingtypes.NewStakeAuthorization(
+		[]sdk.ValAddress{validator},
+		nil,
+		stakingtypes.AuthorizationType_AUTHORIZATION_TYPE_DELEGATE,
+		nil,
+	)
+	suite.Require().NoError(err)
 
-	stakingAuthUndelegate, err := stakingtypes.NewStakeAuthorization([]sdk.ValAddress{validator}, nil, stakingtypes.AuthorizationType_AUTHORIZATION_TYPE_UNDELEGATE, nil)
-	require.NoError(t, err)
+	stakingAuthUndelegate, err := stakingtypes.NewStakeAuthorization(
+		[]sdk.ValAddress{validator},
+		nil,
+		stakingtypes.AuthorizationType_AUTHORIZATION_TYPE_UNDELEGATE,
+		nil,
+	)
+	suite.Require().NoError(err)
 
 	decorator := ante.NewAuthzLimiterDecorator(
 		sdk.MsgTypeURL(&evmtypes.MsgEthereumTx{}),
@@ -118,7 +54,6 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 	testCases := []struct {
 		name        string
 		msgs        []sdk.Msg
-		checkTx     bool
 		expectedErr error
 	}{
 		{
@@ -126,7 +61,6 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 			[]sdk.Msg{
 				testMsgSend,
 			},
-			false,
 			nil,
 		},
 		{
@@ -134,7 +68,6 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 			[]sdk.Msg{
 				testMsgEthereumTx,
 			},
-			false,
 			nil,
 		},
 		{
@@ -142,7 +75,6 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 			[]sdk.Msg{
 				&stakingtypes.MsgCancelUnbondingDelegation{},
 			},
-			false,
 			nil,
 		},
 		{
@@ -153,7 +85,6 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 					sdk.MsgTypeURL(&banktypes.MsgSend{}),
 				),
 			},
-			false,
 			nil,
 		},
 		{
@@ -164,7 +95,6 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 					stakingAuthDelegate,
 				),
 			},
-			false,
 			nil,
 		},
 		{
@@ -175,7 +105,6 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 					sdk.MsgTypeURL(&evmtypes.MsgEthereumTx{}),
 				),
 			},
-			false,
 			sdkerrors.ErrUnauthorized,
 		},
 		{
@@ -186,7 +115,6 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 					stakingAuthUndelegate,
 				),
 			},
-			false,
 			sdkerrors.ErrUnauthorized,
 		},
 		{
@@ -198,7 +126,6 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 						testMsgSend,
 					}),
 			},
-			false,
 			nil,
 		},
 		{
@@ -211,7 +138,6 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 					},
 				),
 			},
-			false,
 			sdkerrors.ErrUnauthorized,
 		},
 		{
@@ -229,7 +155,6 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 					},
 				),
 			},
-			false,
 			sdkerrors.ErrUnauthorized,
 		},
 		{
@@ -243,7 +168,6 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 					},
 				),
 			},
-			false,
 			sdkerrors.ErrUnauthorized,
 		},
 		{
@@ -259,7 +183,6 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 					},
 				),
 			},
-			false,
 			sdkerrors.ErrUnauthorized,
 		},
 		{
@@ -267,7 +190,6 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 			[]sdk.Msg{
 				createNestedExecMsgSend(testAddresses, 6),
 			},
-			false,
 			sdkerrors.ErrUnauthorized,
 		},
 		{
@@ -276,80 +198,28 @@ func TestAuthzLimiterDecorator(t *testing.T) {
 				createNestedExecMsgSend(testAddresses, 5),
 				createNestedExecMsgSend(testAddresses, 5),
 			},
-			false,
 			sdkerrors.ErrUnauthorized,
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("Case %s", tc.name), func(t *testing.T) {
-			ctx := sdk.Context{}.WithIsCheckTx(tc.checkTx)
-			tx, err := createTx(testPrivKeys[0], tc.msgs...)
-			require.NoError(t, err)
+		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
+			suite.SetupTest()
+			tx, err := suite.createTx(suite.priv, tc.msgs...)
+			suite.Require().NoError(err)
 
-			_, err = decorator.AnteHandle(ctx, tx, false, NextFn)
+			_, err = decorator.AnteHandle(suite.ctx, tx, false, NextFn)
 			if tc.expectedErr != nil {
-				require.Error(t, err)
-				require.ErrorIs(t, err, tc.expectedErr)
+				suite.Require().Error(err)
+				suite.Require().ErrorIs(err, tc.expectedErr)
 			} else {
-				require.NoError(t, err)
+				suite.Require().NoError(err)
 			}
 		})
 	}
 }
 
-var chainID = testutil.TestnetChainID + "-1"
-
-func createTx(priv cryptotypes.PrivKey, msgs ...sdk.Msg) (sdk.Tx, error) {
-	encodingConfig := encoding.MakeConfig(app.ModuleBasics)
-	txBuilder := encodingConfig.TxConfig.NewTxBuilder()
-
-	txBuilder.SetGasLimit(1000000)
-	if err := txBuilder.SetMsgs(msgs...); err != nil {
-		return nil, err
-	}
-
-	// First round: we gather all the signer infos. We use the "set empty
-	// signature" hack to do that.
-	sigV2 := signing.SignatureV2{
-		PubKey: priv.PubKey(),
-		Data: &signing.SingleSignatureData{
-			SignMode:  encodingConfig.TxConfig.SignModeHandler().DefaultMode(),
-			Signature: nil,
-		},
-		Sequence: 0,
-	}
-
-	sigsV2 := []signing.SignatureV2{sigV2}
-
-	if err := txBuilder.SetSignatures(sigsV2...); err != nil {
-		return nil, err
-	}
-
-	signerData := authsigning.SignerData{
-		ChainID:       chainID,
-		AccountNumber: 0,
-		Sequence:      0,
-	}
-	sigV2, err := tx.SignWithPrivKey(
-		encodingConfig.TxConfig.SignModeHandler().DefaultMode(), signerData,
-		txBuilder, priv, encodingConfig.TxConfig,
-		0,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	sigsV2 = []signing.SignatureV2{sigV2}
-	err = txBuilder.SetSignatures(sigsV2...)
-	if err != nil {
-		return nil, err
-	}
-
-	return txBuilder.GetTx(), nil
-}
-
-func (suite *AnteTestSuite) TestRejectMsgsInAuthz() {
+func (suite *AnteTestSuite) TestRejectDeliverMsgsInAuthz() {
 	_, testAddresses, err := generatePrivKeyAddressPairs(10)
 	suite.Require().NoError(err)
 
@@ -442,27 +312,9 @@ func (suite *AnteTestSuite) TestRejectMsgsInAuthz() {
 			)
 
 			if tc.isEIP712 {
-				coinAmount := sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20))
-				fees := sdk.NewCoins(coinAmount)
-				cosmosTxArgs := utiltx.CosmosTxArgs{
-					TxCfg:   suite.clientCtx.TxConfig,
-					Priv:    suite.priv,
-					ChainID: suite.ctx.ChainID(),
-					Gas:     200000,
-					Fees:    fees,
-					Msgs:    tc.msgs,
-				}
-
-				tx, err = utiltx.CreateEIP712CosmosTx(
-					suite.ctx,
-					suite.app,
-					utiltx.EIP712TxArgs{
-						CosmosTxArgs:       cosmosTxArgs,
-						UseLegacyExtension: true,
-					},
-				)
+				tx, err = suite.createEIP712Tx(suite.priv, tc.msgs...)
 			} else {
-				tx, err = createTx(suite.priv, tc.msgs...)
+				tx, err = suite.createTx(suite.priv, tc.msgs...)
 			}
 			suite.Require().NoError(err)
 
@@ -486,4 +338,108 @@ func (suite *AnteTestSuite) TestRejectMsgsInAuthz() {
 			suite.Require().Equal(resDeliverTx.Code, tc.expectedCode, resDeliverTx.Log)
 		})
 	}
+}
+
+func generatePrivKeyAddressPairs(accCount int) ([]*ethsecp256k1.PrivKey, []sdk.AccAddress, error) {
+	var (
+		err           error
+		testPrivKeys  = make([]*ethsecp256k1.PrivKey, accCount)
+		testAddresses = make([]sdk.AccAddress, accCount)
+	)
+
+	for i := range testPrivKeys {
+		testPrivKeys[i], err = ethsecp256k1.GenerateKey()
+		if err != nil {
+			return nil, nil, err
+		}
+		testAddresses[i] = testPrivKeys[i].PubKey().Address().Bytes()
+	}
+	return testPrivKeys, testAddresses, nil
+}
+
+func newMsgGrant(testAddresses []sdk.AccAddress, auth authz.Authorization) *authz.MsgGrant {
+	expiration := time.Date(9000, 1, 1, 0, 0, 0, 0, time.UTC)
+	msg, err := authz.NewMsgGrant(testAddresses[0], testAddresses[1], auth, &expiration)
+	if err != nil {
+		panic(err)
+	}
+	return msg
+}
+
+func newGenericMsgGrant(testAddresses []sdk.AccAddress, typeUrl string) *authz.MsgGrant {
+	auth := authz.NewGenericAuthorization(typeUrl)
+	return newMsgGrant(testAddresses, auth)
+}
+
+func newMsgExec(grantee sdk.AccAddress, msgs []sdk.Msg) *authz.MsgExec {
+	msg := authz.NewMsgExec(grantee, msgs)
+	return &msg
+}
+
+func createNestedExecMsgSend(testAddresses []sdk.AccAddress, depth int) *authz.MsgExec {
+	return createNestedMsgExec(
+		testAddresses[1],
+		depth,
+		[]sdk.Msg{
+			createMsgSend(testAddresses),
+		},
+	)
+}
+
+func createMsgSend(testAddresses []sdk.AccAddress) *banktypes.MsgSend {
+	return banktypes.NewMsgSend(
+		testAddresses[0],
+		testAddresses[3],
+		sdk.NewCoins(sdk.NewInt64Coin(evmtypes.DefaultEVMDenom, 1e8)),
+	)
+}
+
+func createNestedMsgExec(grantee sdk.AccAddress, numLevels int, msgsToExec []sdk.Msg) *authz.MsgExec {
+	msgs := make([]*authz.MsgExec, numLevels)
+	for i := range msgs {
+		if i == 0 {
+			msgs[i] = newMsgExec(grantee, msgsToExec)
+			continue
+		}
+		msgs[i] = newMsgExec(grantee, []sdk.Msg{msgs[i-1]})
+	}
+	return msgs[numLevels-1]
+}
+
+func (suite *AnteTestSuite) createTx(priv cryptotypes.PrivKey, msgs ...sdk.Msg) (sdk.Tx, error) {
+	addr := sdk.AccAddress(priv.PubKey().Address().Bytes())
+	args := utiltx.CosmosTxArgs{
+		TxCfg:      suite.clientCtx.TxConfig,
+		Priv:       priv,
+		Gas:        1000000,
+		FeeGranter: addr,
+		Msgs:       msgs,
+	}
+
+	acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr)
+	suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
+
+	return utiltx.PrepareCosmosTx(suite.ctx, suite.app, args)
+}
+
+func (suite *AnteTestSuite) createEIP712Tx(priv cryptotypes.PrivKey, msgs ...sdk.Msg) (sdk.Tx, error) {
+	coinAmount := sdk.NewCoin(evmtypes.DefaultEVMDenom, sdk.NewInt(20))
+	fees := sdk.NewCoins(coinAmount)
+	cosmosTxArgs := utiltx.CosmosTxArgs{
+		TxCfg:   suite.clientCtx.TxConfig,
+		Priv:    suite.priv,
+		ChainID: suite.ctx.ChainID(),
+		Gas:     200000,
+		Fees:    fees,
+		Msgs:    msgs,
+	}
+
+	return utiltx.CreateEIP712CosmosTx(
+		suite.ctx,
+		suite.app,
+		utiltx.EIP712TxArgs{
+			CosmosTxArgs:       cosmosTxArgs,
+			UseLegacyExtension: true,
+		},
+	)
 }
