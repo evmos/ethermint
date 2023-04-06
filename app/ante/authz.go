@@ -36,7 +36,7 @@ type AuthzLimiterDecorator struct {
 
 // NewAuthzLimiterDecorator creates a decorator to block certain msg types
 // from being granted or executed within authz.
-func NewAuthzLimiterDecorator(disabledMsgTypes ...string) AuthzLimiterDecorator {
+func NewAuthzLimiterDecorator(disabledMsgTypes []string) AuthzLimiterDecorator {
 	disabledMsgs := make(map[string]struct{})
 	for _, url := range disabledMsgTypes {
 		disabledMsgs[url] = struct{}{}

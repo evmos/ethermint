@@ -44,8 +44,10 @@ func (suite *AnteTestSuite) TestAuthzLimiterDecorator() {
 	suite.Require().NoError(err)
 
 	decorator := ante.NewAuthzLimiterDecorator(
-		sdk.MsgTypeURL(&evmtypes.MsgEthereumTx{}),
-		sdk.MsgTypeURL(&stakingtypes.MsgUndelegate{}),
+		[]string{
+			sdk.MsgTypeURL(&evmtypes.MsgEthereumTx{}),
+			sdk.MsgTypeURL(&stakingtypes.MsgUndelegate{}),
+		},
 	)
 
 	testMsgSend := createMsgSend(testAddresses)
