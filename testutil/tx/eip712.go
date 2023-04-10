@@ -42,6 +42,7 @@ import (
 
 type EIP712TxArgs struct {
 	CosmosTxArgs       CosmosTxArgs
+	UseLegacyTypedData bool
 	UseLegacyExtension bool
 }
 
@@ -121,7 +122,7 @@ func PrepareEIP712CosmosTx(
 		legacyMsg:      msgs[0],
 	}
 
-	typedData, err := createTypedData(typedDataArgs)
+	typedData, err := createTypedData(typedDataArgs, args.UseLegacyTypedData)
 	if err != nil {
 		return nil, err
 	}
@@ -151,24 +152,27 @@ func PrepareEIP712CosmosTx(
 }
 
 // createTypedData creates the TypedData object corresponding to
-// the arguments.
-func createTypedData(args typedDataArgs) (apitypes.TypedData, error) {
-	registry := codectypes.NewInterfaceRegistry()
-	types.RegisterInterfaces(registry)
-	cryptocodec.RegisterInterfaces(registry)
-	evmosCodec := codec.NewProtoCodec(registry)
+// the arguments, using the legacy implementation as specified.
+func createTypedData(args typedDataArgs, useLegacy bool) (apitypes.TypedData, error) {
+	if useLegacy {
+		registry := codectypes.NewInterfaceRegistry()
+		types.RegisterInterfaces(registry)
+		cryptocodec.RegisterInterfaces(registry)
+		ethermintCodec := codec.NewProtoCodec(registry)
 
-	feeDelegation := &eip712.FeeDelegationOptions{
-		FeePayer: args.legacyFeePayer,
+		feeDelegation := &eip712.FeeDelegationOptions{
+			FeePayer: args.legacyFeePayer,
+		}
+
+		return eip712.LegacyWrapTxToTypedData(
+			ethermintCodec,
+			args.chainID,
+			args.legacyMsg,
+			args.data,
+			feeDelegation,
+		)
 	}
-
-	return eip712.WrapTxToTypedData(
-		evmosCodec,
-		args.chainID,
-		args.legacyMsg,
-		args.data,
-		feeDelegation,
-	)
+	return eip712.WrapTxToTypedData(args.chainID, args.data)
 }
 
 // signCosmosEIP712Tx signs the cosmos transaction on the txBuilder provided using
