@@ -18,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 	"github.com/evmos/ethermint/ethereum/eip712"
+	"github.com/evmos/ethermint/testutil"
 	"github.com/evmos/ethermint/types"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -43,6 +44,7 @@ import (
 	"github.com/evmos/ethermint/crypto/ethsecp256k1"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
+	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 	evtypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
 	"github.com/cosmos/cosmos-sdk/x/feegrant"
 	govtypesv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
@@ -65,6 +67,7 @@ type AnteTestSuite struct {
 	app             *app.EthermintApp
 	clientCtx       client.Context
 	anteHandler     sdk.AnteHandler
+	priv            cryptotypes.PrivKey
 	ethSigner       ethtypes.Signer
 	enableFeemarket bool
 	enableLondonHF  bool
@@ -79,6 +82,9 @@ func (suite *AnteTestSuite) StateDB() *statedb.StateDB {
 
 func (suite *AnteTestSuite) SetupTest() {
 	checkTx := false
+	priv, err := ethsecp256k1.GenerateKey()
+	suite.Require().NoError(err)
+	suite.priv = priv
 
 	suite.app = app.Setup(checkTx, func(app *app.EthermintApp, genesis simapp.GenesisState) simapp.GenesisState {
 		if suite.enableFeemarket {
@@ -109,13 +115,17 @@ func (suite *AnteTestSuite) SetupTest() {
 		return genesis
 	})
 
-	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{Height: 2, ChainID: "ethermint_9000-1", Time: time.Now().UTC()})
+	suite.ctx = suite.app.BaseApp.NewContext(checkTx, tmproto.Header{Height: 2, ChainID: testutil.TestnetChainID + "-1", Time: time.Now().UTC()})
 	suite.ctx = suite.ctx.WithMinGasPrices(sdk.NewDecCoins(sdk.NewDecCoin(evmtypes.DefaultEVMDenom, sdk.OneInt())))
 	suite.ctx = suite.ctx.WithBlockGasMeter(sdk.NewGasMeter(1000000000000000000))
 	suite.app.EvmKeeper.WithChainID(suite.ctx)
 
 	infCtx := suite.ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
 	suite.app.AccountKeeper.SetParams(infCtx, authtypes.DefaultParams())
+
+	addr := sdk.AccAddress(priv.PubKey().Address().Bytes())
+	acc := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr)
+	suite.app.AccountKeeper.SetAccount(suite.ctx, acc)
 
 	encodingConfig := encoding.MakeConfig(app.ModuleBasics)
 	// We're using TestMsg amino encoding in some tests, so register it here.
@@ -133,11 +143,30 @@ func (suite *AnteTestSuite) SetupTest() {
 		FeeMarketKeeper: suite.app.FeeMarketKeeper,
 		SignModeHandler: encodingConfig.TxConfig.SignModeHandler(),
 		SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
+		DisabledAuthzMsgs: []string{
+			sdk.MsgTypeURL(&evmtypes.MsgEthereumTx{}),
+			sdk.MsgTypeURL(&vestingtypes.MsgCreateVestingAccount{}),
+		},
 	})
 	suite.Require().NoError(err)
 
 	suite.anteHandler = anteHandler
 	suite.ethSigner = ethtypes.LatestSignerForChainID(suite.app.EvmKeeper.ChainID())
+
+	// fund signer acc to pay for tx fees
+	amt := sdk.NewInt(int64(math.Pow10(18) * 2))
+	err = testutil.FundAccount(
+		suite.app.BankKeeper,
+		suite.ctx,
+		suite.priv.PubKey().Address().Bytes(),
+		sdk.NewCoins(sdk.NewCoin(testutil.BaseDenom, amt)),
+	)
+	suite.Require().NoError(err)
+
+	header := suite.ctx.BlockHeader()
+	suite.ctx = suite.ctx.WithBlockHeight(header.Height - 1)
+	suite.ctx, err = testutil.Commit(suite.ctx, suite.app, time.Second*0, nil)
+	suite.Require().NoError(err)
 }
 
 func TestAnteTestSuite(t *testing.T) {

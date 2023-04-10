@@ -798,7 +798,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 					signing.SignMode_SIGN_MODE_DIRECT,
 					msg,
 					"ethermint_9000-1",
-					2000,
+					2000000,
 					"EIP-712",
 				)
 
@@ -831,7 +831,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 					signing.SignMode_SIGN_MODE_DIRECT,
 					msg,
 					"ethermint_9000-1",
-					2000,
+					2000000,
 					"EIP-712",
 				)
 
@@ -860,11 +860,47 @@ func (suite AnteTestSuite) TestAnteHandler() {
 					signing.SignMode_SIGN_MODE_DIRECT,
 					msg,
 					"ethermint_9000-1",
-					2000,
+					2000000,
 					"EIP-712",
 				)
 
 				txBuilder.SetMsgs(msg, msg)
+
+				return txBuilder.GetTx()
+			}, false, false, false,
+		},
+		{
+			"Fails - Authz Exec with unauthorized message",
+			func() sdk.Tx {
+				ethTx := evmtypes.NewTx(
+					suite.app.EvmKeeper.ChainID(),
+					1,
+					&to,
+					big.NewInt(10),
+					100000,
+					big.NewInt(150),
+					big.NewInt(200),
+					nil,
+					nil,
+					nil,
+				)
+				ethTx.From = addr.Hex()
+
+				msg := authz.NewMsgExec(
+					sdk.AccAddress(privKey.PubKey().Address()),
+					[]sdk.Msg{ethTx},
+				)
+
+				txBuilder := suite.CreateTestSingleSignedTx(
+					privKey,
+					signing.SignMode_SIGN_MODE_LEGACY_AMINO_JSON,
+					&msg,
+					"ethermint_9000-1",
+					200000,
+					"",
+				)
+
+				txBuilder.SetMsgs(&msg)
 
 				return txBuilder.GetTx()
 			}, false, false, false,
