@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"testing"
 	"time"
 
 	sdkmath "cosmossdk.io/math"
 	kmultisig "github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256r1"
@@ -33,6 +35,26 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 )
+
+func TestAnteTestSuite(t *testing.T) {
+	suite.Run(t, &AnteTestSuite{
+		enableLondonHF: true,
+	})
+
+	// Re-run the tests with EIP-712 Legacy encodings to ensure backwards compatibility.
+	// LegacyEIP712Extension should not be run with current TypedData encodings, since they are not compatible.
+	suite.Run(t, &AnteTestSuite{
+		enableLondonHF:           true,
+		useLegacyEIP712Extension: true,
+		useLegacyEIP712TypedData: true,
+	})
+
+	suite.Run(t, &AnteTestSuite{
+		enableLondonHF:           true,
+		useLegacyEIP712Extension: false,
+		useLegacyEIP712TypedData: true,
+	})
+}
 
 func (suite AnteTestSuite) TestAnteHandler() {
 	var acc authtypes.AccountI
@@ -387,7 +409,7 @@ func (suite AnteTestSuite) TestAnteHandler() {
 					from, grantee, &banktypes.SendAuthorization{SpendLimit: gasAmount}, &expiresAt,
 				)
 				suite.Require().NoError(err)
-				return suite.CreateTestEIP712SingleMessageTxBuilder(from, privKey, "ethermint_9000-1", gas, gasAmount, msg).GetTx()
+				return suite.CreateTestEIP712SingleMessageTxBuilder(privKey, "ethermint_9000-1", gas, gasAmount, msg).GetTx()
 			}, false, false, true,
 		},
 
