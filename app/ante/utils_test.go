@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"math/big"
-	"testing"
 	"time"
 
 	sdkmath "cosmossdk.io/math"
@@ -166,26 +165,6 @@ func (suite *AnteTestSuite) SetupTest() {
 	suite.ctx = suite.ctx.WithBlockHeight(header.Height - 1)
 	suite.ctx, err = testutil.Commit(suite.ctx, suite.app, time.Second*0, nil)
 	suite.Require().NoError(err)
-}
-
-func TestAnteTestSuite(t *testing.T) {
-	suite.Run(t, &AnteTestSuite{
-		enableLondonHF: true,
-	})
-
-	// Re-run the tests with EIP-712 Legacy encodings to ensure backwards compatibility.
-	// LegacyEIP712Extension should not be run with current TypedData encodings, since they are not compatible.
-	suite.Run(t, &AnteTestSuite{
-		enableLondonHF:           true,
-		useLegacyEIP712Extension: true,
-		useLegacyEIP712TypedData: true,
-	})
-
-	suite.Run(t, &AnteTestSuite{
-		enableLondonHF:           true,
-		useLegacyEIP712Extension: false,
-		useLegacyEIP712TypedData: true,
-	})
 }
 
 func (s *AnteTestSuite) BuildTestEthTx(
