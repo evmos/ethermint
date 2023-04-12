@@ -39,12 +39,18 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### State Machine Breaking
 
-- (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to [`v0.46.6`]
-- (imp) [#1739](https://github.com/evmos/ethermint/pull/1739) Remove distribution module perms
+- (deps) [#1168](https://github.com/evmos/ethermint/pull/1716) Bump Cosmos-SDK to v0.46.11, Tendermint to v0.34.27, IAVL v0.19.5 and btcd to v0.23.4
+- (app) [#1739](https://github.com/evmos/ethermint/pull/1739) Remove distribution module perms
+- (ante) [#1741](https://github.com/evmos/ethermint/pull/1741) Add authz ante handler
+- (eip712) [#1746](https://github.com/evmos/ethermint/pull/1746) Add EIP712 support for multiple messages and schemas
 
 ### Bug Fixes
 
 - (rpc) [#1688](https://github.com/evmos/ethermint/pull/1688) Align filter rule for `debug_traceBlockByNumber`
+
+### Improvements
+
+- (ante) [#1717](https://github.com/evmos/ethermint/pull/1717) Reuse sender recovery result.
 
 ## [v0.21.0] - 2023-01-26
 
@@ -60,7 +66,6 @@ Ref: https://keepachangelog.com/en/1.0.0/
 - (evm) [#1582](https://github.com/evmos/ethermint/pull/1582) Cleanup `evm` files
 - (evm) [#1544](https://github.com/evmos/ethermint/pull/1544) Migrate deprecated event emitting to new `TypedEvent`
 - (deps) [#1532](https://github.com/evmos/ethermint/pull/1532) Upgrade Go-Ethereum version to [`v1.10.26`](https://github.com/ethereum/go-ethereum/releases/tag/v1.10.26).
-- (ante) [#1717](https://github.com/evmos/ethermint/pull/1717) Reuse sender recovery result.
 
 ### Bug Fixes
 
