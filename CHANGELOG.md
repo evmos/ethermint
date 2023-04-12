@@ -39,7 +39,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ### State Machine Breaking
 
-- (deps) [#1168](https://github.com/evmos/ethermint/pull/1168) Upgrade Cosmos SDK to [`v0.46.6`]
+- (deps) [#1168](https://github.com/evmos/ethermint/pull/1716) Bump Cosmos-SDK to v0.46.11, Tendermint to v0.34.27, IAVL v0.19.5 and btcd to v0.23.4
 - (app) [#1739](https://github.com/evmos/ethermint/pull/1739) Remove distribution module perms
 - (ante) [#1741](https://github.com/evmos/ethermint/pull/1741) Add authz ante handler
 - (eip712) [#1746](https://github.com/evmos/ethermint/pull/1746) Add EIP712 support for multiple messages and schemas
