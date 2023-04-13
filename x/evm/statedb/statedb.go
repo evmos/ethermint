@@ -44,8 +44,10 @@ var _ vm.StateDB = &StateDB{}
 // * Contracts
 // * Accounts
 type StateDB struct {
-	keeper Keeper
-	ctx    sdk.Context
+	keeper     Keeper
+	ctx        sdk.Context
+	cacheCtx   sdk.Context
+	writeCache func()
 
 	// Journal of state modifications. This is the backbone of
 	// Snapshot and RevertToSnapshot.
@@ -69,9 +71,12 @@ type StateDB struct {
 
 // New creates a new state from a given trie.
 func New(ctx sdk.Context, keeper Keeper, txConfig TxConfig) *StateDB {
+	cacheCtx, writeCache := ctx.CacheContext()
 	return &StateDB{
 		keeper:       keeper,
 		ctx:          ctx,
+		cacheCtx:     cacheCtx,
+		writeCache:   writeCache,
 		stateObjects: make(map[common.Address]*stateObject),
 		journal:      newJournal(),
 		accessList:   newAccessList(),
@@ -298,17 +303,21 @@ func (s *StateDB) setStateObject(object *stateObject) {
 	s.stateObjects[object.Address()] = object
 }
 
-func (s *StateDB) restoreNativeState(ms sdk.MultiStore) {
-	s.cacheCtx = s.cacheCtx.WithMultiStore(ms)
+func (s *StateDB) restoreNativeState(cms sdk.CacheMultiStore) {
+	manager := sdk.NewEventManager()
+	s.cacheCtx = s.cacheCtx.WithMultiStore(cms).WithEventManager(manager)
+	s.writeCache = func() {
+		manager.EmitEvents(manager.Events())
+		cms.Write()
+	}
 }
 
 // ExecuteNativeAction executes native action in isolate,
 // the writes will be revert when either the native action itself fail
 // or the wrapping message call reverted.
 func (s *StateDB) ExecuteNativeAction(action func(ctx sdk.Context) error) error {
-	snapshot := s.ctx
-	s.ctx, write := s.ctx.CacheContext()
-	err := action(s.ctx)
+	snapshot := s.ctx.MultiStore().CacheMultiStore()
+	err := action(s.cacheCtx)
 	if err != nil {
 		s.restoreNativeState(snapshot)
 		return err
@@ -470,6 +479,7 @@ func (s *StateDB) RevertToSnapshot(revid int) {
 // Commit writes the dirty states to keeper
 // the StateDB object should be discarded after committed.
 func (s *StateDB) Commit() error {
+	s.writeCache()
 	for _, addr := range s.journal.sortedDirties() {
 		obj := s.stateObjects[addr]
 		if obj.suicided {
