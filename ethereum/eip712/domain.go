@@ -16,34 +16,19 @@
 package eip712
 
 import (
+	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 )
 
-// WrapTxToTypedData wraps an Amino-encoded Cosmos Tx JSON SignDoc
-// bytestream into an EIP712-compatible TypedData request.
-func WrapTxToTypedData(
-	chainID uint64,
-	data []byte,
-) (apitypes.TypedData, error) {
-	messagePayload, err := createEIP712MessagePayload(data)
-	message := messagePayload.message
-	if err != nil {
-		return apitypes.TypedData{}, err
+// createEIP712Domain creates the typed data domain for the given chainID.
+func createEIP712Domain(chainID uint64) apitypes.TypedDataDomain {
+	domain := apitypes.TypedDataDomain{
+		Name:              "Cosmos Web3",
+		Version:           "1.0.0",
+		ChainId:           math.NewHexOrDecimal256(int64(chainID)), // #nosec G701
+		VerifyingContract: "cosmos",
+		Salt:              "0",
 	}
 
-	types, err := createEIP712Types(messagePayload)
-	if err != nil {
-		return apitypes.TypedData{}, err
-	}
-
-	domain := createEIP712Domain(chainID)
-
-	typedData := apitypes.TypedData{
-		Types:       types,
-		PrimaryType: txField,
-		Domain:      domain,
-		Message:     message,
-	}
-
-	return typedData, nil
+	return domain
 }

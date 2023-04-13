@@ -208,3 +208,10 @@ def parse_events(logs):
 def module_address(name):
     data = hashlib.sha256(name.encode()).digest()[:20]
     return to_checksum_address(decode_bech32(eth_to_bech32(data)).hex())
+
+
+def derive_new_account(n=1):
+    # derive a new address
+    account_path = f"m/44'/60'/0'/0/{n}"
+    mnemonic = os.getenv("COMMUNITY_MNEMONIC")
+    return Account.from_mnemonic(mnemonic, account_path=account_path)

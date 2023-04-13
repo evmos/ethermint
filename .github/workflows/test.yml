@@ -18,7 +18,7 @@ jobs:
   test-unit-cover:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: 1.19
           check-latest: true
@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: 1.19
           check-latest: true
@@ -66,7 +66,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: 1.19
           check-latest: true
@@ -86,8 +86,8 @@ jobs:
   integration_tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: cachix/install-nix-action@v18
+      - uses: actions/checkout@v3
+      - uses: cachix/install-nix-action@v20
       - uses: cachix/cachix-action@v12
         with:
           name: ethermint
@@ -121,8 +121,8 @@ jobs:
         os: [macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: cachix/install-nix-action@v18
+      - uses: actions/checkout@v3
+      - uses: cachix/install-nix-action@v20
       - uses: cachix/cachix-action@v12
         with:
           name: ethermint
