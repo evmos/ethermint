@@ -71,18 +71,19 @@ type StateDB struct {
 
 // New creates a new state from a given trie.
 func New(ctx sdk.Context, keeper Keeper, txConfig TxConfig) *StateDB {
-	cacheCtx, writeCache := ctx.CacheContext()
-	return &StateDB{
+	db := &StateDB{
 		keeper:       keeper,
 		ctx:          ctx,
-		cacheCtx:     cacheCtx,
-		writeCache:   writeCache,
 		stateObjects: make(map[common.Address]*stateObject),
 		journal:      newJournal(),
 		accessList:   newAccessList(),
 
 		txConfig: txConfig,
 	}
+	if ctx.MultiStore() != nil {
+		db.cacheCtx, db.writeCache = ctx.CacheContext()
+	}
+	return db
 }
 
 // Keeper returns the underlying `Keeper`
@@ -479,7 +480,9 @@ func (s *StateDB) RevertToSnapshot(revid int) {
 // Commit writes the dirty states to keeper
 // the StateDB object should be discarded after committed.
 func (s *StateDB) Commit() error {
-	s.writeCache()
+	if s.writeCache != nil {
+		s.writeCache()
+	}
 	for _, addr := range s.journal.sortedDirties() {
 		obj := s.stateObjects[addr]
 		if obj.suicided {
