@@ -419,7 +419,7 @@ func NewEthermintApp(
 	app.EvmKeeper = evmkeeper.NewKeeper(
 		appCodec, keys[evmtypes.StoreKey], tkeys[evmtypes.TransientKey], authtypes.NewModuleAddress(govtypes.ModuleName),
 		app.AccountKeeper, app.BankKeeper, app.StakingKeeper, app.FeeMarketKeeper,
-		tracer, evmSs, keys,
+		tracer, evmSs,
 	)
 
 	// Create IBC Keeper
@@ -664,7 +664,6 @@ func (app *EthermintApp) setAnteHandler(txConfig client.TxConfig, maxGasWanted u
 		MaxTxGasWanted:         maxGasWanted,
 		ExtensionOptionChecker: ethermint.HasDynamicFeeExtensionOption,
 		TxFeeChecker:           ante.NewDynamicFeeChecker(app.EvmKeeper),
-		Keys:                   app.keys,
 		DisabledAuthzMsgs: []string{
 			sdk.MsgTypeURL(&evmtypes.MsgEthereumTx{}),
 			sdk.MsgTypeURL(&vestingtypes.MsgCreateVestingAccount{}),
@@ -756,13 +755,6 @@ func (app *EthermintApp) AppCodec() codec.Codec {
 // InterfaceRegistry returns EthermintApp's InterfaceRegistry
 func (app *EthermintApp) InterfaceRegistry() types.InterfaceRegistry {
 	return app.interfaceRegistry
-}
-
-// GetKeys returns the KVStoreKeys.
-//
-// NOTE: This is solely to be used for testing purposes.
-func (app *EthermintApp) GetKeys() map[string]*storetypes.KVStoreKey {
-	return app.keys
 }
 
 // GetKey returns the KVStoreKey for the provided store key.

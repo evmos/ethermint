@@ -27,7 +27,6 @@ import (
 	ibcante "github.com/cosmos/ibc-go/v6/modules/core/ante"
 	ibckeeper "github.com/cosmos/ibc-go/v6/modules/core/keeper"
 
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
@@ -45,7 +44,6 @@ type HandlerOptions struct {
 	MaxTxGasWanted         uint64
 	ExtensionOptionChecker ante.ExtensionOptionChecker
 	TxFeeChecker           ante.TxFeeChecker
-	Keys                   map[string]*storetypes.KVStoreKey
 	DisabledAuthzMsgs      []string
 }
 
@@ -76,7 +74,7 @@ func newEthAnteHandler(options HandlerOptions) sdk.AnteHandler {
 		NewEthValidateBasicDecorator(options.EvmKeeper),
 		NewEthSigVerificationDecorator(options.EvmKeeper),
 		NewEthAccountVerificationDecorator(options.AccountKeeper, options.EvmKeeper),
-		NewCanTransferDecorator(options.EvmKeeper, options.Keys),
+		NewCanTransferDecorator(options.EvmKeeper),
 		NewEthGasConsumeDecorator(options.EvmKeeper, options.MaxTxGasWanted),
 		NewEthIncrementSenderSequenceDecorator(options.AccountKeeper), // innermost AnteDecorator.
 		NewGasWantedDecorator(options.EvmKeeper, options.FeeMarketKeeper),

@@ -21,13 +21,11 @@ import (
 	"sort"
 
 	errorsmod "cosmossdk.io/errors"
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/evmos/ethermint/store/cachemulti"
 )
 
 // revision is the identifier of a version of state.
@@ -46,9 +44,8 @@ var _ vm.StateDB = &StateDB{}
 // * Contracts
 // * Accounts
 type StateDB struct {
-	keeper   Keeper
-	ctx      sdk.Context
-	cacheCtx sdk.Context
+	keeper Keeper
+	ctx    sdk.Context
 
 	// Journal of state modifications. This is the backbone of
 	// Snapshot and RevertToSnapshot.
@@ -70,27 +67,17 @@ type StateDB struct {
 	accessList *accessList
 }
 
-// New creates a new state from a given trie, StateDB will branch out stores for the specified keys to support
-// precompiles.
-func New(ctx sdk.Context, keys map[string]*storetypes.KVStoreKey, keeper Keeper, txConfig TxConfig) *StateDB {
-	cacheCtx := ctx.WithMultiStore(cachemulti.NewStore(ctx.MultiStore(), keys))
+// New creates a new state from a given trie.
+func New(ctx sdk.Context, keeper Keeper, txConfig TxConfig) *StateDB {
 	return &StateDB{
 		keeper:       keeper,
 		ctx:          ctx,
-		cacheCtx:     cacheCtx,
 		stateObjects: make(map[common.Address]*stateObject),
 		journal:      newJournal(),
 		accessList:   newAccessList(),
 
 		txConfig: txConfig,
 	}
-}
-
-// CacheMultiStore cast the multistore to *cachemulti.Store.
-// invariant: the multistore must be a `cachemulti.Store`,
-// prove: it's set in constructor and only modified in `restoreNativeState` which keeps the invariant.
-func (s *StateDB) CacheMultiStore() cachemulti.Store {
-	return s.cacheCtx.MultiStore().(cachemulti.Store)
 }
 
 // Keeper returns the underlying `Keeper`
@@ -319,8 +306,9 @@ func (s *StateDB) restoreNativeState(ms sdk.MultiStore) {
 // the writes will be revert when either the native action itself fail
 // or the wrapping message call reverted.
 func (s *StateDB) ExecuteNativeAction(action func(ctx sdk.Context) error) error {
-	snapshot := s.CacheMultiStore().Clone()
-	err := action(s.cacheCtx)
+	snapshot := s.ctx
+	s.ctx, write := s.ctx.CacheContext()
+	err := action(s.ctx)
 	if err != nil {
 		s.restoreNativeState(snapshot)
 		return err
@@ -482,10 +470,6 @@ func (s *StateDB) RevertToSnapshot(revid int) {
 // Commit writes the dirty states to keeper
 // the StateDB object should be discarded after committed.
 func (s *StateDB) Commit() error {
-	// commit the native cache store first,
-	// the states managed by precompiles and the other part of StateDB must not overlap.
-	s.CacheMultiStore().Write()
-
 	for _, addr := range s.journal.sortedDirties() {
 		obj := s.stateObjects[addr]
 		if obj.suicided {

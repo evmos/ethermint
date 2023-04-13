@@ -18,14 +18,7 @@ package statedb
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/vm"
 )
-
-// ExtStateDB defines an extension to the interface provided by the go-ethereum
-// codebase to support additional state transition functionalities.
-type ExtStateDB interface {
-	vm.StateDB
-}
 
 // Keeper provide underlying storage of StateDB
 type Keeper interface {

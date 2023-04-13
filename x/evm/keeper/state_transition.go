@@ -351,7 +351,7 @@ func (k *Keeper) ApplyMessageWithConfig(ctx sdk.Context,
 		return nil, errorsmod.Wrap(types.ErrCallDisabled, "failed to call contract")
 	}
 
-	stateDB := statedb.New(ctx, k.keys, k, txConfig)
+	stateDB := statedb.New(ctx, k, txConfig)
 	evm := k.NewEVM(ctx, msg, cfg, tracer, stateDB)
 	leftoverGas := msg.Gas()
 	// Allow the tracer captures the tx level events, mainly the gas consumption.

@@ -71,10 +71,6 @@ type Keeper struct {
 
 	// Legacy subspace
 	ss paramstypes.Subspace
-
-	// a set of store keys that should cover all the precompile use cases,
-	// or ideally just pass the application's all stores.
-	keys map[string]*storetypes.KVStoreKey
 }
 
 // NewKeeper generates new evm module keeper
@@ -88,7 +84,6 @@ func NewKeeper(
 	fmk types.FeeMarketKeeper,
 	tracer string,
 	ss paramstypes.Subspace,
-	keys map[string]*storetypes.KVStoreKey,
 ) *Keeper {
 	// ensure evm module account is set
 	if addr := ak.GetModuleAddress(types.ModuleName); addr == nil {
@@ -112,7 +107,6 @@ func NewKeeper(
 		transientKey:    transientKey,
 		tracer:          tracer,
 		ss:              ss,
-		keys:            keys,
 	}
 }
 
