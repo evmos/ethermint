@@ -550,7 +550,7 @@ schema = 3
     hash = "sha256-2HzpK4s9zAGUv/26wChxbfkX3t4WB1bLM96O5gkQmro="
   [mod."google.golang.org/protobuf"]
     version = "v1.29.1"
-    hash = "sha256-ZJVKkvwzFisv8IAKAmKNKwQSR+ni5pUNYPkloMjqsKA="
+    hash = "sha256-ilSVvttGSP2xpqpoyQ0/Iuyx1WMiwe6GASKTfoeaqxw="
   [mod."gopkg.in/ini.v1"]
     version = "v1.67.0"
     hash = "sha256-V10ahGNGT+NLRdKUyRg1dos5RxLBXBk1xutcnquc/+4="
