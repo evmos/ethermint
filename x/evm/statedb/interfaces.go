@@ -22,13 +22,9 @@ import (
 )
 
 // ExtStateDB defines an extension to the interface provided by the go-ethereum
-// codebase to support additional state transition functionalities. In particular
-// it supports appending a new entry to the state journal through
-// AppendJournalEntry so that the state can be reverted after running
-// stateful precompiled contracts.
+// codebase to support additional state transition functionalities.
 type ExtStateDB interface {
 	vm.StateDB
-	AppendJournalEntry(JournalEntry)
 }
 
 // Keeper provide underlying storage of StateDB
