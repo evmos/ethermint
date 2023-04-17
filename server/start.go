@@ -45,15 +45,15 @@ import (
 	"github.com/tendermint/tendermint/rpc/client/local"
 	dbm "github.com/tendermint/tm-db"
 
-	"github.com/cosmos/cosmos-sdk/server/rosetta"
-	crgserver "github.com/cosmos/cosmos-sdk/server/rosetta/lib/server"
+	"cosmossdk.io/tools/rosetta"
+	crgserver "cosmossdk.io/tools/rosetta/lib/server"
 
 	ethmetricsexp "github.com/ethereum/go-ethereum/metrics/exp"
 
 	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	pruningtypes "github.com/cosmos/cosmos-sdk/pruning/types"
+	pruningtypes "github.com/cosmos/cosmos-sdk/store/pruning/types"
 	"github.com/cosmos/cosmos-sdk/server"
 	"github.com/cosmos/cosmos-sdk/server/api"
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
