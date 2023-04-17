@@ -203,7 +203,7 @@ schema = 3
   [mod."github.com/gogo/gateway"]
     version = "v1.1.0"
     hash = "sha256-OHcA3fEGZt4uYn6V5BAaDc47DkH7z0Al+v7MpkfeR8o="
-  [mod."github.com/gogo/protobuf"]
+  [mod."github.com/cosmos/gogoproto"]
     version = "v1.3.3-alpha.regen.1"
     hash = "sha256-TKa//aFXpWH+yK/cN1oaaqhipZpPUovekP6oA9vLIHY="
     replaced = "github.com/regen-network/protobuf"
