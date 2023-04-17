@@ -148,6 +148,9 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	// add rosetta
 	rootCmd.AddCommand(sdkserver.RosettaCommand(encodingConfig.InterfaceRegistry, encodingConfig.Codec))
 
+	// add bank utility commands
+	rootCmd.AddCommand(ethermintclient.BankCommands())
+
 	return rootCmd, encodingConfig
 }
 

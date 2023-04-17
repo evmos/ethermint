@@ -73,22 +73,19 @@ contract TestBank is ERC20 {
         moveToNativeStatic(amount);
         revert("test");
     }
-    function encodeTransfer(address recipient, uint256 amount) internal view returns (bytes memory) {
-        return abi.encodeWithSignature("transfer(address,address,uint256)", msg.sender, recipient, amount);
-    }
-    function nativeTransfer(address recipient, uint256 amount) public {
+    function nativeTransfer(address recipient, uint256 amount, bytes memory data) public {
         _transfer(msg.sender, recipient, amount);
-        (bool result, ) = bankContract.call(encodeTransfer(recipient, amount));
+        (bool result, ) = bankContract.call(abi.encodeWithSignature("transfer(bytes)", data));
         require(result, "native transfer");
     }
-    function nativeTransferDelegate(address recipient, uint256 amount) public {
+    function nativeTransferDelegate(address recipient, uint256 amount, bytes memory data) public {
         _transfer(msg.sender, recipient, amount);
-        (bool result, ) = bankContract.delegatecall(encodeTransfer(recipient, amount));
+        (bool result, ) = bankContract.delegatecall(abi.encodeWithSignature("transfer(bytes)", data));
         require(result, "native transfer");
     }
-    function nativeTransferStatic(address recipient, uint256 amount) public {
+    function nativeTransferStatic(address recipient, uint256 amount, bytes memory data) public {
         _transfer(msg.sender, recipient, amount);
-        (bool result, ) = bankContract.staticcall(encodeTransfer(recipient, amount));
+        (bool result, ) = bankContract.staticcall(abi.encodeWithSignature("transfer(bytes)", data));
         require(result, "native transfer");
     }
 }

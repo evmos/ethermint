@@ -8,10 +8,13 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/gogo/protobuf/proto"
 
 	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/evmos/ethermint/x/evm/types"
 )
 
@@ -27,6 +30,7 @@ var (
 func init() {
 	addressType, _ := abi.NewType("address", "", nil)
 	uint256Type, _ := abi.NewType("uint256", "", nil)
+	bytesType, _ := abi.NewType("bytes", "", nil)
 	MintMethod = abi.NewMethod(
 		"mint", "mint", abi.Function, "", false, false, abi.Arguments{abi.Argument{
 			Name: "recipient",
@@ -62,14 +66,8 @@ func init() {
 	)
 	TransferMethod = abi.NewMethod(
 		"transfer", "transfer", abi.Function, "", false, false, abi.Arguments{abi.Argument{
-			Name: "sender",
-			Type: addressType,
-		}, abi.Argument{
-			Name: "recipient",
-			Type: addressType,
-		}, abi.Argument{
-			Name: "amount",
-			Type: uint256Type,
+			Name: "data",
+			Type: bytesType,
 		}},
 		nil,
 	)
@@ -82,12 +80,14 @@ func EVMDenom(token common.Address) string {
 type BankContract struct {
 	ctx        sdk.Context
 	bankKeeper types.BankKeeper
+	msgServer  banktypes.MsgServer
 	stateDB    ExtStateDB
 }
 
 // NewBankContract creates the precompiled contract to manage native tokens
 func NewBankContract(ctx sdk.Context, bankKeeper types.BankKeeper, stateDB ExtStateDB) StatefulPrecompiledContract {
-	return &BankContract{ctx, bankKeeper, stateDB}
+	msgServer := keeper.NewMsgServerImpl(bankKeeper)
+	return &BankContract{ctx, bankKeeper, msgServer, stateDB}
 }
 
 func (bc *BankContract) Address() common.Address {
@@ -187,27 +187,14 @@ func (bc *BankContract) Run(evm *vm.EVM, contract *vm.Contract, readonly bool) (
 		if err != nil {
 			return nil, errors.New("fail to unpack input arguments")
 		}
-		sender := args[0].(common.Address)
-		recipient := args[1].(common.Address)
-		amount := args[2].(*big.Int)
-		if amount.Sign() <= 0 {
-			return nil, errors.New("invalid amount")
+		bytes := args[0].([]byte)
+		var msgSend banktypes.MsgSend
+		if err = proto.Unmarshal(bytes, &msgSend); err != nil {
+			return nil, errors.New("fail to Unmarshal input arguments")
 		}
-		from := sdk.AccAddress(sender.Bytes())
-		to := sdk.AccAddress(recipient.Bytes())
-		if err := bc.checkBlockedAddr(to); err != nil {
-			return nil, err
-		}
-		denom := EVMDenom(contract.CallerAddress)
-		amt := sdk.NewCoin(denom, sdkmath.NewIntFromBigInt(amount))
 		err = bc.stateDB.ExecuteNativeAction(func(ctx sdk.Context) error {
-			if err := bc.bankKeeper.IsSendEnabledCoins(ctx, amt); err != nil {
-				return err
-			}
-			if err := bc.bankKeeper.SendCoins(ctx, from, to, sdk.NewCoins(amt)); err != nil {
-				return errorsmod.Wrap(err, "fail to send coins in precompiled contract")
-			}
-			return nil
+			_, err = bc.msgServer.Send(ctx, &msgSend)
+			return err
 		})
 		return nil, err
 	default:

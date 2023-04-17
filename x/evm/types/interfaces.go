@@ -18,12 +18,13 @@ package types
 import (
 	"math/big"
 
-	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/query"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-
 	"github.com/ethereum/go-ethereum/core"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
@@ -51,6 +52,32 @@ type BankKeeper interface {
 	BurnCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error
 	IsSendEnabledCoins(ctx sdk.Context, coins ...sdk.Coin) error
 	BlockedAddr(addr sdk.AccAddress) bool
+	banktypes.QueryServer
+	DelegateCoins(ctx sdk.Context, delegatorAddr, moduleAccAddr sdk.AccAddress, amt sdk.Coins) error
+	DelegateCoinsFromAccountToModule(
+		ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins,
+	) error
+	InitGenesis(sdk.Context, *banktypes.GenesisState)
+	ExportGenesis(sdk.Context) *banktypes.GenesisState
+	bankkeeper.ViewKeeper
+	GetDenomMetaData(ctx sdk.Context, denom string) (banktypes.Metadata, bool)
+	GetPaginatedTotalSupply(ctx sdk.Context, pagination *query.PageRequest) (sdk.Coins, *query.PageResponse, error)
+	GetParams(ctx sdk.Context) banktypes.Params
+	GetSupply(ctx sdk.Context, denom string) sdk.Coin
+	HasDenomMetaData(ctx sdk.Context, denom string) bool
+	HasSupply(ctx sdk.Context, denom string) bool
+	InputOutputCoins(ctx sdk.Context, inputs []banktypes.Input, outputs []banktypes.Output) error
+	IsSendEnabledCoin(ctx sdk.Context, coin sdk.Coin) bool
+	IterateAllDenomMetaData(ctx sdk.Context, cb func(banktypes.Metadata) bool)
+	IterateTotalSupply(ctx sdk.Context, cb func(sdk.Coin) bool)
+	SendCoinsFromModuleToModule(ctx sdk.Context, senderModule, recipientModule string, amt sdk.Coins) error
+	SetDenomMetaData(ctx sdk.Context, denomMetaData banktypes.Metadata)
+	SetParams(ctx sdk.Context, params banktypes.Params)
+	UndelegateCoins(ctx sdk.Context, moduleAccAddr, delegatorAddr sdk.AccAddress, amt sdk.Coins) error
+	UndelegateCoinsFromModuleToAccount(
+		ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins,
+	) error
+	WithMintCoinsRestriction(check bankkeeper.MintingRestrictionFn) bankkeeper.BaseKeeper
 }
 
 // StakingKeeper returns the historical headers kept in store.

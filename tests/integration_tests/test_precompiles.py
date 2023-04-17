@@ -55,7 +55,8 @@ def test_call(ethermint):
     # test transfer
     amt3 = 10
     addr2 = ADDRS["signer2"]
-    tx = contract.functions.nativeTransfer(addr2, amt3).build_transaction(data)
+    raw = cli.encode_bank_msg(addr, addr2, f"{amt3}{denom}")
+    tx = contract.functions.nativeTransfer(addr2, amt3, raw).build_transaction(data)
     balance = get_balance(cli, addr, denom)
     assert balance == contract.caller.nativeBalanceOf(addr)
     crc20_balance = contract.caller.balanceOf(addr)
@@ -80,8 +81,9 @@ def test_call(ethermint):
     # test transfer to blocked address
     recipient = module_address("evm")
     amt4 = 20
+    raw = cli.encode_bank_msg(addr, recipient, f"{amt4}{denom}")
     with pytest.raises(web3.exceptions.ContractLogicError):
-        contract.functions.nativeTransfer(recipient, amt4).build_transaction(data)
+        contract.functions.nativeTransfer(recipient, amt4, raw).build_transaction(data)
 
 
 @pytest.mark.parametrize("suffix", ["Delegate", "Static"])
@@ -124,8 +126,9 @@ def test_readonly_call(ethermint, suffix):
     amt3 = 10
     addr2 = ADDRS["signer2"]
     native_transfer = contract.functions["nativeTransfer" + suffix]
+    raw = cli.encode_bank_msg(addr, addr2, f"{amt3}{denom}")
     with pytest.raises(web3.exceptions.ContractLogicError):
-        native_transfer(addr2, amt3).build_transaction(data)
+        native_transfer(addr2, amt3, raw).build_transaction(data)
 
     # balance no change
     assert balances == get_balances()
