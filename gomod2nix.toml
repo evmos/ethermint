@@ -113,7 +113,7 @@ schema = 3
   [mod."github.com/cosmos/iavl"]
     version = "v0.19.5"
     hash = "sha256-8PerCyxQrBCtr2zkhgriqauhCSoIe580dsYpZ44o+cE="
-  [mod."github.com/cosmos/ibc-go/v6"]
+  [mod."github.com/cosmos/ibc-go/v7"]
     version = "v6.1.0"
     hash = "sha256-mHYCqLedcveDjfm1EiO2EMMNJqLm9u4WHwQTy1muOoc="
   [mod."github.com/cosmos/ledger-cosmos-go"]

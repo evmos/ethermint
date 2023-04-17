@@ -3,7 +3,7 @@ package ante_test
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/cosmos/ibc-go/v6/testing/simapp"
+	"github.com/cosmos/ibc-go/v7/testing/simapp"
 	"math"
 	"math/big"
 	"time"
