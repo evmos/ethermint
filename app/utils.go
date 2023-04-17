@@ -19,12 +19,13 @@ import (
 	"encoding/json"
 	"time"
 
+	"cosmossdk.io/simapp"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
-	"github.com/cosmos/cosmos-sdk/simapp"
 	"github.com/cosmos/cosmos-sdk/testutil/mock"
+	"github.com/cosmos/cosmos-sdk/testutil/sims"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -72,7 +73,7 @@ func SetupWithDB(isCheckTx bool, patchGenesis func(*EthermintApp, simapp.Genesis
 		DefaultNodeHome,
 		5,
 		encoding.MakeConfig(ModuleBasics),
-		simapp.EmptyAppOptions{})
+		sims.NewAppOptionsWithFlagHome(DefaultNodeHome))
 	if !isCheckTx {
 		// init chain must be called to stop deliverState from being nil
 		genesisState := NewTestGenesisState(app.AppCodec())

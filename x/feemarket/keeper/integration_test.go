@@ -25,7 +25,7 @@ import (
 	"github.com/evmos/ethermint/testutil"
 	"github.com/evmos/ethermint/x/feemarket/types"
 
-	"github.com/cosmos/cosmos-sdk/simapp"
+	"github.com/cosmos/cosmos-sdk/testutil/sims"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -492,7 +492,7 @@ func setupChain(localMinGasPricesStr string) {
 		app.DefaultNodeHome,
 		5,
 		encoding.MakeConfig(app.ModuleBasics),
-		simapp.EmptyAppOptions{},
+		sims.NewAppOptionsWithFlagHome(val.Ctx.Config.RootDir),
 		baseapp.SetMinGasPrices(localMinGasPricesStr),
 	)
 
