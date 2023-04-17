@@ -393,7 +393,7 @@ format-fix:
 ###############################################################################
 
 # ------
-# NOTE: Link to the tendermintdev/sdk-proto-gen docker images: 
+# NOTE: Link to the tendermintdev/sdk-proto-gen docker images:
 #       https://hub.docker.com/r/tendermintdev/sdk-proto-gen/tags
 #
 protoVer=v0.7
@@ -405,7 +405,7 @@ protoImage=$(DOCKER) run --network host --rm -v $(CURDIR):/workspace --workdir /
 #		Link to the cosmos/proto-builder docker images:
 #       https://github.com/cosmos/cosmos-sdk/pkgs/container/proto-builder
 #
-protoCosmosVer=0.11.2
+protoCosmosVer=0.11.5
 protoCosmosName=ghcr.io/cosmos/proto-builder:$(protoCosmosVer)
 protoCosmosImage=$(DOCKER) run --network host --rm -v $(CURDIR):/workspace --workdir /workspace $(protoCosmosName)
 # ------
