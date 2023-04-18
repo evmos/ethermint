@@ -405,7 +405,7 @@ protoImage=$(DOCKER) run --network host --rm -v $(CURDIR):/workspace --workdir /
 #		Link to the cosmos/proto-builder docker images:
 #       https://github.com/cosmos/cosmos-sdk/pkgs/container/proto-builder
 #
-protoCosmosVer=0.11.5
+protoCosmosVer=0.12.1
 protoCosmosName=ghcr.io/cosmos/proto-builder:$(protoCosmosVer)
 protoCosmosImage=$(DOCKER) run --network host --rm -v $(CURDIR):/workspace --workdir /workspace $(protoCosmosName)
 # ------
