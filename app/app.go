@@ -193,9 +193,7 @@ var (
 	}
 
 	// module accounts that are allowed to receive tokens
-	allowedReceivingModAcc = map[string]bool{
-		distrtypes.ModuleName: true,
-	}
+	allowedReceivingModAcc = map[string]bool{}
 )
 
 // var _ server.Application (*EthermintApp)(nil)
@@ -668,6 +666,10 @@ func (app *EthermintApp) setAnteHandler(txConfig client.TxConfig, maxGasWanted u
 		MaxTxGasWanted:         maxGasWanted,
 		ExtensionOptionChecker: ethermint.HasDynamicFeeExtensionOption,
 		TxFeeChecker:           ante.NewDynamicFeeChecker(app.EvmKeeper),
+		DisabledAuthzMsgs: []string{
+			sdk.MsgTypeURL(&evmtypes.MsgEthereumTx{}),
+			sdk.MsgTypeURL(&vestingtypes.MsgCreateVestingAccount{}),
+		},
 	})
 	if err != nil {
 		panic(err)

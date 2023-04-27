@@ -107,7 +107,7 @@ const (
 
 // Logs searches the blockchain for matching log entries, returning all from the
 // first block that contains matches, updating the start of the filter accordingly.
-func (f *Filter) Logs(ctx context.Context, logLimit int, blockLimit int64) ([]*ethtypes.Log, error) {
+func (f *Filter) Logs(_ context.Context, logLimit int, blockLimit int64) ([]*ethtypes.Log, error) {
 	logs := []*ethtypes.Log{}
 	var err error
 

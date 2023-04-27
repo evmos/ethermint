@@ -53,6 +53,8 @@ func init() {
 func NewLegacyCosmosAnteHandlerEip712(options HandlerOptions) sdk.AnteHandler {
 	return sdk.ChainAnteDecorators(
 		RejectMessagesDecorator{}, // reject MsgEthereumTxs
+		// disable the Msg types that cannot be included on an authz.MsgExec msgs field
+		NewAuthzLimiterDecorator(options.DisabledAuthzMsgs),
 		authante.NewSetUpContextDecorator(),
 		authante.NewValidateBasicDecorator(),
 		authante.NewTxTimeoutHeightDecorator(),
@@ -264,7 +266,7 @@ func VerifySignature(
 			FeePayer: feePayer,
 		}
 
-		typedData, err := eip712.WrapTxToTypedData(ethermintCodec, extOpt.TypedDataChainID, msgs[0], txBytes, feeDelegation)
+		typedData, err := eip712.LegacyWrapTxToTypedData(ethermintCodec, extOpt.TypedDataChainID, msgs[0], txBytes, feeDelegation)
 		if err != nil {
 			return errorsmod.Wrap(err, "failed to create EIP-712 typed data from tx")
 		}

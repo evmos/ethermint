@@ -44,6 +44,7 @@ type HandlerOptions struct {
 	MaxTxGasWanted         uint64
 	ExtensionOptionChecker ante.ExtensionOptionChecker
 	TxFeeChecker           ante.TxFeeChecker
+	DisabledAuthzMsgs      []string
 }
 
 func (options HandlerOptions) validate() error {
@@ -84,6 +85,8 @@ func newEthAnteHandler(options HandlerOptions) sdk.AnteHandler {
 func newCosmosAnteHandler(options HandlerOptions) sdk.AnteHandler {
 	return sdk.ChainAnteDecorators(
 		RejectMessagesDecorator{}, // reject MsgEthereumTxs
+		// disable the Msg types that cannot be included on an authz.MsgExec msgs field
+		NewAuthzLimiterDecorator(options.DisabledAuthzMsgs),
 		ante.NewSetUpContextDecorator(),
 		ante.NewExtensionOptionsDecorator(options.ExtensionOptionChecker),
 		ante.NewValidateBasicDecorator(),
