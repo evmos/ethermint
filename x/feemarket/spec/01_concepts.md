@@ -67,8 +67,6 @@ min(baseFee + gasTipCap, gasFeeCap)
 
 Minimum gas prices are used to discard spam transactions in the network, by raising the cost of transactions to the point that it is not economically viable for the spammer. This is achieved by defining a minimum gas price for accepting txs in the mempool for both Cosmos and EVM transactions. A transaction is discarded from the mempool if it doesn't provide at least one of the two types of min gas prices:
 
-Minimum gas prices are used to discard spam transactions in the network, by raising the cost of transactions to the point that it is not economically viable for the spammer. This is achieved by defining a minimum gas price for accepting txs in the mempool for both Cosmos and EVM transactions. A transaction is discarded from the mempool if it doesn't provide at least one of the two types of min gas prices:
-
 1. the local min gas prices that validators can set on their node config and
 2. the global min gas price, which is set as a parameter in the `feemarket` module, which can be changed through governance.
 
