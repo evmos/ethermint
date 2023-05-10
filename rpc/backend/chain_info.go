@@ -17,6 +17,7 @@ package backend
 
 import (
 	"fmt"
+	"math"
 	"math/big"
 	"strconv"
 	"sync"
@@ -154,20 +155,25 @@ func (b *Backend) GetCoinbase() (sdk.AccAddress, error) {
 	return address, nil
 }
 
+var (
+	errRequestBeyondHead = fmt.Errorf("request beyond head block")
+)
+
 // FeeHistory returns data relevant for fee estimation based on the specified range of blocks.
 func (b *Backend) FeeHistory(
 	userBlockCount rpc.DecimalOrHex, // number blocks to fetch, maximum is 100
 	lastBlock rpc.BlockNumber, // the block to start search , to oldest
 	rewardPercentiles []float64, // percentiles to fetch reward
 ) (*rpctypes.FeeHistoryResult, error) {
+	blockNumber, err := b.BlockNumber()
+	if err != nil {
+		return nil, err
+	}
 	blockEnd := int64(lastBlock)
-
 	if blockEnd < 0 {
-		blockNumber, err := b.BlockNumber()
-		if err != nil {
-			return nil, err
-		}
 		blockEnd = int64(blockNumber)
+	} else if int64(blockNumber) < blockEnd {
+		return nil, fmt.Errorf("%w: requested %d, head %d", errRequestBeyondHead, blockEnd, int64(blockNumber))
 	}
 
 	blocks := int64(userBlockCount)
@@ -175,8 +181,7 @@ func (b *Backend) FeeHistory(
 	if blocks > maxBlockCount {
 		return nil, fmt.Errorf("FeeHistory user block count %d higher than %d", blocks, maxBlockCount)
 	}
-
-	if blockEnd+1 < blocks {
+	if blockEnd < math.MaxInt64 && blockEnd+1 < blocks {
 		blocks = blockEnd + 1
 	}
 	// Ensure not trying to retrieve before genesis.

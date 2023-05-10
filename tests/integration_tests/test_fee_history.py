@@ -138,3 +138,10 @@ def test_next(cluster, custom_ethermint):
         )
         expected.append(hex(next_base_price))
     assert histories == list(zip(expected, expected[1:]))
+
+
+def test_beyond_head(cluster):
+    end = hex(0x7fffffffffffffff)
+    res = cluster.w3.provider.make_request("eth_feeHistory", [4, end, []])
+    msg = f"request beyond head block: requested {int(end, 16)}"
+    assert msg in res["error"]["message"]
