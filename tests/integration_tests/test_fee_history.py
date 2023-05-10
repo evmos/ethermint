@@ -145,3 +145,18 @@ def test_beyond_head(cluster):
     res = cluster.w3.provider.make_request("eth_feeHistory", [4, end, []])
     msg = f"request beyond head block: requested {int(end, 16)}"
     assert msg in res["error"]["message"]
+
+
+def test_percentiles(cluster):
+    w3: Web3 = cluster.w3
+    call = w3.provider.make_request
+    method = "eth_feeHistory"
+    percentiles = [[-1], [101], [2, 1]]
+    size = 4
+    msg = "invalid reward percentile"
+    with ThreadPoolExecutor(len(percentiles)) as exec:
+        tasks = [
+            exec.submit(call, method, [size, "latest", p]) for p in percentiles
+        ]
+        result = [future.result() for future in as_completed(tasks)]
+        assert all(msg in res["error"]["message"] for res in result)
