@@ -51,7 +51,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Improvements
 
 - (ante) [#1717](https://github.com/evmos/ethermint/pull/1717) Reuse sender recovery result.
-- (store) [#]() Integrate local state sync commands from recent sdk.
+- (store) [#1768](https://github.com/evmos/ethermint/pull/1768) Integrate local state sync commands from recent sdk.
 
 ## [v0.21.0] - 2023-01-26
 
