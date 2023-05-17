@@ -244,9 +244,10 @@ func (es *EventSystem) eventLoop() {
 			es.indexMux.Lock()
 			es.index[f.typ][f.id] = f
 			ch := make(chan coretypes.ResultEvent)
-			es.topicChans[f.event] = ch
 			if err := es.eventBus.AddTopic(f.event, ch); err != nil {
 				es.logger.Error("failed to add event topic to event bus", "topic", f.event, "error", err.Error())
+			} else {
+				es.topicChans[f.event] = ch
 			}
 			es.indexMux.Unlock()
 			close(f.installed)
