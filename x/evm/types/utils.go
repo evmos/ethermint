@@ -38,21 +38,32 @@ var EmptyCodeHash = crypto.Keccak256(nil)
 
 // DecodeTxResponse decodes an protobuf-encoded byte slice into TxResponse
 func DecodeTxResponse(in []byte) (*MsgEthereumTxResponse, error) {
+	responses, err := DecodeTxResponses(in)
+	if err != nil {
+		return nil, err
+	}
+	if len(responses) == 0 {
+		return &MsgEthereumTxResponse{}, nil
+	}
+	return responses[0], nil
+}
+
+// DecodeTxResponses decodes an protobuf-encoded byte slice into TxResponses
+func DecodeTxResponses(in []byte) ([]*MsgEthereumTxResponse, error) {
 	var txMsgData sdk.TxMsgData
 	if err := proto.Unmarshal(in, &txMsgData); err != nil {
 		return nil, err
 	}
 
-	if len(txMsgData.MsgResponses) == 0 {
-		return &MsgEthereumTxResponse{}, nil
+	responses := make([]*MsgEthereumTxResponse, len(txMsgData.MsgResponses))
+	for i, res := range txMsgData.MsgResponses {
+		var response MsgEthereumTxResponse
+		if err := proto.Unmarshal(res.Value, &response); err != nil {
+			return nil, errorsmod.Wrap(err, "failed to unmarshal tx response message data")
+		}
+		responses[i] = &response
 	}
-
-	var res MsgEthereumTxResponse
-	if err := proto.Unmarshal(txMsgData.MsgResponses[0].Value, &res); err != nil {
-		return nil, errorsmod.Wrap(err, "failed to unmarshal tx response message data")
-	}
-
-	return &res, nil
+	return responses, nil
 }
 
 // EncodeTransactionLogs encodes TransactionLogs slice into a protobuf-encoded byte slice.

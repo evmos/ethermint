@@ -41,11 +41,11 @@ import (
 	rpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"github.com/evmos/ethermint/rpc/backend"
 	"github.com/evmos/ethermint/rpc/ethereum/pubsub"
 	rpcfilters "github.com/evmos/ethermint/rpc/namespaces/ethereum/eth/filters"
 	"github.com/evmos/ethermint/rpc/types"
 	"github.com/evmos/ethermint/server/config"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
 )
 
 type WebsocketsServer interface {
@@ -581,16 +581,17 @@ func (api *pubSubAPI) subscribeLogs(wsConn *wsConn, subID rpc.ID, extra interfac
 					continue
 				}
 
-				allLogs, err := backend.AllTxLogsFromEvents(dataTx.Result.Events)
+				txResponses, err := evmtypes.DecodeTxResponses(dataTx.TxResult.Result.Data)
 				if err != nil {
 					api.logger.Error("failed to decode tx response", "error", err.Error())
 					return
 				}
-				unfiltered := []*ethtypes.Log{}
-				for _, l := range allLogs {
-					unfiltered = append(unfiltered, l...)
+
+				var txLogs []*evmtypes.Log
+				for _, response := range txResponses {
+					txLogs = append(txLogs, response.Logs...)
 				}
-				logs := rpcfilters.FilterLogs(unfiltered, crit.FromBlock, crit.ToBlock, crit.Addresses, crit.Topics)
+				logs := rpcfilters.FilterLogs(evmtypes.LogsToEthereum(txLogs), crit.FromBlock, crit.ToBlock, crit.Addresses, crit.Topics)
 				if len(logs) == 0 {
 					continue
 				}
