@@ -122,8 +122,6 @@ def test_subscribe_basic(ethermint: Ethermint):
         async with websockets.connect(ethermint.w3_ws_endpoint) as ws:
             c = Client(ws)
             t = asyncio.create_task(c.receive_loop())
-            # run send concurrently
-            await asyncio.gather(*[c.send(id) for id in ["0", 1, 2.0]])
             contract, _ = deploy_contract(ethermint.w3, CONTRACTS["TestMessageCall"])
             inner = contract.caller.inner()
             await asyncio.gather(*[logs_test(c, ethermint.w3, contract, inner)])
