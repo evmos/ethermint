@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -188,10 +189,9 @@ def decode_bech32(addr):
 
 
 def supervisorctl(inipath, *args):
-    subprocess.run(
+    return subprocess.check_output(
         (sys.executable, "-msupervisor.supervisorctl", "-c", inipath, *args),
-        check=True,
-    )
+    ).decode()
 
 
 def parse_events(logs):
@@ -215,3 +215,16 @@ def send_raw_transactions(w3, raw_transactions):
         ]
         sended_hash_set = {future.result() for future in as_completed(tasks)}
     return sended_hash_set
+
+
+def modify_command_in_supervisor_config(ini: Path, fn, **kwargs):
+    "replace the first node with the instrumented binary"
+    ini.write_text(
+        re.sub(
+            r"^command = (ethermintd .*$)",
+            lambda m: f"command = {fn(m.group(1))}",
+            ini.read_text(),
+            flags=re.M,
+            **kwargs,
+        )
+    )

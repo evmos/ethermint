@@ -9,7 +9,7 @@ from pystarport import ports
 from web3.middleware import geth_poa_middleware
 
 from .cosmoscli import CosmosCLI
-from .utils import wait_for_port
+from .utils import supervisorctl, wait_for_port
 
 DEFAULT_CHAIN_BINARY = "ethermintd"
 
@@ -61,6 +61,9 @@ class Ethermint:
         return CosmosCLI(
             self.base_dir / f"node{i}", self.node_rpc(i), self.chain_binary
         )
+
+    def supervisorctl(self, *args):
+        return supervisorctl(self.base_dir / "../tasks.ini", *args)
 
 
 class Geth:

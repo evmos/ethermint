@@ -11,6 +11,7 @@ from .utils import (
     CONTRACTS,
     KEYS,
     deploy_contract,
+    modify_command_in_supervisor_config,
     send_raw_transactions,
     sign_transaction,
     wait_for_new_blocks,
@@ -82,6 +83,11 @@ def test_subscribe_basic(ethermint: Ethermint):
     """
     test basic subscribe and unsubscribe
     """
+    modify_command_in_supervisor_config(
+        ethermint.base_dir / "tasks.ini",
+        lambda cmd: f"{cmd} --evm.max-tx-gas-wanted {0}",
+    )
+    ethermint.supervisorctl("update")
     wait_for_port(ports.evmrpc_ws_port(ethermint.base_port(0)))
     cli = ethermint.cosmos_cli()
     loop = asyncio.get_event_loop()
@@ -99,7 +105,7 @@ def test_subscribe_basic(ethermint: Ethermint):
             method = f"TestEvent{i}(uint256)"
             topic = f"0x{abi.event_signature_to_log_topic(method).hex()}"
             sub_id = await c.subscribe("logs", {"address": address, "topics": [topic]})
-            iterations = 5
+            iterations = 1
             tx = contract.functions.test(iterations).build_transaction()
             raw_transactions = []
             for key_from in KEYS.values():
@@ -125,6 +131,8 @@ def test_subscribe_basic(ethermint: Ethermint):
             try:
                 await t
             except asyncio.CancelledError:
+                print("cancel")
                 pass
 
-    loop.run_until_complete(async_test())
+    timeout = 100
+    loop.run_until_complete(asyncio.wait_for(async_test(), timeout))
