@@ -76,18 +76,17 @@ schema = 3
     version = "v0.1.1-0.20220910012023-760eaf8b6816"
     hash = "sha256-Tx3sPuhsoVwrCfJdIwf4ipn7pD92OQNYvpCxl1Z9Wt0="
   [mod."github.com/btcsuite/btcd"]
-    version = "v0.23.3"
-    hash = "sha256-/FimjFJye25/cpKOdNYJjPw1TUyu+7HuyfPggNcIsBY="
+    version = "v0.23.4"
+    hash = "sha256-xP7TLBdOoUIjg5Q3MOjbT5P9tkCWjsd4bWgZLp539Wo="
   [mod."github.com/btcsuite/btcd/btcec/v2"]
     version = "v2.3.2"
     hash = "sha256-natWs+yIAuD1UI07iZtjPilroQLfXizFn3lNOiOT83U="
+  [mod."github.com/btcsuite/btcd/btcutil"]
+    version = "v1.1.3"
+    hash = "sha256-6Y9sP1yvPBO8PhqmFVVXNV7dxsXlERDAB+TPTEfW3kI="
   [mod."github.com/btcsuite/btcd/chaincfg/chainhash"]
     version = "v1.0.1"
     hash = "sha256-vix0j/KGNvoKjhlKgVeSLY6un2FHeIEoZWMC4z3yvZ4="
-  [mod."github.com/btcsuite/btcutil"]
-    version = "v1.1.2"
-    hash = "sha256-c58dV4r6iXM/0uBQjVq9eyJPrEOK8keQxGzMInnk71g="
-    replaced = "github.com/btcsuite/btcd/btcutil"
   [mod."github.com/cenkalti/backoff/v4"]
     version = "v4.1.3"
     hash = "sha256-u6MEDopHoTWAZoVvvXOKnAg++xre53YgQx0gmf6t2KU="

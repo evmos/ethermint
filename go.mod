@@ -9,8 +9,8 @@ require (
 	cosmossdk.io/simapp v0.0.0-20230224204036-a6adb0821462
 	cosmossdk.io/tools/rosetta v0.2.1
 	github.com/armon/go-metrics v0.4.1
-	github.com/btcsuite/btcd v0.23.3
-	github.com/btcsuite/btcd/btcutil v1.1.2
+	github.com/btcsuite/btcd v0.23.4
+	github.com/btcsuite/btcd/btcutil v1.1.3
 	github.com/cometbft/cometbft v0.37.1
 	github.com/cometbft/cometbft-db v0.7.0
 	github.com/cosmos/cosmos-proto v1.0.0-beta.2
@@ -215,7 +215,6 @@ replace (
 	// use cosmos keyring
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.1.7-0.20210622111912-ef00f8ac3d76
 	github.com/ChainSafe/go-schnorrkel => github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d
-	github.com/btcsuite/btcutil => github.com/btcsuite/btcd/btcutil v1.1.3
 	github.com/cometbft/cometbft-db => github.com/crypto-org-chain/cometbft-db v0.0.0-20230412133340-ac70df4b45f6
 	// Fix upstream GHSA-h395-qcrw-5vmq vulnerability.
 	// TODO Remove it: https://github.com/cosmos/cosmos-sdk/issues/10409
