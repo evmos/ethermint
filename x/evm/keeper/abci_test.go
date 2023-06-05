@@ -1,8 +1,8 @@
 package keeper_test
 
 import (
+	"github.com/cometbft/cometbft/abci/types"
 	evmtypes "github.com/evmos/ethermint/x/evm/types"
-	"github.com/tendermint/tendermint/abci/types"
 )
 
 func (suite *KeeperTestSuite) TestEndBlock() {

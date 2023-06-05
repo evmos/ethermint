@@ -18,11 +18,11 @@ package filters
 import (
 	"time"
 
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/ethereum/go-ethereum/rpc"
-	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 // Subscription defines a wrapper for the private subscription

@@ -50,8 +50,8 @@ const (
 	flagMultiSigThreshold = "multisig-threshold"
 	flagNoSort            = "nosort"
 	flagHDPath            = "hd-path"
-
-	mnemonicEntropySize = 256
+	flagKeyAlgorithm      = "algo"
+	mnemonicEntropySize   = 256
 )
 
 /*
@@ -76,7 +76,7 @@ func RunAddCmd(ctx client.Context, cmd *cobra.Command, args []string, inBuf *buf
 	interactive, _ := cmd.Flags().GetBool(flagInteractive)
 	noBackup, _ := cmd.Flags().GetBool(flagNoBackup)
 	useLedger, _ := cmd.Flags().GetBool(flags.FlagUseLedger)
-	algoStr, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
+	algoStr, _ := cmd.Flags().GetString(flagKeyAlgorithm)
 
 	showMnemonic := !noBackup
 	kb := ctx.Keyring
