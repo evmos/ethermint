@@ -26,6 +26,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -36,7 +37,7 @@ var DefaultPriorityReduction = sdk.DefaultPowerReduction
 
 var EmptyCodeHash = crypto.Keccak256(nil)
 
-// DecodeTxResponse decodes an protobuf-encoded byte slice into TxResponse
+// DecodeTxResponse decodes a protobuf-encoded byte slice into TxResponse
 func DecodeTxResponse(in []byte) (*MsgEthereumTxResponse, error) {
 	responses, err := DecodeTxResponses(in)
 	if err != nil {
@@ -48,7 +49,7 @@ func DecodeTxResponse(in []byte) (*MsgEthereumTxResponse, error) {
 	return responses[0], nil
 }
 
-// DecodeTxResponses decodes an protobuf-encoded byte slice into TxResponses
+// DecodeTxResponses decodes a protobuf-encoded byte slice into TxResponses
 func DecodeTxResponses(in []byte) ([]*MsgEthereumTxResponse, error) {
 	var txMsgData sdk.TxMsgData
 	if err := proto.Unmarshal(in, &txMsgData); err != nil {
@@ -64,6 +65,19 @@ func DecodeTxResponses(in []byte) ([]*MsgEthereumTxResponse, error) {
 		responses[i] = &response
 	}
 	return responses, nil
+}
+
+// DecodeTxLogsFromEvents decodes a protobuf-encoded byte slice into ethereum logs
+func DecodeTxLogsFromEvents(in []byte) ([]*ethtypes.Log, error) {
+	txResponses, err := DecodeTxResponses(in)
+	if err != nil {
+		return nil, err
+	}
+	var txLogs []*Log
+	for _, response := range txResponses {
+		txLogs = append(txLogs, response.Logs...)
+	}
+	return LogsToEthereum(txLogs), nil
 }
 
 // EncodeTransactionLogs encodes TransactionLogs slice into a protobuf-encoded byte slice.
