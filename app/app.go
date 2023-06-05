@@ -51,6 +51,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/store/streaming"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	mempool "github.com/cosmos/cosmos-sdk/types/mempool"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -293,6 +294,14 @@ func NewEthermintApp(
 	eip712.SetEncodingConfig(encodingConfig)
 
 	// NOTE we use custom transaction decoder that supports the sdk.Tx interface instead of sdk.StdTx
+	// Setup Mempool and Proposal Handlers
+	baseAppOptions = append(baseAppOptions, func(app *baseapp.BaseApp) {
+		mempool := mempool.NewSenderNonceMempool()
+		app.SetMempool(mempool)
+		handler := baseapp.NewDefaultProposalHandler(mempool, app)
+		app.SetPrepareProposal(handler.PrepareProposalHandler())
+		app.SetProcessProposal(handler.ProcessProposalHandler())
+	})
 	bApp := baseapp.NewBaseApp(
 		appName,
 		logger,
@@ -303,10 +312,6 @@ func NewEthermintApp(
 	bApp.SetCommitMultiStoreTracer(traceStore)
 	bApp.SetVersion(version.Version)
 	bApp.SetInterfaceRegistry(interfaceRegistry)
-
-	// Setup Mempool and Proposal Handlers
-	bApp.SetPrepareProposal(bApp.DefaultPrepareProposal())
-	bApp.SetProcessProposal(bApp.DefaultProcessProposal())
 
 	keys := sdk.NewKVStoreKeys(
 		// SDK keys
