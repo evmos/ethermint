@@ -34,7 +34,6 @@ TEST_CONTRACTS = {
     "TestChainID": "ChainID.sol",
     "Mars": "Mars.sol",
     "StateContract": "StateContract.sol",
-    "TestMessageCall": "TestMessageCall.sol",
 }
 
 
@@ -228,3 +227,38 @@ def modify_command_in_supervisor_config(ini: Path, fn, **kwargs):
             **kwargs,
         )
     )
+
+
+def build_batch_tx(w3, cli, txs, key=KEYS["validator"]):
+    "return cosmos batch tx and eth tx hashes"
+    signed_txs = [sign_transaction(w3, tx, key) for tx in txs]
+    tmp_txs = [cli.build_evm_tx(signed.rawTransaction.hex()) for signed in signed_txs]
+
+    msgs = [tx["body"]["messages"][0] for tx in tmp_txs]
+    fee = sum(int(tx["auth_info"]["fee"]["amount"][0]["amount"]) for tx in tmp_txs)
+    gas_limit = sum(int(tx["auth_info"]["fee"]["gas_limit"]) for tx in tmp_txs)
+
+    tx_hashes = [signed.hash for signed in signed_txs]
+
+    # build batch cosmos tx
+    return {
+        "body": {
+            "messages": msgs,
+            "memo": "",
+            "timeout_height": "0",
+            "extension_options": [
+                {"@type": "/ethermint.evm.v1.ExtensionOptionsEthereumTx"}
+            ],
+            "non_critical_extension_options": [],
+        },
+        "auth_info": {
+            "signer_infos": [],
+            "fee": {
+                "amount": [{"denom": "aphoton", "amount": str(fee)}],
+                "gas_limit": str(gas_limit),
+                "payer": "",
+                "granter": "",
+            },
+        },
+        "signatures": [],
+    }, tx_hashes

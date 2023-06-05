@@ -4,16 +4,16 @@ from collections import defaultdict
 
 import websockets
 from eth_utils import abi
+from hexbytes import HexBytes
 from pystarport import ports
 
 from .network import Ethermint
 from .utils import (
+    ADDRS,
     CONTRACTS,
-    KEYS,
+    build_batch_tx,
     deploy_contract,
     modify_command_in_supervisor_config,
-    send_raw_transactions,
-    sign_transaction,
     wait_for_new_blocks,
     wait_for_port,
 )
@@ -100,31 +100,40 @@ def test_subscribe_basic(ethermint: Ethermint):
         # unsubscribe again return False
         assert not await c.unsubscribe(sub_id)
 
-    async def logs_test(c: Client, w3, contract, address):
-        for i in range(2):
-            method = f"TestEvent{i}(uint256)"
-            topic = f"0x{abi.event_signature_to_log_topic(method).hex()}"
-            sub_id = await c.subscribe("logs", {"address": address, "topics": [topic]})
-            iterations = 1
-            tx = contract.functions.test(iterations).build_transaction()
-            raw_transactions = []
-            for key_from in KEYS.values():
-                signed = sign_transaction(w3, tx, key_from)
-                raw_transactions.append(signed.rawTransaction)
-            send_raw_transactions(w3, raw_transactions)
-            total = len(KEYS) * iterations
-            msgs = [await c.recv_subscription(sub_id) for i in range(total)]
-            assert len(msgs) == total
-            assert all(msg["topics"] == [topic] for msg in msgs)
-            await assert_unsubscribe(c, sub_id)
+    async def logs_test(c: Client, w3, contract):
+        method = "Transfer(address,address,uint256)"
+        topic = f"0x{abi.event_signature_to_log_topic(method).hex()}"
+        params = {"address": contract.address, "topics": [topic]}
+        sub_id = await c.subscribe("logs", params)
+        sender = ADDRS["validator"]
+        recipient = ADDRS["community"]
+        nonce = w3.eth.get_transaction_count(sender)
+        total = 2
+        txs = [
+            contract.functions.transfer(recipient, 1000).build_transaction(
+                {"from": sender, "nonce": nonce + n, "gas": 200000}
+            )
+            for n in range(total)
+        ]
+        cosmos_tx, _ = build_batch_tx(w3, cli, txs)
+        rsp = cli.broadcast_tx_json(cosmos_tx)
+        assert rsp["code"] == 0, rsp["raw_log"]
+        msgs = [await c.recv_subscription(sub_id) for i in range(total)]
+        assert len(msgs) == total
+        for msg in msgs:
+            assert topic in msg["topics"] == [
+                topic,
+                HexBytes(b"\x00" * 12 + HexBytes(sender)).hex(),
+                HexBytes(b"\x00" * 12 + HexBytes(recipient)).hex(),
+            ]
+        await assert_unsubscribe(c, sub_id)
 
     async def async_test():
         async with websockets.connect(ethermint.w3_ws_endpoint) as ws:
             c = Client(ws)
             t = asyncio.create_task(c.receive_loop())
-            contract, _ = deploy_contract(ethermint.w3, CONTRACTS["TestMessageCall"])
-            inner = contract.caller.inner()
-            await asyncio.gather(*[logs_test(c, ethermint.w3, contract, inner)])
+            contract, _ = deploy_contract(ethermint.w3, CONTRACTS["TestERC20A"])
+            await asyncio.gather(*[logs_test(c, ethermint.w3, contract)])
             t.cancel()
             try:
                 await t
@@ -132,5 +141,5 @@ def test_subscribe_basic(ethermint: Ethermint):
                 print("cancel")
                 pass
 
-    timeout = 100
+    timeout = 50
     loop.run_until_complete(asyncio.wait_for(async_test(), timeout))
