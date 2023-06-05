@@ -82,8 +82,8 @@ schema = 3
     version = "v1.0.1"
     hash = "sha256-vix0j/KGNvoKjhlKgVeSLY6un2FHeIEoZWMC4z3yvZ4="
   [mod."github.com/btcsuite/btcutil"]
-    version = "v1.1.3"
-    hash = "sha256-6Y9sP1yvPBO8PhqmFVVXNV7dxsXlERDAB+TPTEfW3kI="
+    version = "v1.1.2"
+    hash = "sha256-c58dV4r6iXM/0uBQjVq9eyJPrEOK8keQxGzMInnk71g="
     replaced = "github.com/btcsuite/btcd/btcutil"
   [mod."github.com/cenkalti/backoff/v4"]
     version = "v4.1.3"
@@ -243,9 +243,8 @@ schema = 3
     version = "v1.4.1"
     hash = "sha256-4KgwVRIA6GOV/Lkv11c/vj2RMlgu4ZMjwJGeyb2DZC4="
   [mod."github.com/gogo/protobuf"]
-    version = "v1.3.3-alpha.regen.1"
-    hash = "sha256-TKa//aFXpWH+yK/cN1oaaqhipZpPUovekP6oA9vLIHY="
-    replaced = "github.com/regen-network/protobuf"
+    version = "v1.3.2"
+    hash = "sha256-pogILFrrk+cAtb0ulqn9+gRZJ7sGnnLLdtqITvxvG6c="
   [mod."github.com/golang/glog"]
     version = "v1.1.0"
     hash = "sha256-FgkBzn32nsq5Fpz0KKOrOqKap6pa2A1P3N2C0/Qp820="

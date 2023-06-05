@@ -24,4 +24,3 @@ done
 cp -r github.com/evmos/ethermint/* ./
 rm -rf github.com
 
-go mod tidy -compat=1.19
