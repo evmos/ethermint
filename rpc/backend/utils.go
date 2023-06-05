@@ -260,12 +260,12 @@ func TxLogsFromEvents(events []abci.Event, msgIndex int) ([]*ethtypes.Log, error
 func ParseTxLogsFromEvent(event abci.Event) ([]*ethtypes.Log, error) {
 	logs := make([]*evmtypes.Log, 0, len(event.Attributes))
 	for _, attr := range event.Attributes {
-		if !bytes.Equal(attr.Key, []byte(evmtypes.AttributeKeyTxLog)) {
+		if !bytes.Equal([]byte(attr.Key), []byte(evmtypes.AttributeKeyTxLog)) {
 			continue
 		}
 
 		var log evmtypes.Log
-		if err := json.Unmarshal(attr.Value, &log); err != nil {
+		if err := json.Unmarshal([]byte(attr.Value), &log); err != nil {
 			return nil, err
 		}
 

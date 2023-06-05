@@ -37,6 +37,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/math"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
+	tmrpcclient "github.com/tendermint/tendermint/rpc/client"
 )
 
 // ExceedBlockGasLimitError defines the error message when tx execution exceeds the block gas limit.
@@ -92,7 +93,12 @@ func EthHeaderFromTendermint(header tmtypes.Header, bloom ethtypes.Bloom, baseFe
 
 // BlockMaxGasFromConsensusParams returns the gas limit for the current block from the chain consensus params.
 func BlockMaxGasFromConsensusParams(goCtx context.Context, clientCtx client.Context, blockHeight int64) (int64, error) {
-	resConsParams, err := clientCtx.Client.ConsensusParams(goCtx, &blockHeight)
+	tmrpcClient, ok := clientCtx.Client.(tmrpcclient.Client)
+	if !ok {
+		panic("incorrect tm rpc client")
+	}
+
+	resConsParams, err := tmrpcClient.ConsensusParams(goCtx, &blockHeight)
 	if err != nil {
 		return int64(^uint32(0)), err
 	}
@@ -235,8 +241,8 @@ func BaseFeeFromEvents(events []abci.Event) *big.Int {
 		}
 
 		for _, attr := range event.Attributes {
-			if bytes.Equal(attr.Key, []byte(feemarkettypes.AttributeKeyBaseFee)) {
-				result, success := new(big.Int).SetString(string(attr.Value), 10)
+			if bytes.Equal([]byte(attr.Key), []byte(feemarkettypes.AttributeKeyBaseFee)) {
+				result, success := new(big.Int).SetString(attr.Value, 10)
 				if success {
 					return result
 				}

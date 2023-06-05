@@ -81,7 +81,7 @@ func (suite *BackendTestSuite) TestBaseFee() {
 					{
 						Type: feemarkettypes.EventTypeFeeMarket,
 						Attributes: []types.EventAttribute{
-							{Value: []byte{0x1}},
+							{Value: "/1"},
 						},
 					},
 				},
@@ -101,7 +101,7 @@ func (suite *BackendTestSuite) TestBaseFee() {
 					{
 						Type: feemarkettypes.EventTypeFeeMarket,
 						Attributes: []types.EventAttribute{
-							{Value: []byte(baseFee.String())},
+							{Value: baseFee.String()},
 						},
 					},
 				},

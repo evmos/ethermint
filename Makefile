@@ -255,7 +255,7 @@ endif
 
 ifeq (, $(shell which protoc-gen-go))
 	@echo "Installing protoc-gen-go..."
-	@go get github.com/fjl/gencodec github.com/golang/protobuf/protoc-gen-go
+	@go get github.com/fjl/gencodec google.golang.org/protobuf/cmd/protoc-gen-go
 else
 	@echo "protoc-gen-go already installed; skipping..."
 endif
@@ -392,30 +392,10 @@ format-fix:
 ###                                Protobuf                                 ###
 ###############################################################################
 
-# ------
-# NOTE: Link to the tendermintdev/sdk-proto-gen docker images: 
-#       https://hub.docker.com/r/tendermintdev/sdk-proto-gen/tags
-#
-protoVer=v0.7
-protoImageName=tendermintdev/sdk-proto-gen:$(protoVer)
-protoImage=$(DOCKER) run --network host --rm -v $(CURDIR):/workspace --workdir /workspace $(protoImageName)
-# ------
-# NOTE: cosmos/proto-builder image is needed because clang-format is not installed
-#       on the tendermintdev/sdk-proto-gen docker image.
-#		Link to the cosmos/proto-builder docker images:
-#       https://github.com/cosmos/cosmos-sdk/pkgs/container/proto-builder
-#
-protoCosmosVer=0.11.2
-protoCosmosName=ghcr.io/cosmos/proto-builder:$(protoCosmosVer)
-protoCosmosImage=$(DOCKER) run --network host --rm -v $(CURDIR):/workspace --workdir /workspace $(protoCosmosName)
-# ------
-# NOTE: Link to the yoheimuta/protolint docker images:
-#       https://hub.docker.com/r/yoheimuta/protolint/tags
-#
-protolintVer=0.42.2
-protolintName=yoheimuta/protolint:$(protolintVer)
-protolintImage=$(DOCKER) run --network host --rm -v $(CURDIR):/workspace --workdir /workspace $(protolintName)
 
+protoVer=0.11.6
+protoImageName=ghcr.io/cosmos/proto-builder:$(protoVer)
+protoImage=$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace $(protoImageName)
 
 # ------
 # NOTE: If you are experiencing problems running these commands, try deleting
@@ -426,7 +406,13 @@ proto-all: proto-format proto-lint proto-gen
 proto-gen:
 	@echo "Generating Protobuf files"
 	$(protoImage) sh ./scripts/protocgen.sh
+proto-lint:
+	@echo "Linting Protobuf files"
+	@$(protoImage) buf lint --error-format=json
 
+proto-check-breaking:
+	@echo "Checking Protobuf files for breaking changes"
+	@$(protoImage) buf breaking --against $(HTTPS_GIT)#branch=main
 
 # TODO: Rethink API docs generation
 # proto-swagger-gen:
@@ -435,19 +421,9 @@ proto-gen:
 
 proto-format:
 	@echo "Formatting Protobuf files"
-	$(protoCosmosImage) find ./ -name *.proto -exec clang-format -i {} \;
+	@$(protoImage) find ./ -name "*.proto" -exec clang-format -i {} \;
 
-# NOTE: The linter configuration lives in .protolint.yaml
-proto-lint:
-	@echo "Linting Protobuf files"
-	$(protolintImage) lint ./proto
-
-proto-check-breaking:
-	@echo "Checking Protobuf files for breaking changes"
-	$(protoImage) buf breaking --against $(HTTPS_GIT)#branch=main
-
-
-.PHONY: proto-all proto-gen proto-gen-any proto-format proto-lint proto-check-breaking
+.PHONY: proto-all proto-gen proto-format proto-lint proto-check-breaking
 
 ###############################################################################
 ###                                Localnet                                 ###
