@@ -82,7 +82,7 @@ var lock = new(sync.Mutex)
 type AppConstructor = func(val Validator) servertypes.Application
 
 // NewAppConstructor returns a new simapp AppConstructor
-func NewAppConstructor(encodingCfg params.EncodingConfig) AppConstructor {
+func NewAppConstructor(encodingCfg params.EncodingConfig, chainID string) AppConstructor {
 	return func(val Validator) servertypes.Application {
 		return app.NewEthermintApp(
 			val.Ctx.Logger,
@@ -96,6 +96,7 @@ func NewAppConstructor(encodingCfg params.EncodingConfig) AppConstructor {
 			simtestutil.NewAppOptionsWithFlagHome(val.Ctx.Config.RootDir),
 			baseapp.SetPruning(pruningtypes.NewPruningOptionsFromString(val.AppConfig.Pruning)),
 			baseapp.SetMinGasPrices(val.AppConfig.MinGasPrices),
+			baseapp.SetChainID(chainID),
 		)
 	}
 }
@@ -134,17 +135,17 @@ type Config struct {
 // testing requirements.
 func DefaultConfig() Config {
 	encCfg := encoding.MakeConfig(app.ModuleBasics)
-
+	chainID := fmt.Sprintf("ethermint_%d-1", tmrand.Int63n(9999999999999)+1)
 	return Config{
 		Codec:             encCfg.Codec,
 		TxConfig:          encCfg.TxConfig,
 		LegacyAmino:       encCfg.Amino,
 		InterfaceRegistry: encCfg.InterfaceRegistry,
 		AccountRetriever:  authtypes.AccountRetriever{},
-		AppConstructor:    NewAppConstructor(encCfg),
+		AppConstructor:    NewAppConstructor(encCfg, chainID),
 		GenesisState:      app.ModuleBasics.DefaultGenesis(encCfg.Codec),
 		TimeoutCommit:     2 * time.Second,
-		ChainID:           fmt.Sprintf("ethermint_%d-1", tmrand.Int63n(9999999999999)+1),
+		ChainID:           chainID,
 		NumValidators:     4,
 		BondDenom:         ethermint.AttoPhoton,
 		MinGasPrices:      fmt.Sprintf("0.000006%s", ethermint.AttoPhoton),

@@ -179,6 +179,7 @@ func setupChain(localMinGasPricesStr string) {
 		encoding.MakeConfig(app.ModuleBasics),
 		simtestutil.NewAppOptionsWithFlagHome(app.DefaultNodeHome),
 		baseapp.SetMinGasPrices(localMinGasPricesStr),
+		baseapp.SetChainID(app.ChainID),
 	)
 
 	genesisState := app.NewTestGenesisState(newapp.AppCodec())

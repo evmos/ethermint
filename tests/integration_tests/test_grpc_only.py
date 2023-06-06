@@ -100,11 +100,6 @@ def test_grpc_mode(custom_ethermint):
             wait_for_port(grpc_port)
             wait_for_port(api_port)
 
-            # in grpc-only mode, grpc query don't work if we don't pass chain_id
-            rsp = grpc_eth_call(api_port, msg)
-            assert rsp["code"] != 0, str(rsp)
-            assert "invalid chain ID" in rsp["message"]
-
             # it don't works without proposer address neither
             rsp = grpc_eth_call(api_port, msg, chain_id=9000)
             assert rsp["code"] != 0, str(rsp)

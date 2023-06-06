@@ -23,6 +23,7 @@ import (
 
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	dbm "github.com/cometbft/cometbft-db"
 	tmcfg "github.com/cometbft/cometbft/config"
@@ -229,8 +230,8 @@ func (a appCreator) newApp(logger tmlog.Logger, db dbm.DB, traceStore io.Writer,
 	if err != nil {
 		panic(err)
 	}
-
-	snapshotDir := filepath.Join(cast.ToString(appOpts.Get(flags.FlagHome)), "data", "snapshots")
+	home := cast.ToString(appOpts.Get(flags.FlagHome))
+	snapshotDir := filepath.Join(home, "data", "snapshots")
 	if err = os.MkdirAll(snapshotDir, os.ModePerm); err != nil {
 		panic(err)
 	}
@@ -249,6 +250,18 @@ func (a appCreator) newApp(logger tmlog.Logger, db dbm.DB, traceStore io.Writer,
 		cast.ToUint32(appOpts.Get(sdkserver.FlagStateSyncSnapshotKeepRecent)),
 	)
 
+	// Setup chainId
+	v := viper.New()
+	v.AddConfigPath(filepath.Join(home, "config"))
+	v.SetConfigName("client")
+	v.SetConfigType("toml")
+	if err := v.ReadInConfig(); err != nil {
+		panic(err)
+	}
+	conf := new(config.ClientConfig)
+	if err := v.Unmarshal(conf); err != nil {
+		panic(err)
+	}
 	ethermintApp := app.NewEthermintApp(
 		logger, db, traceStore, true, skipUpgradeHeights,
 		cast.ToString(appOpts.Get(flags.FlagHome)),
@@ -266,6 +279,7 @@ func (a appCreator) newApp(logger tmlog.Logger, db dbm.DB, traceStore io.Writer,
 		baseapp.SetSnapshot(snapshotStore, snapshotOptions),
 		baseapp.SetIAVLCacheSize(cast.ToInt(appOpts.Get(sdkserver.FlagIAVLCacheSize))),
 		baseapp.SetIAVLDisableFastNode(cast.ToBool(appOpts.Get(sdkserver.FlagDisableIAVLFastNode))),
+		baseapp.SetChainID(conf.ChainID),
 	)
 
 	return ethermintApp
@@ -290,13 +304,13 @@ func (a appCreator) appExport(
 	}
 
 	if height != -1 {
-		ethermintApp = app.NewEthermintApp(logger, db, traceStore, false, map[int64]bool{}, "", uint(1), a.encCfg, appOpts)
+		ethermintApp = app.NewEthermintApp(logger, db, traceStore, false, map[int64]bool{}, "", uint(1), a.encCfg, appOpts, baseapp.SetChainID(app.ChainID))
 
 		if err := ethermintApp.LoadHeight(height); err != nil {
 			return servertypes.ExportedApp{}, err
 		}
 	} else {
-		ethermintApp = app.NewEthermintApp(logger, db, traceStore, true, map[int64]bool{}, "", uint(1), a.encCfg, appOpts)
+		ethermintApp = app.NewEthermintApp(logger, db, traceStore, true, map[int64]bool{}, "", uint(1), a.encCfg, appOpts, baseapp.SetChainID(app.ChainID))
 	}
 
 	return ethermintApp.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs, modulesToExport)

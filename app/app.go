@@ -302,8 +302,6 @@ func NewEthermintApp(
 		app.SetPrepareProposal(handler.PrepareProposalHandler())
 		app.SetProcessProposal(handler.ProcessProposalHandler())
 	})
-	// Setup chainId
-	baseAppOptions = append(baseAppOptions, baseapp.SetChainID("ethermint_9000-1"))
 	bApp := baseapp.NewBaseApp(
 		appName,
 		logger,
