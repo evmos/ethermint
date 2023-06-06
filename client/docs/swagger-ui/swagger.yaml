@@ -19,7 +19,7 @@ paths:
                 description: balance is the balance of the EVM denomination.
               code_hash:
                 type: string
-                description: code hash is the hex-formatted code bytes from the EOA.
+                description: code_hash is the hex-formatted code bytes from the EOA.
               nonce:
                 type: string
                 format: uint64
@@ -141,7 +141,7 @@ paths:
                           foo = any.unpack(Foo.class);
                         }
 
-                     Example 3: Pack and unpack a message in Python.
+                    Example 3: Pack and unpack a message in Python.
 
                         foo = Foo(...)
                         any = Any()
@@ -151,7 +151,7 @@ paths:
                           any.Unpack(foo)
                           ...
 
-                     Example 4: Pack and unpack a message in Go
+                    Example 4: Pack and unpack a message in Go
 
                          foo := &pb.Foo{...}
                          any, err := anypb.New(foo)
@@ -182,7 +182,6 @@ paths:
 
                     JSON
 
-                    ====
 
                     The JSON representation of an `Any` value uses the regular
 
@@ -359,7 +358,7 @@ paths:
                           foo = any.unpack(Foo.class);
                         }
 
-                     Example 3: Pack and unpack a message in Python.
+                    Example 3: Pack and unpack a message in Python.
 
                         foo = Foo(...)
                         any = Any()
@@ -369,7 +368,7 @@ paths:
                           any.Unpack(foo)
                           ...
 
-                     Example 4: Pack and unpack a message in Go
+                    Example 4: Pack and unpack a message in Go
 
                          foo := &pb.Foo{...}
                          any, err := anypb.New(foo)
@@ -400,7 +399,6 @@ paths:
 
                     JSON
 
-                    ====
 
                     The JSON representation of an `Any` value uses the regular
 
@@ -461,7 +459,8 @@ paths:
             properties:
               base_fee:
                 type: string
-            description: BaseFeeResponse returns the EIP1559 base fee.
+                title: base_fee is the EIP1559 base fee
+            description: QueryBaseFeeResponse returns the EIP1559 base fee.
         default:
           description: An unexpected error response.
           schema:
@@ -576,7 +575,7 @@ paths:
                           foo = any.unpack(Foo.class);
                         }
 
-                     Example 3: Pack and unpack a message in Python.
+                    Example 3: Pack and unpack a message in Python.
 
                         foo = Foo(...)
                         any = Any()
@@ -586,7 +585,7 @@ paths:
                           any.Unpack(foo)
                           ...
 
-                     Example 4: Pack and unpack a message in Go
+                    Example 4: Pack and unpack a message in Go
 
                          foo := &pb.Foo{...}
                          any, err := anypb.New(foo)
@@ -617,7 +616,6 @@ paths:
 
                     JSON
 
-                    ====
 
                     The JSON representation of an `Any` value uses the regular
 
@@ -787,7 +785,7 @@ paths:
                           foo = any.unpack(Foo.class);
                         }
 
-                     Example 3: Pack and unpack a message in Python.
+                    Example 3: Pack and unpack a message in Python.
 
                         foo = Foo(...)
                         any = Any()
@@ -797,7 +795,7 @@ paths:
                           any.Unpack(foo)
                           ...
 
-                     Example 4: Pack and unpack a message in Go
+                    Example 4: Pack and unpack a message in Go
 
                          foo := &pb.Foo{...}
                          any, err := anypb.New(foo)
@@ -828,7 +826,6 @@ paths:
 
                     JSON
 
-                    ====
 
                     The JSON representation of an `Any` value uses the regular
 
@@ -893,7 +890,7 @@ paths:
               account_number:
                 type: string
                 format: uint64
-                title: account_number is the account numbert
+                title: account_number is the account number
             description: >-
               QueryCosmosAccountResponse is the response type for the
               Query/CosmosAccount
@@ -1013,7 +1010,7 @@ paths:
                           foo = any.unpack(Foo.class);
                         }
 
-                     Example 3: Pack and unpack a message in Python.
+                    Example 3: Pack and unpack a message in Python.
 
                         foo = Foo(...)
                         any = Any()
@@ -1023,7 +1020,7 @@ paths:
                           any.Unpack(foo)
                           ...
 
-                     Example 4: Pack and unpack a message in Go
+                    Example 4: Pack and unpack a message in Go
 
                          foo := &pb.Foo{...}
                          any, err := anypb.New(foo)
@@ -1054,7 +1051,6 @@ paths:
 
                     JSON
 
-                    ====
 
                     The JSON representation of an `Any` value uses the regular
 
@@ -1112,7 +1108,7 @@ paths:
               gas:
                 type: string
                 format: uint64
-                title: the estimated gas
+                title: gas returns the estimated gas
             title: EstimateGasResponse defines EstimateGas response
         default:
           description: An unexpected error response.
@@ -1228,7 +1224,7 @@ paths:
                           foo = any.unpack(Foo.class);
                         }
 
-                     Example 3: Pack and unpack a message in Python.
+                    Example 3: Pack and unpack a message in Python.
 
                         foo = Foo(...)
                         any = Any()
@@ -1238,7 +1234,7 @@ paths:
                           any.Unpack(foo)
                           ...
 
-                     Example 4: Pack and unpack a message in Go
+                    Example 4: Pack and unpack a message in Go
 
                          foo := &pb.Foo{...}
                          any, err := anypb.New(foo)
@@ -1269,7 +1265,6 @@ paths:
 
                     JSON
 
-                    ====
 
                     The JSON representation of an `Any` value uses the regular
 
@@ -1308,25 +1303,27 @@ paths:
                         }
       parameters:
         - name: args
-          description: same json format as the json rpc api.
+          description: args uses the same json format as the json rpc api.
           in: query
           required: false
           type: string
           format: byte
         - name: gas_cap
-          description: the default gas cap to be used.
+          description: gas_cap defines the default gas cap to be used.
           in: query
           required: false
           type: string
           format: uint64
         - name: proposer_address
-          description: the proposer of the requested block.
+          description: proposer_address of the requested block in hex format.
           in: query
           required: false
           type: string
           format: byte
         - name: chain_id
-          description: the eip155 chain id parsed from the requested block header.
+          description: >-
+            chain_id is the eip155 chain id parsed from the requested block
+            header.
           in: query
           required: false
           type: string
@@ -1346,8 +1343,8 @@ paths:
               hash:
                 type: string
                 title: >-
-                  ethereum transaction hash in hex format. This hash differs
-                  from the
+                  hash of the ethereum transaction in hex format. This hash
+                  differs from the
 
                   Tendermint sha256 hash of the transaction bytes. See
 
@@ -1365,25 +1362,31 @@ paths:
                       type: array
                       items:
                         type: string
-                      description: list of topics provided by the contract.
+                      description: topics is a list of topics provided by the contract.
                     data:
                       type: string
                       format: byte
-                      title: supplied by the contract, usually ABI-encoded
+                      title: >-
+                        data which is supplied by the contract, usually
+                        ABI-encoded
                     block_number:
                       type: string
                       format: uint64
-                      title: block in which the transaction was included
+                      title: >-
+                        block_number of the block in which the transaction was
+                        included
                     tx_hash:
                       type: string
-                      title: hash of the transaction
+                      title: tx_hash is the transaction hash
                     tx_index:
                       type: string
                       format: uint64
-                      title: index of the transaction in the block
+                      title: tx_index of the transaction in the block
                     block_hash:
                       type: string
-                      title: hash of the block in which the transaction was included
+                      title: >-
+                        block_hash of the block in which the transaction was
+                        included
                     index:
                       type: string
                       format: uint64
@@ -1391,8 +1394,7 @@ paths:
                     removed:
                       type: boolean
                       description: >-
-                        The Removed field is true if this log was reverted due
-                        to a chain
+                        removed is true if this log was reverted due to a chain
 
                         reorganisation. You must pay attention to this field if
                         you receive logs
@@ -1406,6 +1408,13 @@ paths:
                     stored/indexed by
 
                     the node.
+
+
+                    NOTE: address, topics and data are consensus fields. The
+                    rest of the fields
+
+                    are derived, i.e. filled in by the nodes, but not secured by
+                    consensus.
                 description: >-
                   logs contains the transaction hash and the proto-compatible
                   ethereum
@@ -1415,17 +1424,19 @@ paths:
                 type: string
                 format: byte
                 title: >-
-                  returned data from evm function (result or data supplied with
-                  revert
+                  ret is the returned data from evm function (result or data
+                  supplied with revert
 
                   opcode)
               vm_error:
                 type: string
-                title: vm error is the error returned by vm execution
+                title: vm_error is the error returned by vm execution
               gas_used:
                 type: string
                 format: uint64
-                title: gas consumed by the transaction
+                title: >-
+                  gas_used specifies how much gas was consumed by the
+                  transaction
             description: MsgEthereumTxResponse defines the Msg/EthereumTx response type.
         default:
           description: An unexpected error response.
@@ -1541,7 +1552,7 @@ paths:
                           foo = any.unpack(Foo.class);
                         }
 
-                     Example 3: Pack and unpack a message in Python.
+                    Example 3: Pack and unpack a message in Python.
 
                         foo = Foo(...)
                         any = Any()
@@ -1551,7 +1562,7 @@ paths:
                           any.Unpack(foo)
                           ...
 
-                     Example 4: Pack and unpack a message in Go
+                    Example 4: Pack and unpack a message in Go
 
                          foo := &pb.Foo{...}
                          any, err := anypb.New(foo)
@@ -1582,7 +1593,6 @@ paths:
 
                     JSON
 
-                    ====
 
                     The JSON representation of an `Any` value uses the regular
 
@@ -1621,25 +1631,27 @@ paths:
                         }
       parameters:
         - name: args
-          description: same json format as the json rpc api.
+          description: args uses the same json format as the json rpc api.
           in: query
           required: false
           type: string
           format: byte
         - name: gas_cap
-          description: the default gas cap to be used.
+          description: gas_cap defines the default gas cap to be used.
           in: query
           required: false
           type: string
           format: uint64
         - name: proposer_address
-          description: the proposer of the requested block.
+          description: proposer_address of the requested block in hex format.
           in: query
           required: false
           type: string
           format: byte
         - name: chain_id
-          description: the eip155 chain id parsed from the requested block header.
+          description: >-
+            chain_id is the eip155 chain id parsed from the requested block
+            header.
           in: query
           required: false
           type: string
@@ -1663,111 +1675,125 @@ paths:
                   evm_denom:
                     type: string
                     description: >-
-                      evm denom represents the token denomination used to run
+                      evm_denom represents the token denomination used to run
                       the EVM state
 
                       transitions.
                   enable_create:
                     type: boolean
                     title: >-
-                      enable create toggles state transitions that use the
+                      enable_create toggles state transitions that use the
                       vm.Create function
                   enable_call:
                     type: boolean
                     title: >-
-                      enable call toggles state transitions that use the vm.Call
+                      enable_call toggles state transitions that use the vm.Call
                       function
                   extra_eips:
                     type: array
                     items:
                       type: string
                       format: int64
-                    title: extra eips defines the additional EIPs for the vm.Config
+                    title: extra_eips defines the additional EIPs for the vm.Config
                   chain_config:
                     title: >-
-                      chain config defines the EVM chain configuration
+                      chain_config defines the EVM chain configuration
                       parameters
                     type: object
                     properties:
                       homestead_block:
                         type: string
                         title: >-
-                          Homestead switch block (nil no fork, 0 = already
+                          homestead_block switch (nil no fork, 0 = already
                           homestead)
                       dao_fork_block:
                         type: string
-                        title: TheDAO hard-fork switch block (nil no fork)
+                        title: >-
+                          dao_fork_block corresponds to TheDAO hard-fork switch
+                          block (nil no fork)
                       dao_fork_support:
                         type: boolean
                         title: >-
-                          Whether the nodes supports or opposes the DAO
-                          hard-fork
+                          dao_fork_support defines whether the nodes supports or
+                          opposes the DAO hard-fork
                       eip150_block:
                         type: string
                         title: >-
-                          EIP150 implements the Gas price changes
+                          eip150_block: EIP150 implements the Gas price changes
 
                           (https://github.com/ethereum/EIPs/issues/150) EIP150
                           HF block (nil no fork)
                       eip150_hash:
                         type: string
                         title: >-
-                          EIP150 HF hash (needed for header only clients as only
-                          gas pricing changed)
+                          eip150_hash: EIP150 HF hash (needed for header only
+                          clients as only gas pricing changed)
                       eip155_block:
                         type: string
-                        title: EIP155Block HF block
+                        title: 'eip155_block: EIP155Block HF block'
                       eip158_block:
                         type: string
-                        title: EIP158 HF block
+                        title: 'eip158_block: EIP158 HF block'
                       byzantium_block:
                         type: string
                         title: >-
-                          Byzantium switch block (nil no fork, 0 = already on
-                          byzantium)
+                          byzantium_block: Byzantium switch block (nil no fork,
+                          0 = already on byzantium)
                       constantinople_block:
                         type: string
                         title: >-
-                          Constantinople switch block (nil no fork, 0 = already
-                          activated)
+                          constantinople_block: Constantinople switch block (nil
+                          no fork, 0 = already activated)
                       petersburg_block:
                         type: string
-                        title: Petersburg switch block (nil same as Constantinople)
+                        title: >-
+                          petersburg_block: Petersburg switch block (nil same as
+                          Constantinople)
                       istanbul_block:
                         type: string
                         title: >-
-                          Istanbul switch block (nil no fork, 0 = already on
-                          istanbul)
+                          istanbul_block: Istanbul switch block (nil no fork, 0
+                          = already on istanbul)
                       muir_glacier_block:
                         type: string
                         title: >-
-                          Eip-2384 (bomb delay) switch block (nil no fork, 0 =
-                          already activated)
+                          muir_glacier_block: Eip-2384 (bomb delay) switch block
+                          (nil no fork, 0 = already activated)
                       berlin_block:
                         type: string
                         title: >-
-                          Berlin switch block (nil = no fork, 0 = already on
-                          berlin)
+                          berlin_block: Berlin switch block (nil = no fork, 0 =
+                          already on berlin)
                       london_block:
                         type: string
                         title: >-
-                          London switch block (nil = no fork, 0 = already on
-                          london)
+                          london_block: London switch block (nil = no fork, 0 =
+                          already on london)
                       arrow_glacier_block:
                         type: string
                         title: >-
-                          Eip-4345 (bomb delay) switch block (nil = no fork, 0 =
-                          already activated)
+                          arrow_glacier_block: Eip-4345 (bomb delay) switch
+                          block (nil = no fork, 0 = already activated)
                       gray_glacier_block:
                         type: string
                         title: >-
-                          EIP-5133 (bomb delay) switch block (nil = no fork, 0 =
-                          already activated)
+                          gray_glacier_block: EIP-5133 (bomb delay) switch block
+                          (nil = no fork, 0 = already activated)
                       merge_netsplit_block:
                         type: string
                         title: >-
-                          Virtual fork after The Merge to use as a network
-                          splitter
+                          merge_netsplit_block: Virtual fork after The Merge to
+                          use as a network splitter
+                      shanghai_block:
+                        type: string
+                        title: >-
+                          shanghai_block switch block (nil = no fork, 0 =
+                          already on shanghai)
+                      cancun_block:
+                        type: string
+                        title: >-
+                          cancun_block switch block (nil = no fork, 0 = already
+                          on cancun)
                     description: >-
                       ChainConfig defines the Ethereum ChainConfig parameters
                       using *sdk.Int values
@@ -1776,8 +1802,8 @@ paths:
                   allow_unprotected_txs:
                     type: boolean
                     description: >-
-                      Allow unprotected transactions defines if replay-protected
-                      (i.e non EIP155
+                      allow_unprotected_txs defines if replay-protected (i.e non
+                      EIP155
 
                       signed) transactions can be executed on the state machine.
                 title: Params defines the EVM module parameters
@@ -1898,7 +1924,7 @@ paths:
                           foo = any.unpack(Foo.class);
                         }
 
-                     Example 3: Pack and unpack a message in Python.
+                    Example 3: Pack and unpack a message in Python.
 
                         foo = Foo(...)
                         any = Any()
@@ -1908,7 +1934,7 @@ paths:
                           any.Unpack(foo)
                           ...
 
-                     Example 4: Pack and unpack a message in Go
+                    Example 4: Pack and unpack a message in Go
 
                          foo := &pb.Foo{...}
                          any, err := anypb.New(foo)
@@ -1939,7 +1965,6 @@ paths:
 
                     JSON
 
-                    ====
 
                     The JSON representation of an `Any` value uses the regular
 
@@ -1991,7 +2016,7 @@ paths:
               value:
                 type: string
                 description: >-
-                  key defines the storage state value hash associated with the
+                  value defines the storage state value hash associated with the
                   given key.
             description: >-
               QueryStorageResponse is the response type for the Query/Storage
@@ -2112,7 +2137,7 @@ paths:
                           foo = any.unpack(Foo.class);
                         }
 
-                     Example 3: Pack and unpack a message in Python.
+                    Example 3: Pack and unpack a message in Python.
 
                         foo = Foo(...)
                         any = Any()
@@ -2122,7 +2147,7 @@ paths:
                           any.Unpack(foo)
                           ...
 
-                     Example 4: Pack and unpack a message in Go
+                    Example 4: Pack and unpack a message in Go
 
                          foo := &pb.Foo{...}
                          any, err := anypb.New(foo)
@@ -2153,7 +2178,6 @@ paths:
 
                     JSON
 
-                    ====
 
                     The JSON representation of an `Any` value uses the regular
 
@@ -2192,9 +2216,7 @@ paths:
                         }
       parameters:
         - name: address
-          description: >-
-            / address is the ethereum hex address to query the storage state
-            for.
+          description: address is the ethereum hex address to query the storage state for.
           in: path
           required: true
           type: string
@@ -2220,6 +2242,7 @@ paths:
               data:
                 type: string
                 format: byte
+                title: data is the response serialized in bytes
             title: QueryTraceBlockResponse defines TraceBlock response
         default:
           description: An unexpected error response.
@@ -2335,7 +2358,7 @@ paths:
                           foo = any.unpack(Foo.class);
                         }
 
-                     Example 3: Pack and unpack a message in Python.
+                    Example 3: Pack and unpack a message in Python.
 
                         foo = Foo(...)
                         any = Any()
@@ -2345,7 +2368,7 @@ paths:
                           any.Unpack(foo)
                           ...
 
-                     Example 4: Pack and unpack a message in Go
+                    Example 4: Pack and unpack a message in Go
 
                          foo := &pb.Foo{...}
                          any, err := anypb.New(foo)
@@ -2376,7 +2399,6 @@ paths:
 
                     JSON
 
-                    ====
 
                     The JSON representation of an `Any` value uses the regular
 
@@ -2415,64 +2437,72 @@ paths:
                         }
       parameters:
         - name: trace_config.tracer
-          description: custom javascript tracer.
+          description: tracer is a custom javascript tracer.
           in: query
           required: false
           type: string
         - name: trace_config.timeout
           description: >-
-            overrides the default timeout of 5 seconds for JavaScript-based
-            tracing
+            timeout overrides the default timeout of 5 seconds for
+            JavaScript-based tracing
 
             calls.
           in: query
           required: false
           type: string
         - name: trace_config.reexec
-          description: number of blocks the tracer is willing to go back.
+          description: >-
+            reexec defines the number of blocks the tracer is willing to go
+            back.
           in: query
           required: false
           type: string
           format: uint64
         - name: trace_config.disable_stack
-          description: disable stack capture.
+          description: disable_stack switches stack capture.
           in: query
           required: false
           type: boolean
         - name: trace_config.disable_storage
-          description: disable storage capture.
+          description: disable_storage switches storage capture.
           in: query
           required: false
           type: boolean
         - name: trace_config.debug
-          description: print output during capture end.
+          description: debug can be used to print output during capture end.
           in: query
           required: false
           type: boolean
         - name: trace_config.limit
-          description: maximum length of output, but zero means unlimited.
+          description: >-
+            limit defines the maximum length of output, but zero means
+            unlimited.
           in: query
           required: false
           type: integer
           format: int32
         - name: trace_config.overrides.homestead_block
-          description: Homestead switch block (nil no fork, 0 = already homestead).
+          description: homestead_block switch (nil no fork, 0 = already homestead).
           in: query
           required: false
           type: string
         - name: trace_config.overrides.dao_fork_block
-          description: TheDAO hard-fork switch block (nil no fork).
+          description: >-
+            dao_fork_block corresponds to TheDAO hard-fork switch block (nil no
+            fork).
           in: query
           required: false
           type: string
         - name: trace_config.overrides.dao_fork_support
-          description: Whether the nodes supports or opposes the DAO hard-fork.
+          description: >-
+            dao_fork_support defines whether the nodes supports or opposes the
+            DAO hard-fork.
           in: query
           required: false
           type: boolean
         - name: trace_config.overrides.eip150_block
           description: >-
-            EIP150 implements the Gas price changes
+            eip150_block: EIP150 implements the Gas price changes
 
             (https://github.com/ethereum/EIPs/issues/150) EIP150 HF block (nil
             no fork).
@@ -2481,117 +2511,145 @@ paths:
           type: string
         - name: trace_config.overrides.eip150_hash
           description: >-
-            EIP150 HF hash (needed for header only clients as only gas pricing
-            changed).
+            eip150_hash: EIP150 HF hash (needed for header only clients as only
+            gas pricing changed).
           in: query
           required: false
           type: string
         - name: trace_config.overrides.eip155_block
-          description: EIP155Block HF block.
+          description: 'eip155_block: EIP155Block HF block.'
           in: query
           required: false
           type: string
         - name: trace_config.overrides.eip158_block
-          description: EIP158 HF block.
+          description: 'eip158_block: EIP158 HF block.'
           in: query
           required: false
           type: string
         - name: trace_config.overrides.byzantium_block
-          description: Byzantium switch block (nil no fork, 0 = already on byzantium).
+          description: >-
+            byzantium_block: Byzantium switch block (nil no fork, 0 = already on
+            byzantium).
           in: query
           required: false
           type: string
         - name: trace_config.overrides.constantinople_block
-          description: Constantinople switch block (nil no fork, 0 = already activated).
+          description: >-
+            constantinople_block: Constantinople switch block (nil no fork, 0 =
+            already activated).
           in: query
           required: false
           type: string
         - name: trace_config.overrides.petersburg_block
-          description: Petersburg switch block (nil same as Constantinople).
+          description: >-
+            petersburg_block: Petersburg switch block (nil same as
+            Constantinople).
           in: query
           required: false
           type: string
         - name: trace_config.overrides.istanbul_block
-          description: Istanbul switch block (nil no fork, 0 = already on istanbul).
+          description: >-
+            istanbul_block: Istanbul switch block (nil no fork, 0 = already on
+            istanbul).
           in: query
           required: false
           type: string
         - name: trace_config.overrides.muir_glacier_block
           description: >-
-            Eip-2384 (bomb delay) switch block (nil no fork, 0 = already
-            activated).
+            muir_glacier_block: Eip-2384 (bomb delay) switch block (nil no fork,
+            0 = already activated).
           in: query
           required: false
           type: string
         - name: trace_config.overrides.berlin_block
-          description: Berlin switch block (nil = no fork, 0 = already on berlin).
+          description: >-
+            berlin_block: Berlin switch block (nil = no fork, 0 = already on
+            berlin).
           in: query
           required: false
           type: string
         - name: trace_config.overrides.london_block
-          description: London switch block (nil = no fork, 0 = already on london).
+          description: >-
+            london_block: London switch block (nil = no fork, 0 = already on
+            london).
           in: query
           required: false
           type: string
         - name: trace_config.overrides.arrow_glacier_block
           description: >-
-            Eip-4345 (bomb delay) switch block (nil = no fork, 0 = already
-            activated).
+            arrow_glacier_block: Eip-4345 (bomb delay) switch block (nil = no
+            fork, 0 = already activated).
           in: query
           required: false
           type: string
         - name: trace_config.overrides.gray_glacier_block
           description: >-
-            EIP-5133 (bomb delay) switch block (nil = no fork, 0 = already
-            activated).
+            gray_glacier_block: EIP-5133 (bomb delay) switch block (nil = no
+            fork, 0 = already activated).
           in: query
           required: false
           type: string
         - name: trace_config.overrides.merge_netsplit_block
-          description: Virtual fork after The Merge to use as a network splitter.
+          description: >-
+            merge_netsplit_block: Virtual fork after The Merge to use as a
+            network splitter.
+          in: query
+          required: false
+          type: string
+        - name: trace_config.overrides.shanghai_block
+          description: >-
+            shanghai_block switch block (nil = no fork, 0 = already on
+            shanghai).
+          in: query
+          required: false
+          type: string
+        - name: trace_config.overrides.cancun_block
+          description: cancun_block switch block (nil = no fork, 0 = already on cancun).
           in: query
           required: false
           type: string
         - name: trace_config.enable_memory
-          description: enable memory capture.
+          description: enable_memory switches memory capture.
           in: query
           required: false
           type: boolean
         - name: trace_config.enable_return_data
-          description: enable return data capture.
+          description: enable_return_data switches the capture of return data.
           in: query
           required: false
           type: boolean
         - name: trace_config.tracer_json_config
-          description: tracer config.
+          description: tracer_json_config configures the tracer using a JSON string.
           in: query
           required: false
           type: string
         - name: block_number
-          description: block number.
+          description: block_number of the traced block.
           in: query
           required: false
           type: string
           format: int64
         - name: block_hash
-          description: block hex hash.
+          description: block_hash (hex) of the traced block.
           in: query
           required: false
           type: string
         - name: block_time
-          description: block time.
+          description: block_time of the traced block.
           in: query
           required: false
           type: string
           format: date-time
         - name: proposer_address
-          description: the proposer of the requested block.
+          description: proposer_address is the address of the requested block.
           in: query
           required: false
           type: string
           format: byte
         - name: chain_id
-          description: the eip155 chain id parsed from the requested block header.
+          description: >-
+            chain_id is the eip155 chain id parsed from the requested block
+            header.
           in: query
           required: false
           type: string
@@ -2611,7 +2669,7 @@ paths:
               data:
                 type: string
                 format: byte
-                title: response serialized in bytes
+                title: data is the response serialized in bytes
             title: QueryTraceTxResponse defines TraceTx response
         default:
           description: An unexpected error response.
@@ -2727,7 +2785,7 @@ paths:
                           foo = any.unpack(Foo.class);
                         }
 
-                     Example 3: Pack and unpack a message in Python.
+                    Example 3: Pack and unpack a message in Python.
 
                         foo = Foo(...)
                         any = Any()
@@ -2737,7 +2795,7 @@ paths:
                           any.Unpack(foo)
                           ...
 
-                     Example 4: Pack and unpack a message in Go
+                    Example 4: Pack and unpack a message in Go
 
                          foo := &pb.Foo{...}
                          any, err := anypb.New(foo)
@@ -2768,7 +2826,6 @@ paths:
 
                     JSON
 
-                    ====
 
                     The JSON representation of an `Any` value uses the regular
 
@@ -2867,83 +2924,94 @@ paths:
           type: string
           format: byte
         - name: msg.size
-          description: 'DEPRECATED: encoded storage size of the transaction.'
+          description: size is the encoded storage size of the transaction (DEPRECATED).
           in: query
           required: false
           type: number
           format: double
         - name: msg.hash
-          description: transaction hash in hex format.
+          description: hash of the transaction in hex format.
           in: query
           required: false
           type: string
         - name: msg.from
-          description: |-
-            ethereum signer address in hex format. This address value is checked
+          description: >-
+            from is the ethereum signer address in hex format. This address
+            value is checked
+
             against the address derived from the signature (V, R, S) using the
+
             secp256k1 elliptic curve.
           in: query
           required: false
           type: string
         - name: trace_config.tracer
-          description: custom javascript tracer.
+          description: tracer is a custom javascript tracer.
           in: query
           required: false
           type: string
         - name: trace_config.timeout
           description: >-
-            overrides the default timeout of 5 seconds for JavaScript-based
-            tracing
+            timeout overrides the default timeout of 5 seconds for
+            JavaScript-based tracing
 
             calls.
           in: query
           required: false
           type: string
         - name: trace_config.reexec
-          description: number of blocks the tracer is willing to go back.
+          description: >-
+            reexec defines the number of blocks the tracer is willing to go
+            back.
           in: query
           required: false
           type: string
           format: uint64
         - name: trace_config.disable_stack
-          description: disable stack capture.
+          description: disable_stack switches stack capture.
           in: query
           required: false
           type: boolean
         - name: trace_config.disable_storage
-          description: disable storage capture.
+          description: disable_storage switches storage capture.
           in: query
           required: false
           type: boolean
         - name: trace_config.debug
-          description: print output during capture end.
+          description: debug can be used to print output during capture end.
           in: query
           required: false
           type: boolean
         - name: trace_config.limit
-          description: maximum length of output, but zero means unlimited.
+          description: >-
+            limit defines the maximum length of output, but zero means
+            unlimited.
           in: query
           required: false
           type: integer
           format: int32
         - name: trace_config.overrides.homestead_block
-          description: Homestead switch block (nil no fork, 0 = already homestead).
+          description: homestead_block switch (nil no fork, 0 = already homestead).
           in: query
           required: false
           type: string
         - name: trace_config.overrides.dao_fork_block
-          description: TheDAO hard-fork switch block (nil no fork).
+          description: >-
+            dao_fork_block corresponds to TheDAO hard-fork switch block (nil no
+            fork).
           in: query
           required: false
           type: string
         - name: trace_config.overrides.dao_fork_support
-          description: Whether the nodes supports or opposes the DAO hard-fork.
+          description: >-
+            dao_fork_support defines whether the nodes supports or opposes the
+            DAO hard-fork.
           in: query
           required: false
           type: boolean
         - name: trace_config.overrides.eip150_block
           description: >-
-            EIP150 implements the Gas price changes
+            eip150_block: EIP150 implements the Gas price changes
 
             (https://github.com/ethereum/EIPs/issues/150) EIP150 HF block (nil
             no fork).
@@ -2952,117 +3020,145 @@ paths:
           type: string
         - name: trace_config.overrides.eip150_hash
           description: >-
-            EIP150 HF hash (needed for header only clients as only gas pricing
-            changed).
+            eip150_hash: EIP150 HF hash (needed for header only clients as only
+            gas pricing changed).
           in: query
           required: false
           type: string
         - name: trace_config.overrides.eip155_block
-          description: EIP155Block HF block.
+          description: 'eip155_block: EIP155Block HF block.'
           in: query
           required: false
           type: string
         - name: trace_config.overrides.eip158_block
-          description: EIP158 HF block.
+          description: 'eip158_block: EIP158 HF block.'
           in: query
           required: false
           type: string
         - name: trace_config.overrides.byzantium_block
-          description: Byzantium switch block (nil no fork, 0 = already on byzantium).
+          description: >-
+            byzantium_block: Byzantium switch block (nil no fork, 0 = already on
+            byzantium).
           in: query
           required: false
           type: string
         - name: trace_config.overrides.constantinople_block
-          description: Constantinople switch block (nil no fork, 0 = already activated).
+          description: >-
+            constantinople_block: Constantinople switch block (nil no fork, 0 =
+            already activated).
           in: query
           required: false
           type: string
         - name: trace_config.overrides.petersburg_block
-          description: Petersburg switch block (nil same as Constantinople).
+          description: >-
+            petersburg_block: Petersburg switch block (nil same as
+            Constantinople).
           in: query
           required: false
           type: string
         - name: trace_config.overrides.istanbul_block
-          description: Istanbul switch block (nil no fork, 0 = already on istanbul).
+          description: >-
+            istanbul_block: Istanbul switch block (nil no fork, 0 = already on
+            istanbul).
           in: query
           required: false
           type: string
         - name: trace_config.overrides.muir_glacier_block
           description: >-
-            Eip-2384 (bomb delay) switch block (nil no fork, 0 = already
-            activated).
+            muir_glacier_block: Eip-2384 (bomb delay) switch block (nil no fork,
+            0 = already activated).
           in: query
           required: false
           type: string
         - name: trace_config.overrides.berlin_block
-          description: Berlin switch block (nil = no fork, 0 = already on berlin).
+          description: >-
+            berlin_block: Berlin switch block (nil = no fork, 0 = already on
+            berlin).
           in: query
           required: false
           type: string
         - name: trace_config.overrides.london_block
-          description: London switch block (nil = no fork, 0 = already on london).
+          description: >-
+            london_block: London switch block (nil = no fork, 0 = already on
+            london).
           in: query
           required: false
           type: string
         - name: trace_config.overrides.arrow_glacier_block
           description: >-
-            Eip-4345 (bomb delay) switch block (nil = no fork, 0 = already
-            activated).
+            arrow_glacier_block: Eip-4345 (bomb delay) switch block (nil = no
+            fork, 0 = already activated).
           in: query
           required: false
           type: string
         - name: trace_config.overrides.gray_glacier_block
           description: >-
-            EIP-5133 (bomb delay) switch block (nil = no fork, 0 = already
-            activated).
+            gray_glacier_block: EIP-5133 (bomb delay) switch block (nil = no
+            fork, 0 = already activated).
           in: query
           required: false
           type: string
         - name: trace_config.overrides.merge_netsplit_block
-          description: Virtual fork after The Merge to use as a network splitter.
+          description: >-
+            merge_netsplit_block: Virtual fork after The Merge to use as a
+            network splitter.
+          in: query
+          required: false
+          type: string
+        - name: trace_config.overrides.shanghai_block
+          description: >-
+            shanghai_block switch block (nil = no fork, 0 = already on
+            shanghai).
+          in: query
+          required: false
+          type: string
+        - name: trace_config.overrides.cancun_block
+          description: cancun_block switch block (nil = no fork, 0 = already on cancun).
           in: query
           required: false
           type: string
         - name: trace_config.enable_memory
-          description: enable memory capture.
+          description: enable_memory switches memory capture.
           in: query
           required: false
           type: boolean
         - name: trace_config.enable_return_data
-          description: enable return data capture.
+          description: enable_return_data switches the capture of return data.
           in: query
           required: false
           type: boolean
         - name: trace_config.tracer_json_config
-          description: tracer config.
+          description: tracer_json_config configures the tracer using a JSON string.
           in: query
           required: false
           type: string
         - name: block_number
-          description: block number of requested transaction.
+          description: block_number of requested transaction.
           in: query
           required: false
           type: string
           format: int64
         - name: block_hash
-          description: block hex hash of requested transaction.
+          description: block_hash of requested transaction.
           in: query
           required: false
           type: string
         - name: block_time
-          description: block time of requested transaction.
+          description: block_time of requested transaction.
           in: query
           required: false
           type: string
           format: date-time
         - name: proposer_address
-          description: the proposer of the requested block.
+          description: proposer_address is the proposer of the requested block.
           in: query
           required: false
           type: string
           format: byte
         - name: chain_id
-          description: the eip155 chain id parsed from the requested block header.
+          description: >-
+            chain_id is the the eip155 chain id parsed from the requested block
+            header.
           in: query
           required: false
           type: string
@@ -3213,7 +3309,7 @@ paths:
                           foo = any.unpack(Foo.class);
                         }
 
-                     Example 3: Pack and unpack a message in Python.
+                    Example 3: Pack and unpack a message in Python.
 
                         foo = Foo(...)
                         any = Any()
@@ -3223,7 +3319,7 @@ paths:
                           any.Unpack(foo)
                           ...
 
-                     Example 4: Pack and unpack a message in Go
+                    Example 4: Pack and unpack a message in Go
 
                          foo := &pb.Foo{...}
                          any, err := anypb.New(foo)
@@ -3254,7 +3350,6 @@ paths:
 
                     JSON
 
-                    ====
 
                     The JSON representation of an `Any` value uses the regular
 
@@ -3305,67 +3400,89 @@ definitions:
     properties:
       homestead_block:
         type: string
-        title: Homestead switch block (nil no fork, 0 = already homestead)
+        title: homestead_block switch (nil no fork, 0 = already homestead)
       dao_fork_block:
         type: string
-        title: TheDAO hard-fork switch block (nil no fork)
+        title: >-
+          dao_fork_block corresponds to TheDAO hard-fork switch block (nil no
+          fork)
       dao_fork_support:
         type: boolean
-        title: Whether the nodes supports or opposes the DAO hard-fork
+        title: >-
+          dao_fork_support defines whether the nodes supports or opposes the DAO
+          hard-fork
       eip150_block:
         type: string
         title: >-
-          EIP150 implements the Gas price changes
+          eip150_block: EIP150 implements the Gas price changes
 
           (https://github.com/ethereum/EIPs/issues/150) EIP150 HF block (nil no
           fork)
       eip150_hash:
         type: string
         title: >-
-          EIP150 HF hash (needed for header only clients as only gas pricing
-          changed)
+          eip150_hash: EIP150 HF hash (needed for header only clients as only
+          gas pricing changed)
       eip155_block:
         type: string
-        title: EIP155Block HF block
+        title: 'eip155_block: EIP155Block HF block'
       eip158_block:
         type: string
-        title: EIP158 HF block
+        title: 'eip158_block: EIP158 HF block'
       byzantium_block:
         type: string
-        title: Byzantium switch block (nil no fork, 0 = already on byzantium)
+        title: >-
+          byzantium_block: Byzantium switch block (nil no fork, 0 = already on
+          byzantium)
       constantinople_block:
         type: string
-        title: Constantinople switch block (nil no fork, 0 = already activated)
+        title: >-
+          constantinople_block: Constantinople switch block (nil no fork, 0 =
+          already activated)
       petersburg_block:
         type: string
-        title: Petersburg switch block (nil same as Constantinople)
+        title: 'petersburg_block: Petersburg switch block (nil same as Constantinople)'
       istanbul_block:
         type: string
-        title: Istanbul switch block (nil no fork, 0 = already on istanbul)
+        title: >-
+          istanbul_block: Istanbul switch block (nil no fork, 0 = already on
+          istanbul)
       muir_glacier_block:
         type: string
         title: >-
-          Eip-2384 (bomb delay) switch block (nil no fork, 0 = already
-          activated)
+          muir_glacier_block: Eip-2384 (bomb delay) switch block (nil no fork, 0
+          = already activated)
       berlin_block:
         type: string
-        title: Berlin switch block (nil = no fork, 0 = already on berlin)
+        title: >-
+          berlin_block: Berlin switch block (nil = no fork, 0 = already on
+          berlin)
       london_block:
         type: string
-        title: London switch block (nil = no fork, 0 = already on london)
+        title: >-
+          london_block: London switch block (nil = no fork, 0 = already on
+          london)
       arrow_glacier_block:
         type: string
         title: >-
-          Eip-4345 (bomb delay) switch block (nil = no fork, 0 = already
-          activated)
+          arrow_glacier_block: Eip-4345 (bomb delay) switch block (nil = no
+          fork, 0 = already activated)
       gray_glacier_block:
         type: string
         title: >-
-          EIP-5133 (bomb delay) switch block (nil = no fork, 0 = already
-          activated)
+          gray_glacier_block: EIP-5133 (bomb delay) switch block (nil = no fork,
+          0 = already activated)
       merge_netsplit_block:
         type: string
-        title: Virtual fork after The Merge to use as a network splitter
+        title: >-
+          merge_netsplit_block: Virtual fork after The Merge to use as a network
+          splitter
+      shanghai_block:
+        type: string
+        title: shanghai_block switch block (nil = no fork, 0 = already on shanghai)
+      cancun_block:
+        type: string
+        title: cancun_block switch block (nil = no fork, 0 = already on cancun)
     description: >-
       ChainConfig defines the Ethereum ChainConfig parameters using *sdk.Int
       values
@@ -3377,7 +3494,7 @@ definitions:
       gas:
         type: string
         format: uint64
-        title: the estimated gas
+        title: gas returns the estimated gas
     title: EstimateGasResponse defines EstimateGas response
   ethermint.evm.v1.Log:
     type: object
@@ -3389,25 +3506,25 @@ definitions:
         type: array
         items:
           type: string
-        description: list of topics provided by the contract.
+        description: topics is a list of topics provided by the contract.
       data:
         type: string
         format: byte
-        title: supplied by the contract, usually ABI-encoded
+        title: data which is supplied by the contract, usually ABI-encoded
       block_number:
         type: string
         format: uint64
-        title: block in which the transaction was included
+        title: block_number of the block in which the transaction was included
       tx_hash:
         type: string
-        title: hash of the transaction
+        title: tx_hash is the transaction hash
       tx_index:
         type: string
         format: uint64
-        title: index of the transaction in the block
+        title: tx_index of the transaction in the block
       block_hash:
         type: string
-        title: hash of the block in which the transaction was included
+        title: block_hash of the block in which the transaction was included
       index:
         type: string
         format: uint64
@@ -3415,7 +3532,7 @@ definitions:
       removed:
         type: boolean
         description: >-
-          The Removed field is true if this log was reverted due to a chain
+          removed is true if this log was reverted due to a chain
 
           reorganisation. You must pay attention to this field if you receive
           logs
@@ -3428,6 +3545,12 @@ definitions:
       by
 
       the node.
+
+
+      NOTE: address, topics and data are consensus fields. The rest of the
+      fields
+
+      are derived, i.e. filled in by the nodes, but not secured by consensus.
   ethermint.evm.v1.MsgEthereumTx:
     type: object
     properties:
@@ -3524,7 +3647,7 @@ definitions:
                 foo = any.unpack(Foo.class);
               }
 
-           Example 3: Pack and unpack a message in Python.
+          Example 3: Pack and unpack a message in Python.
 
               foo = Foo(...)
               any = Any()
@@ -3534,7 +3657,7 @@ definitions:
                 any.Unpack(foo)
                 ...
 
-           Example 4: Pack and unpack a message in Go
+          Example 4: Pack and unpack a message in Go
 
                foo := &pb.Foo{...}
                any, err := anypb.New(foo)
@@ -3561,7 +3684,6 @@ definitions:
 
           JSON
 
-          ====
 
           The JSON representation of an `Any` value uses the regular
 
@@ -3593,19 +3715,22 @@ definitions:
                 "@type": "type.googleapis.com/google.protobuf.Duration",
                 "value": "1.212s"
               }
-        title: inner transaction data
+        title: data is inner transaction data of the Ethereum transaction
       size:
         type: number
         format: double
-        title: 'DEPRECATED: encoded storage size of the transaction'
+        title: size is the encoded storage size of the transaction (DEPRECATED)
       hash:
         type: string
-        title: transaction hash in hex format
+        title: hash of the transaction in hex format
       from:
         type: string
-        title: |-
-          ethereum signer address in hex format. This address value is checked
+        title: >-
+          from is the ethereum signer address in hex format. This address value
+          is checked
+
           against the address derived from the signature (V, R, S) using the
+
           secp256k1 elliptic curve
     description: MsgEthereumTx encapsulates an Ethereum transaction as an SDK message.
   ethermint.evm.v1.MsgEthereumTxResponse:
@@ -3613,9 +3738,12 @@ definitions:
     properties:
       hash:
         type: string
-        title: |-
-          ethereum transaction hash in hex format. This hash differs from the
+        title: >-
+          hash of the ethereum transaction in hex format. This hash differs from
+          the
+
           Tendermint sha256 hash of the transaction bytes. See
+
           https://github.com/tendermint/tendermint/issues/6539 for reference
       logs:
         type: array
@@ -3629,25 +3757,25 @@ definitions:
               type: array
               items:
                 type: string
-              description: list of topics provided by the contract.
+              description: topics is a list of topics provided by the contract.
             data:
               type: string
               format: byte
-              title: supplied by the contract, usually ABI-encoded
+              title: data which is supplied by the contract, usually ABI-encoded
             block_number:
               type: string
               format: uint64
-              title: block in which the transaction was included
+              title: block_number of the block in which the transaction was included
             tx_hash:
               type: string
-              title: hash of the transaction
+              title: tx_hash is the transaction hash
             tx_index:
               type: string
               format: uint64
-              title: index of the transaction in the block
+              title: tx_index of the transaction in the block
             block_hash:
               type: string
-              title: hash of the block in which the transaction was included
+              title: block_hash of the block in which the transaction was included
             index:
               type: string
               format: uint64
@@ -3655,8 +3783,7 @@ definitions:
             removed:
               type: boolean
               description: >-
-                The Removed field is true if this log was reverted due to a
-                chain
+                removed is true if this log was reverted due to a chain
 
                 reorganisation. You must pay attention to this field if you
                 receive logs
@@ -3670,22 +3797,31 @@ definitions:
             stored/indexed by
 
             the node.
+
+
+            NOTE: address, topics and data are consensus fields. The rest of the
+            fields
+
+            are derived, i.e. filled in by the nodes, but not secured by
+            consensus.
         description: |-
           logs contains the transaction hash and the proto-compatible ethereum
           logs.
       ret:
         type: string
         format: byte
-        title: |-
-          returned data from evm function (result or data supplied with revert
+        title: >-
+          ret is the returned data from evm function (result or data supplied
+          with revert
+
           opcode)
       vm_error:
         type: string
-        title: vm error is the error returned by vm execution
+        title: vm_error is the error returned by vm execution
       gas_used:
         type: string
         format: uint64
-        title: gas consumed by the transaction
+        title: gas_used specifies how much gas was consumed by the transaction
     description: MsgEthereumTxResponse defines the Msg/EthereumTx response type.
   ethermint.evm.v1.Params:
     type: object
@@ -3693,89 +3829,115 @@ definitions:
       evm_denom:
         type: string
         description: |-
-          evm denom represents the token denomination used to run the EVM state
+          evm_denom represents the token denomination used to run the EVM state
           transitions.
       enable_create:
         type: boolean
         title: >-
-          enable create toggles state transitions that use the vm.Create
+          enable_create toggles state transitions that use the vm.Create
           function
       enable_call:
         type: boolean
-        title: enable call toggles state transitions that use the vm.Call function
+        title: enable_call toggles state transitions that use the vm.Call function
       extra_eips:
         type: array
         items:
           type: string
           format: int64
-        title: extra eips defines the additional EIPs for the vm.Config
+        title: extra_eips defines the additional EIPs for the vm.Config
       chain_config:
-        title: chain config defines the EVM chain configuration parameters
+        title: chain_config defines the EVM chain configuration parameters
         type: object
         properties:
           homestead_block:
             type: string
-            title: Homestead switch block (nil no fork, 0 = already homestead)
+            title: homestead_block switch (nil no fork, 0 = already homestead)
           dao_fork_block:
             type: string
-            title: TheDAO hard-fork switch block (nil no fork)
+            title: >-
+              dao_fork_block corresponds to TheDAO hard-fork switch block (nil
+              no fork)
           dao_fork_support:
             type: boolean
-            title: Whether the nodes supports or opposes the DAO hard-fork
+            title: >-
+              dao_fork_support defines whether the nodes supports or opposes the
+              DAO hard-fork
           eip150_block:
             type: string
             title: >-
-              EIP150 implements the Gas price changes
+              eip150_block: EIP150 implements the Gas price changes
 
               (https://github.com/ethereum/EIPs/issues/150) EIP150 HF block (nil
               no fork)
           eip150_hash:
             type: string
             title: >-
-              EIP150 HF hash (needed for header only clients as only gas pricing
-              changed)
+              eip150_hash: EIP150 HF hash (needed for header only clients as
+              only gas pricing changed)
           eip155_block:
             type: string
-            title: EIP155Block HF block
+            title: 'eip155_block: EIP155Block HF block'
           eip158_block:
             type: string
-            title: EIP158 HF block
+            title: 'eip158_block: EIP158 HF block'
           byzantium_block:
             type: string
-            title: Byzantium switch block (nil no fork, 0 = already on byzantium)
+            title: >-
+              byzantium_block: Byzantium switch block (nil no fork, 0 = already
+              on byzantium)
           constantinople_block:
             type: string
-            title: Constantinople switch block (nil no fork, 0 = already activated)
+            title: >-
+              constantinople_block: Constantinople switch block (nil no fork, 0
+              = already activated)
           petersburg_block:
             type: string
-            title: Petersburg switch block (nil same as Constantinople)
+            title: >-
+              petersburg_block: Petersburg switch block (nil same as
+              Constantinople)
           istanbul_block:
             type: string
-            title: Istanbul switch block (nil no fork, 0 = already on istanbul)
+            title: >-
+              istanbul_block: Istanbul switch block (nil no fork, 0 = already on
+              istanbul)
           muir_glacier_block:
             type: string
             title: >-
-              Eip-2384 (bomb delay) switch block (nil no fork, 0 = already
-              activated)
+              muir_glacier_block: Eip-2384 (bomb delay) switch block (nil no
+              fork, 0 = already activated)
           berlin_block:
             type: string
-            title: Berlin switch block (nil = no fork, 0 = already on berlin)
+            title: >-
+              berlin_block: Berlin switch block (nil = no fork, 0 = already on
+              berlin)
           london_block:
             type: string
-            title: London switch block (nil = no fork, 0 = already on london)
+            title: >-
+              london_block: London switch block (nil = no fork, 0 = already on
+              london)
           arrow_glacier_block:
             type: string
             title: >-
-              Eip-4345 (bomb delay) switch block (nil = no fork, 0 = already
-              activated)
+              arrow_glacier_block: Eip-4345 (bomb delay) switch block (nil = no
+              fork, 0 = already activated)
           gray_glacier_block:
             type: string
             title: >-
-              EIP-5133 (bomb delay) switch block (nil = no fork, 0 = already
-              activated)
+              gray_glacier_block: EIP-5133 (bomb delay) switch block (nil = no
+              fork, 0 = already activated)
           merge_netsplit_block:
             type: string
-            title: Virtual fork after The Merge to use as a network splitter
+            title: >-
+              merge_netsplit_block: Virtual fork after The Merge to use as a
+              network splitter
+          shanghai_block:
+            type: string
+            title: >-
+              shanghai_block switch block (nil = no fork, 0 = already on
+              shanghai)
+          cancun_block:
+            type: string
+            title: cancun_block switch block (nil = no fork, 0 = already on cancun)
         description: >-
           ChainConfig defines the Ethereum ChainConfig parameters using *sdk.Int
           values
@@ -3783,10 +3945,8 @@ definitions:
           instead of *big.Int.
       allow_unprotected_txs:
         type: boolean
-        description: >-
-          Allow unprotected transactions defines if replay-protected (i.e non
-          EIP155
-
+        description: |-
+          allow_unprotected_txs defines if replay-protected (i.e non EIP155
           signed) transactions can be executed on the state machine.
     title: Params defines the EVM module parameters
   ethermint.evm.v1.QueryAccountResponse:
@@ -3797,7 +3957,7 @@ definitions:
         description: balance is the balance of the EVM denomination.
       code_hash:
         type: string
-        description: code hash is the hex-formatted code bytes from the EOA.
+        description: code_hash is the hex-formatted code bytes from the EOA.
       nonce:
         type: string
         format: uint64
@@ -3819,7 +3979,8 @@ definitions:
     properties:
       base_fee:
         type: string
-    description: BaseFeeResponse returns the EIP1559 base fee.
+        title: base_fee is the EIP1559 base fee
+    description: QueryBaseFeeResponse returns the EIP1559 base fee.
   ethermint.evm.v1.QueryCodeResponse:
     type: object
     properties:
@@ -3843,7 +4004,7 @@ definitions:
       account_number:
         type: string
         format: uint64
-        title: account_number is the account numbert
+        title: account_number is the account number
     description: >-
       QueryCosmosAccountResponse is the response type for the
       Query/CosmosAccount
@@ -3859,95 +4020,121 @@ definitions:
           evm_denom:
             type: string
             description: >-
-              evm denom represents the token denomination used to run the EVM
+              evm_denom represents the token denomination used to run the EVM
               state
 
               transitions.
           enable_create:
             type: boolean
             title: >-
-              enable create toggles state transitions that use the vm.Create
+              enable_create toggles state transitions that use the vm.Create
               function
           enable_call:
             type: boolean
             title: >-
-              enable call toggles state transitions that use the vm.Call
+              enable_call toggles state transitions that use the vm.Call
               function
           extra_eips:
             type: array
             items:
               type: string
               format: int64
-            title: extra eips defines the additional EIPs for the vm.Config
+            title: extra_eips defines the additional EIPs for the vm.Config
           chain_config:
-            title: chain config defines the EVM chain configuration parameters
+            title: chain_config defines the EVM chain configuration parameters
             type: object
             properties:
               homestead_block:
                 type: string
-                title: Homestead switch block (nil no fork, 0 = already homestead)
+                title: homestead_block switch (nil no fork, 0 = already homestead)
               dao_fork_block:
                 type: string
-                title: TheDAO hard-fork switch block (nil no fork)
+                title: >-
+                  dao_fork_block corresponds to TheDAO hard-fork switch block
+                  (nil no fork)
               dao_fork_support:
                 type: boolean
-                title: Whether the nodes supports or opposes the DAO hard-fork
+                title: >-
+                  dao_fork_support defines whether the nodes supports or opposes
+                  the DAO hard-fork
               eip150_block:
                 type: string
                 title: >-
-                  EIP150 implements the Gas price changes
+                  eip150_block: EIP150 implements the Gas price changes
 
                   (https://github.com/ethereum/EIPs/issues/150) EIP150 HF block
                   (nil no fork)
               eip150_hash:
                 type: string
                 title: >-
-                  EIP150 HF hash (needed for header only clients as only gas
-                  pricing changed)
+                  eip150_hash: EIP150 HF hash (needed for header only clients as
+                  only gas pricing changed)
               eip155_block:
                 type: string
-                title: EIP155Block HF block
+                title: 'eip155_block: EIP155Block HF block'
               eip158_block:
                 type: string
-                title: EIP158 HF block
+                title: 'eip158_block: EIP158 HF block'
               byzantium_block:
                 type: string
-                title: Byzantium switch block (nil no fork, 0 = already on byzantium)
+                title: >-
+                  byzantium_block: Byzantium switch block (nil no fork, 0 =
+                  already on byzantium)
               constantinople_block:
                 type: string
                 title: >-
-                  Constantinople switch block (nil no fork, 0 = already
-                  activated)
+                  constantinople_block: Constantinople switch block (nil no
+                  fork, 0 = already activated)
               petersburg_block:
                 type: string
-                title: Petersburg switch block (nil same as Constantinople)
+                title: >-
+                  petersburg_block: Petersburg switch block (nil same as
+                  Constantinople)
               istanbul_block:
                 type: string
-                title: Istanbul switch block (nil no fork, 0 = already on istanbul)
+                title: >-
+                  istanbul_block: Istanbul switch block (nil no fork, 0 =
+                  already on istanbul)
               muir_glacier_block:
                 type: string
                 title: >-
-                  Eip-2384 (bomb delay) switch block (nil no fork, 0 = already
-                  activated)
+                  muir_glacier_block: Eip-2384 (bomb delay) switch block (nil no
+                  fork, 0 = already activated)
               berlin_block:
                 type: string
-                title: Berlin switch block (nil = no fork, 0 = already on berlin)
+                title: >-
+                  berlin_block: Berlin switch block (nil = no fork, 0 = already
+                  on berlin)
               london_block:
                 type: string
-                title: London switch block (nil = no fork, 0 = already on london)
+                title: >-
+                  london_block: London switch block (nil = no fork, 0 = already
+                  on london)
               arrow_glacier_block:
                 type: string
                 title: >-
-                  Eip-4345 (bomb delay) switch block (nil = no fork, 0 = already
-                  activated)
+                  arrow_glacier_block: Eip-4345 (bomb delay) switch block (nil =
+                  no fork, 0 = already activated)
               gray_glacier_block:
                 type: string
                 title: >-
-                  EIP-5133 (bomb delay) switch block (nil = no fork, 0 = already
-                  activated)
+                  gray_glacier_block: EIP-5133 (bomb delay) switch block (nil =
+                  no fork, 0 = already activated)
               merge_netsplit_block:
                 type: string
-                title: Virtual fork after The Merge to use as a network splitter
+                title: >-
+                  merge_netsplit_block: Virtual fork after The Merge to use as a
+                  network splitter
+              shanghai_block:
+                type: string
+                title: >-
+                  shanghai_block switch block (nil = no fork, 0 = already on
+                  shanghai)
+              cancun_block:
+                type: string
+                title: >-
+                  cancun_block switch block (nil = no fork, 0 = already on
+                  cancun)
             description: >-
               ChainConfig defines the Ethereum ChainConfig parameters using
               *sdk.Int values
@@ -3955,10 +4142,8 @@ definitions:
               instead of *big.Int.
           allow_unprotected_txs:
             type: boolean
-            description: >-
-              Allow unprotected transactions defines if replay-protected (i.e
-              non EIP155
-
+            description: |-
+              allow_unprotected_txs defines if replay-protected (i.e non EIP155
               signed) transactions can be executed on the state machine.
         title: Params defines the EVM module parameters
     description: >-
@@ -3970,7 +4155,7 @@ definitions:
       value:
         type: string
         description: >-
-          key defines the storage state value hash associated with the given
+          value defines the storage state value hash associated with the given
           key.
     description: |-
       QueryStorageResponse is the response type for the Query/Storage RPC
@@ -3981,6 +4166,7 @@ definitions:
       data:
         type: string
         format: byte
+        title: data is the response serialized in bytes
     title: QueryTraceBlockResponse defines TraceBlock response
   ethermint.evm.v1.QueryTraceTxResponse:
     type: object
@@ -3988,7 +4174,7 @@ definitions:
       data:
         type: string
         format: byte
-        title: response serialized in bytes
+        title: data is the response serialized in bytes
     title: QueryTraceTxResponse defines TraceTx response
   ethermint.evm.v1.QueryValidatorAccountResponse:
     type: object
@@ -4012,100 +4198,124 @@ definitions:
     properties:
       tracer:
         type: string
-        title: custom javascript tracer
+        title: tracer is a custom javascript tracer
       timeout:
         type: string
         title: >-
-          overrides the default timeout of 5 seconds for JavaScript-based
-          tracing
+          timeout overrides the default timeout of 5 seconds for
+          JavaScript-based tracing
 
           calls
       reexec:
         type: string
         format: uint64
-        title: number of blocks the tracer is willing to go back
+        title: reexec defines the number of blocks the tracer is willing to go back
       disable_stack:
         type: boolean
-        title: disable stack capture
+        title: disable_stack switches stack capture
       disable_storage:
         type: boolean
-        title: disable storage capture
+        title: disable_storage switches storage capture
       debug:
         type: boolean
-        title: print output during capture end
+        title: debug can be used to print output during capture end
       limit:
         type: integer
         format: int32
-        title: maximum length of output, but zero means unlimited
+        title: limit defines the maximum length of output, but zero means unlimited
       overrides:
-        title: >-
-          Chain overrides, can be used to execute a trace using future fork
-          rules
+        title: overrides can be used to execute a trace using future fork rules
         type: object
         properties:
           homestead_block:
             type: string
-            title: Homestead switch block (nil no fork, 0 = already homestead)
+            title: homestead_block switch (nil no fork, 0 = already homestead)
           dao_fork_block:
             type: string
-            title: TheDAO hard-fork switch block (nil no fork)
+            title: >-
+              dao_fork_block corresponds to TheDAO hard-fork switch block (nil
+              no fork)
           dao_fork_support:
             type: boolean
-            title: Whether the nodes supports or opposes the DAO hard-fork
+            title: >-
+              dao_fork_support defines whether the nodes supports or opposes the
+              DAO hard-fork
           eip150_block:
             type: string
             title: >-
-              EIP150 implements the Gas price changes
+              eip150_block: EIP150 implements the Gas price changes
 
               (https://github.com/ethereum/EIPs/issues/150) EIP150 HF block (nil
               no fork)
           eip150_hash:
             type: string
             title: >-
-              EIP150 HF hash (needed for header only clients as only gas pricing
-              changed)
+              eip150_hash: EIP150 HF hash (needed for header only clients as
+              only gas pricing changed)
           eip155_block:
             type: string
-            title: EIP155Block HF block
+            title: 'eip155_block: EIP155Block HF block'
           eip158_block:
             type: string
-            title: EIP158 HF block
+            title: 'eip158_block: EIP158 HF block'
           byzantium_block:
             type: string
-            title: Byzantium switch block (nil no fork, 0 = already on byzantium)
+            title: >-
+              byzantium_block: Byzantium switch block (nil no fork, 0 = already
+              on byzantium)
           constantinople_block:
             type: string
-            title: Constantinople switch block (nil no fork, 0 = already activated)
+            title: >-
+              constantinople_block: Constantinople switch block (nil no fork, 0
+              = already activated)
           petersburg_block:
             type: string
-            title: Petersburg switch block (nil same as Constantinople)
+            title: >-
+              petersburg_block: Petersburg switch block (nil same as
+              Constantinople)
           istanbul_block:
             type: string
-            title: Istanbul switch block (nil no fork, 0 = already on istanbul)
+            title: >-
+              istanbul_block: Istanbul switch block (nil no fork, 0 = already on
+              istanbul)
           muir_glacier_block:
             type: string
             title: >-
-              Eip-2384 (bomb delay) switch block (nil no fork, 0 = already
-              activated)
+              muir_glacier_block: Eip-2384 (bomb delay) switch block (nil no
+              fork, 0 = already activated)
           berlin_block:
             type: string
-            title: Berlin switch block (nil = no fork, 0 = already on berlin)
+            title: >-
+              berlin_block: Berlin switch block (nil = no fork, 0 = already on
+              berlin)
           london_block:
             type: string
-            title: London switch block (nil = no fork, 0 = already on london)
+            title: >-
+              london_block: London switch block (nil = no fork, 0 = already on
+              london)
           arrow_glacier_block:
             type: string
             title: >-
-              Eip-4345 (bomb delay) switch block (nil = no fork, 0 = already
-              activated)
+              arrow_glacier_block: Eip-4345 (bomb delay) switch block (nil = no
+              fork, 0 = already activated)
           gray_glacier_block:
             type: string
             title: >-
-              EIP-5133 (bomb delay) switch block (nil = no fork, 0 = already
-              activated)
+              gray_glacier_block: EIP-5133 (bomb delay) switch block (nil = no
+              fork, 0 = already activated)
           merge_netsplit_block:
             type: string
-            title: Virtual fork after The Merge to use as a network splitter
+            title: >-
+              merge_netsplit_block: Virtual fork after The Merge to use as a
+              network splitter
+          shanghai_block:
+            type: string
+            title: >-
+              shanghai_block switch block (nil = no fork, 0 = already on
+              shanghai)
+          cancun_block:
+            type: string
+            title: cancun_block switch block (nil = no fork, 0 = already on cancun)
         description: >-
           ChainConfig defines the Ethereum ChainConfig parameters using *sdk.Int
           values
@@ -4113,13 +4323,13 @@ definitions:
           instead of *big.Int.
       enable_memory:
         type: boolean
-        title: enable memory capture
+        title: enable_memory switches memory capture
       enable_return_data:
         type: boolean
-        title: enable return data capture
+        title: enable_return_data switches the capture of return data
       tracer_json_config:
         type: string
-        title: tracer config
+        title: tracer_json_config configures the tracer using a JSON string
     description: TraceConfig holds extra parameters to trace functions.
   google.protobuf.Any:
     type: object
@@ -4210,7 +4420,7 @@ definitions:
             foo = any.unpack(Foo.class);
           }
 
-       Example 3: Pack and unpack a message in Python.
+      Example 3: Pack and unpack a message in Python.
 
           foo = Foo(...)
           any = Any()
@@ -4220,7 +4430,7 @@ definitions:
             any.Unpack(foo)
             ...
 
-       Example 4: Pack and unpack a message in Go
+      Example 4: Pack and unpack a message in Go
 
            foo := &pb.Foo{...}
            any, err := anypb.New(foo)
@@ -4247,7 +4457,6 @@ definitions:
 
       JSON
 
-      ====
 
       The JSON representation of an `Any` value uses the regular
 
@@ -4387,7 +4596,7 @@ definitions:
                   foo = any.unpack(Foo.class);
                 }
 
-             Example 3: Pack and unpack a message in Python.
+            Example 3: Pack and unpack a message in Python.
 
                 foo = Foo(...)
                 any = Any()
@@ -4397,7 +4606,7 @@ definitions:
                   any.Unpack(foo)
                   ...
 
-             Example 4: Pack and unpack a message in Go
+            Example 4: Pack and unpack a message in Go
 
                  foo := &pb.Foo{...}
                  any, err := anypb.New(foo)
@@ -4424,7 +4633,6 @@ definitions:
 
             JSON
 
-            ====
 
             The JSON representation of an `Any` value uses the regular
 
