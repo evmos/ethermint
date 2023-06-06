@@ -506,8 +506,9 @@ schema = 3
     version = "v1.4.2"
     hash = "sha256-LnrDR1k/AoCFWBMcU7vQsoQLkZ65evT2hoQHLDudTsg="
   [mod."github.com/syndtr/goleveldb"]
-    version = "v1.0.1-0.20220721030215-126854af5e6d"
-    hash = "sha256-z7HzuNVmpAJalsebJ+X7jdXq7BykcOyfzhFT8os+euM="
+    version = "v1.0.1-0.20210819022825-2ae1ddf74ef7"
+    hash = "sha256-36a4hgVQfwtS2zhylKpQuFhrjdc/Y8pF0dxc26jcZIU="
+    replaced = "github.com/syndtr/goleveldb"
   [mod."github.com/tendermint/go-amino"]
     version = "v0.16.0"
     hash = "sha256-JW4zO/0vMzf1dXLePOqaMtiLUZgNbuIseh9GV+jQlf0="
