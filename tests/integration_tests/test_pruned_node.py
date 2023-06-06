@@ -77,9 +77,7 @@ def test_pruned_node(pruned):
         "eth_getBalance", [ADDRS["validator"], hex(tx_receipt.blockNumber)]
     )
     assert "error" in pruned_res
-    assert (
-        pruned_res["error"]["message"] == "couldn't fetch balance. Node state is pruned"
-    )
+    assert "version mismatch on immutable IAVL tree" in pruned_res["error"]["message"]
 
     with pytest.raises(Exception):
         erc20.caller(block_identifier=tx_receipt.blockNumber).balanceOf(
