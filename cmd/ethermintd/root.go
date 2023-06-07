@@ -251,16 +251,20 @@ func (a appCreator) newApp(logger tmlog.Logger, db dbm.DB, traceStore io.Writer,
 	)
 
 	// Setup chainId
-	v := viper.New()
-	v.AddConfigPath(filepath.Join(home, "config"))
-	v.SetConfigName("client")
-	v.SetConfigType("toml")
-	if err := v.ReadInConfig(); err != nil {
-		panic(err)
-	}
-	conf := new(config.ClientConfig)
-	if err := v.Unmarshal(conf); err != nil {
-		panic(err)
+	chainID := cast.ToString(appOpts.Get(flags.FlagChainID))
+	if len(chainID) == 0 {
+		v := viper.New()
+		v.AddConfigPath(filepath.Join(home, "config"))
+		v.SetConfigName("client")
+		v.SetConfigType("toml")
+		if err := v.ReadInConfig(); err != nil {
+			panic(err)
+		}
+		conf := new(config.ClientConfig)
+		if err := v.Unmarshal(conf); err != nil {
+			panic(err)
+		}
+		chainID = conf.ChainID
 	}
 	ethermintApp := app.NewEthermintApp(
 		logger, db, traceStore, true, skipUpgradeHeights,
@@ -279,7 +283,7 @@ func (a appCreator) newApp(logger tmlog.Logger, db dbm.DB, traceStore io.Writer,
 		baseapp.SetSnapshot(snapshotStore, snapshotOptions),
 		baseapp.SetIAVLCacheSize(cast.ToInt(appOpts.Get(sdkserver.FlagIAVLCacheSize))),
 		baseapp.SetIAVLDisableFastNode(cast.ToBool(appOpts.Get(sdkserver.FlagDisableIAVLFastNode))),
-		baseapp.SetChainID(conf.ChainID),
+		baseapp.SetChainID(chainID),
 	)
 
 	return ethermintApp
