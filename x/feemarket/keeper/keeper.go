@@ -24,6 +24,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
+	consensusparamkeeper "github.com/cosmos/cosmos-sdk/x/consensus/keeper"
 	"github.com/evmos/ethermint/x/feemarket/types"
 )
 
@@ -41,11 +42,12 @@ type Keeper struct {
 	authority sdk.AccAddress
 	// Legacy subspace
 	ss paramstypes.Subspace
+	ck consensusparamkeeper.Keeper
 }
 
 // NewKeeper generates new fee market module keeper
 func NewKeeper(
-	cdc codec.BinaryCodec, authority sdk.AccAddress, storeKey, transientKey storetypes.StoreKey, ss paramstypes.Subspace,
+	cdc codec.BinaryCodec, authority sdk.AccAddress, storeKey, transientKey storetypes.StoreKey, ss paramstypes.Subspace, ck consensusparamkeeper.Keeper,
 ) Keeper {
 	// ensure authority account is correctly formatted
 	if err := sdk.VerifyAddressFormat(authority); err != nil {
@@ -58,6 +60,7 @@ func NewKeeper(
 		authority:    authority,
 		transientKey: transientKey,
 		ss:           ss,
+		ck:           ck,
 	}
 }
 
