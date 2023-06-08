@@ -43,6 +43,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 - (app) [#1739](https://github.com/evmos/ethermint/pull/1739) Remove distribution module perms
 - (ante) [#1741](https://github.com/evmos/ethermint/pull/1741) Add authz ante handler
 - (eip712) [#1746](https://github.com/evmos/ethermint/pull/1746) Add EIP712 support for multiple messages and schemas
+- (deps) [#1782](https://github.com/evmos/ethermint/pull/1782) Bump Cosmos-SDK to v0.47.2 and ibc-go to v7.0.1.
 
 ### Bug Fixes
 
