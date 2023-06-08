@@ -263,6 +263,47 @@ func (suite *AnteTestSuite) TestRejectDeliverMsgsInAuthz() {
 			expectedCode: sdkerrors.ErrUnauthorized.ABCICode(),
 			isEIP712:     true,
 		},
+		{
+			name: "a MsgExec with nested messages (valid: MsgSend and invalid: MsgEthereumTx) is blocked",
+			msgs: []sdk.Msg{
+				newMsgExec(
+					testAddresses[1],
+					[]sdk.Msg{
+						createMsgSend(testAddresses),
+						&evmtypes.MsgEthereumTx{},
+					},
+				),
+			},
+			expectedCode: sdkerrors.ErrUnpackAny.ABCICode(),
+		},
+		{
+			name: "a MsgExec with nested MsgExec messages that has invalid messages is blocked",
+			msgs: []sdk.Msg{
+				createNestedMsgExec(
+					testAddresses[1],
+					2,
+					[]sdk.Msg{
+						&evmtypes.MsgEthereumTx{},
+					},
+				),
+			},
+			expectedCode: sdkerrors.ErrUnpackAny.ABCICode(),
+		},
+		{
+			name: "a MsgExec with more nested MsgExec messages than allowed and with valid messages is blocked",
+			msgs: []sdk.Msg{
+				createNestedExecMsgSend(testAddresses, 6),
+			},
+			expectedCode: sdkerrors.ErrUnauthorized.ABCICode(),
+		},
+		{
+			name: "two MsgExec messages NOT containing a blocked msg but between the two have more nesting than the allowed. Then, is blocked",
+			msgs: []sdk.Msg{
+				createNestedExecMsgSend(testAddresses, 5),
+				createNestedExecMsgSend(testAddresses, 5),
+			},
+			expectedCode: sdkerrors.ErrUnauthorized.ABCICode(),
+		},
 	}
 
 	for _, tc := range testcases {
