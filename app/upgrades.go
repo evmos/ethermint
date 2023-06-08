@@ -34,6 +34,9 @@ import (
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
+	evmtypes "github.com/evmos/ethermint/x/evm/types"
+	feemarkettypes "github.com/evmos/ethermint/x/feemarket/types"
 )
 
 func (app *EthermintApp) RegisterUpgradeHandlers() {
@@ -58,6 +61,14 @@ func (app *EthermintApp) RegisterUpgradeHandlers() {
 			keyTable = govv1.ParamKeyTable() //nolint:staticcheck
 		case crisistypes.ModuleName:
 			keyTable = crisistypes.ParamKeyTable() //nolint:staticcheck
+		case ibctransfertypes.ModuleName:
+			keyTable = ibctransfertypes.ParamKeyTable() //nolint:staticcheck
+		case evmtypes.ModuleName:
+			keyTable = evmtypes.ParamKeyTable() //nolint:staticcheck
+		case feemarkettypes.ModuleName:
+			keyTable = feemarkettypes.ParamKeyTable() //nolint:staticcheck
+		default:
+			continue
 		}
 		if !subspace.HasKeyTable() {
 			subspace.WithKeyTable(keyTable)
