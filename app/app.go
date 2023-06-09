@@ -455,7 +455,7 @@ func NewEthermintApp(
 	feeMarketSs := app.GetSubspace(feemarkettypes.ModuleName)
 	app.FeeMarketKeeper = feemarketkeeper.NewKeeper(
 		appCodec, authtypes.NewModuleAddress(govtypes.ModuleName),
-		keys[feemarkettypes.StoreKey], tkeys[feemarkettypes.TransientKey], feeMarketSs, app.ConsensusParamsKeeper,
+		keys[feemarkettypes.StoreKey], tkeys[feemarkettypes.TransientKey], feeMarketSs,
 	)
 
 	// Set authority to x/gov module account to only expect the module account to update params
@@ -463,7 +463,7 @@ func NewEthermintApp(
 	app.EvmKeeper = evmkeeper.NewKeeper(
 		appCodec, keys[evmtypes.StoreKey], tkeys[evmtypes.TransientKey], authtypes.NewModuleAddress(govtypes.ModuleName),
 		app.AccountKeeper, app.BankKeeper, app.StakingKeeper, app.FeeMarketKeeper,
-		nil, geth.NewEVM, tracer, evmSs, app.ConsensusParamsKeeper,
+		nil, geth.NewEVM, tracer, evmSs,
 	)
 
 	// Create IBC Keeper

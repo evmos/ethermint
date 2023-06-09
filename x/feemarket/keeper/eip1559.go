@@ -35,10 +35,8 @@ func (k Keeper) CalculateBaseFee(ctx sdk.Context) *big.Int {
 	if !params.IsBaseFeeEnabled(ctx.BlockHeight()) {
 		return nil
 	}
-	consParams, err := k.ck.Get(ctx)
-	if err != nil {
-		return nil
-	}
+
+	consParams := ctx.ConsensusParams()
 
 	// If the current block is the first EIP-1559 block, return the base fee
 	// defined in the parameters (DefaultBaseFee if it hasn't been changed by
