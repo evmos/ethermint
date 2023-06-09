@@ -62,11 +62,11 @@ func (app *EthermintApp) RegisterUpgradeHandlers() {
 		case crisistypes.ModuleName:
 			keyTable = crisistypes.ParamKeyTable() //nolint:staticcheck
 		case ibctransfertypes.ModuleName:
-			keyTable = ibctransfertypes.ParamKeyTable() //nolint:staticcheck
+			keyTable = ibctransfertypes.ParamKeyTable()
 		case evmtypes.ModuleName:
 			keyTable = evmtypes.ParamKeyTable() //nolint:staticcheck
 		case feemarkettypes.ModuleName:
-			keyTable = feemarkettypes.ParamKeyTable() //nolint:staticcheck
+			keyTable = feemarkettypes.ParamKeyTable()
 		default:
 			continue
 		}
