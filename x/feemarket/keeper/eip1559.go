@@ -59,7 +59,7 @@ func (k Keeper) CalculateBaseFee(ctx sdk.Context) *big.Int {
 	gasLimit := new(big.Int).SetUint64(math.MaxUint64)
 
 	// NOTE: a MaxGas equal to -1 means that block gas is unlimited
-	if consParams != nil && consParams.Block.MaxGas > -1 {
+	if consParams != nil && consParams.Block != nil && consParams.Block.MaxGas > -1 {
 		gasLimit = big.NewInt(consParams.Block.MaxGas)
 	}
 
