@@ -11,7 +11,7 @@ require (
 	github.com/armon/go-metrics v0.4.1
 	github.com/btcsuite/btcd v0.23.4
 	github.com/btcsuite/btcd/btcutil v1.1.3
-	github.com/cometbft/cometbft v0.37.1
+	github.com/cometbft/cometbft v0.37.2
 	github.com/cometbft/cometbft-db v0.7.0
 	github.com/cosmos/cosmos-proto v1.0.0-beta.2
 	github.com/cosmos/cosmos-sdk v0.47.3
@@ -217,6 +217,7 @@ replace (
 	github.com/ChainSafe/go-schnorrkel => github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d
 	github.com/cometbft/cometbft => github.com/cometbft/cometbft v0.37.2
 	github.com/cometbft/cometbft-db => github.com/crypto-org-chain/cometbft-db v0.0.0-20230412133340-ac70df4b45f6
+	github.com/cosmos/cosmos-sdk => github.com/mmsqe/cosmos-sdk v0.47.0-rc1.0.20230615150848-6d03dea8c6d7
 	// Fix upstream GHSA-h395-qcrw-5vmq vulnerability.
 	// TODO Remove it: https://github.com/cosmos/cosmos-sdk/issues/10409
 	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.7.0

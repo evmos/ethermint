@@ -368,8 +368,6 @@ github.com/cosmos/btcutil v1.0.5 h1:t+ZFcX77LpKtDBhjucvnOH8C2l2ioGsBNEQ3jef8xFk=
 github.com/cosmos/btcutil v1.0.5/go.mod h1:IyB7iuqZMJlthe2tkIFL33xPyzbFYP0XVdS8P5lUPis=
 github.com/cosmos/cosmos-proto v1.0.0-beta.2 h1:X3OKvWgK9Gsejo0F1qs5l8Qn6xJV/AzgIWR2wZ8Nua8=
 github.com/cosmos/cosmos-proto v1.0.0-beta.2/go.mod h1:+XRCLJ14pr5HFEHIUcn51IKXD1Fy3rkEQqt4WqmN4V0=
-github.com/cosmos/cosmos-sdk v0.47.3 h1:r0hGmZoAzP2D+MaPaFGHwAaTdFQq3pNpHaUp1BsffbM=
-github.com/cosmos/cosmos-sdk v0.47.3/go.mod h1:c4OfLdAykA9zsj1CqrxBRqXzVz48I++JSvIMPSPcEmk=
 github.com/cosmos/go-bip39 v0.0.0-20180819234021-555e2067c45d/go.mod h1:tSxLoYXyBmiFeKpvmq4dzayMdCjCnu8uqmCysIGBT2Y=
 github.com/cosmos/go-bip39 v1.0.0 h1:pcomnQdrdH22njcAatO0yWojsUnCO3y2tNoV1cb6hHY=
 github.com/cosmos/go-bip39 v1.0.0/go.mod h1:RNJv0H/pOIVgxw6KS7QeX2a0Uo0aKUlfhZ4xuwvCdJw=
@@ -886,6 +884,8 @@ github.com/mitchellh/mapstructure v1.1.2/go.mod h1:FVVH3fgwuzCH5S8UJGiWEs2h04kUh
 github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=
 github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
 github.com/mitchellh/pointerstructure v1.2.0 h1:O+i9nHnXS3l/9Wu7r4NrEdwA2VFTicjUEN1uBnDo34A=
+github.com/mmsqe/cosmos-sdk v0.47.0-rc1.0.20230615150848-6d03dea8c6d7 h1:u5TYBLx83n1q2jVGOSKKmJRE9DmngY77FodFrNDHHCo=
+github.com/mmsqe/cosmos-sdk v0.47.0-rc1.0.20230615150848-6d03dea8c6d7/go.mod h1:D5LeqUL7SdWD398iTLvNcUEaAoKLpw0bRHf5uh4He+M=
 github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
 github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd h1:TRLaZ9cD/w8PVh93nsPXa1VrQ6jlwL5oN8l14QlcNfg=
 github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=

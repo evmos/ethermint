@@ -79,6 +79,8 @@ func (app *EthermintApp) RegisterUpgradeHandlers() {
 	app.UpgradeKeeper.SetUpgradeHandler(planName, func(ctx sdk.Context, plan upgradetypes.Plan, fromVM module.VersionMap) (module.VersionMap, error) {
 		// Migrate Tendermint consensus parameters from x/params module to a dedicated x/consensus module.
 		baseapp.MigrateParams(ctx, baseAppLegacySS, &app.ConsensusParamsKeeper)
+		c := app.GetConsensusParams(ctx)
+		ctx = ctx.WithConsensusParams(c)
 		return app.mm.RunMigrations(ctx, app.configurator, fromVM)
 	})
 	upgradeInfo, err := app.UpgradeKeeper.ReadUpgradeInfoFromDisk()
