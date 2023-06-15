@@ -43,6 +43,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 - (app) [#1739](https://github.com/evmos/ethermint/pull/1739) Remove distribution module perms
 - (ante) [#1741](https://github.com/evmos/ethermint/pull/1741) Add authz ante handler
 - (eip712) [#1746](https://github.com/evmos/ethermint/pull/1746) Add EIP712 support for multiple messages and schemas
+- (feemarket) [#1790](https://github.com/evmos/ethermint/pull/1790) Add nil check for consParams.Block
 
 ### Bug Fixes
 
