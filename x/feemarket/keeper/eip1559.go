@@ -59,8 +59,7 @@ func (k Keeper) CalculateBaseFee(ctx sdk.Context) *big.Int {
 
 	// NOTE: a MaxGas equal to -1 means that block gas is unlimited
 	if consParams == nil || consParams.Block == nil || consParams.Block.MaxGas <= -1 {
-		k.Logger(ctx).Error(fmt.Sprintf("get invalid consensus params: %s", consParams))
-		return nil
+		panic(fmt.Sprintf("get invalid consensus params: %s", consParams))
 	}
 	gasLimit := big.NewInt(consParams.Block.MaxGas)
 	// CONTRACT: ElasticityMultiplier cannot be 0 as it's checked in the params
