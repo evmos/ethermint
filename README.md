@@ -38,6 +38,11 @@ parent:
   </a>
 </div>
 
+> [!WARNING] 
+> The team behind Ethermint has fully shifted its focus to [Evmos](https://github.com/evmos/evmos) where we
+> continue to build interoperability solutions for the future!
+> This repository is no longer being actively maintained for that reason and all relevant code has been migrated.
+
 Ethermint is a scalable and interoperable Ethereum library, built on Proof-of-Stake with fast-finality using the [Cosmos SDK](https://github.com/cosmos/cosmos-sdk/) which runs on top of [Tendermint Core](https://github.com/tendermint/tendermint) consensus engine.
 
 **Note**: Requires [Go 1.19+](https://golang.org/dl/)
