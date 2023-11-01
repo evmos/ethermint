@@ -18,7 +18,7 @@ jobs:
         with:
           go-version: 1.19
           check-latest: true
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: technote-space/get-diff-action@v6.1.2
         with:
           PATTERNS: |
@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: technote-space/get-diff-action@v6.1.2
         with:
           PATTERNS: |
@@ -56,7 +56,7 @@ jobs:
     name: Run flake8 on python integration tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: cachix/install-nix-action@v20
       - uses: cachix/cachix-action@v12
         with:
@@ -72,7 +72,7 @@ jobs:
     name: Check gomod2nix.toml file is up to date
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: cachix/install-nix-action@v20
       - uses: cachix/cachix-action@v12
         with:
