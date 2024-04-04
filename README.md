@@ -11,10 +11,10 @@ parent:
 
 <div align="center">
   <a href="https://github.com/evmos/ethermint/releases/latest">
-    <img alt="Version" src="https://img.shields.io/github/tag/tharsis/ethermint.svg" />
+    <img alt="Version" src="https://img.shields.io/github/tag/evmos/ethermint.svg" />
   </a>
   <a href="https://github.com/evmos/ethermint/blob/main/LICENSE">
-    <img alt="License: Apache-2.0" src="https://img.shields.io/github/license/tharsis/ethermint.svg" />
+    <img alt="License: LGPL-v3" src="https://img.shields.io/github/license/evmos/ethermint.svg" />
   </a>
   <a href="https://pkg.go.dev/github.com/evmos/ethermint">
     <img alt="GoDoc" src="https://godoc.org/github.com/evmos/ethermint?status.svg" />
@@ -23,7 +23,7 @@ parent:
     <img alt="Go report card" src="https://goreportcard.com/badge/github.com/evmos/ethermint"/>
   </a>
   <a href="https://bestpractices.coreinfrastructure.org/projects/5018">
-    <img alt="Lines of code" src="https://img.shields.io/tokei/lines/github/tharsis/ethermint">
+    <img alt="Lines of code" src="https://img.shields.io/tokei/lines/github/evmos/ethermint">
   </a>
 </div>
 <div align="center">
@@ -34,7 +34,7 @@ parent:
     <img alt="Lint Status" src="https://github.com/evmos/ethermint/actions/workflows/lint.yml/badge.svg?branch=main" />
   </a>
   <a href="https://codecov.io/gh/tharsis/ethermint">
-    <img alt="Code Coverage" src="https://codecov.io/gh/tharsis/ethermint/branch/main/graph/badge.svg" />
+    <img alt="Code Coverage" src="https://codecov.io/gh/evmos/ethermint/branch/main/graph/badge.svg" />
   </a>
 </div>
 
@@ -43,7 +43,7 @@ parent:
 > continue to build interoperability solutions for the future!
 > As a result, this repository is no longer maintained for that reason and all relevant code has been migrated.
 >
-> **NOTE: If you are interested in using this software** email us at [evmos-sdk@evmos.org](mailto:evmos-sdk@evmos.org) with copy to [legal@thars.is](mailto:legal@thars.is)
+> **NOTE: If you are interested in using this software** email us at [os@evmos.org](mailto:os@evmos.org) with copy to [legal@thars.is](mailto:legal@thars.is)
 
 ## About 
 
@@ -51,7 +51,7 @@ Ethermint is a scalable and interoperable Ethereum library, built on Proof-of-St
 
 ## Careers
 
-See our open positions on [Greenhouse](https://evmos.org/careers).
+See our open positions on [Evmos Careers](https://evmos.org/careers).
 
 
 ## Community
@@ -59,7 +59,7 @@ See our open positions on [Greenhouse](https://evmos.org/careers).
 The following chat channels and forums are a great spot to ask questions about Ethermint:
 
 - [Evmos Twitter](https://twitter.com/EvmosOrg)
-- [Evmos Discord](https://discord.gg/trje9XuAmy)
+- [Evmos Discord](https://discord.gg/evmos)
 - [Evmos Telegram](https://t.me/EvmosOrg)
 - [Altiplanic Twitter](https://twitter.com/Altiplanic_io)
 
