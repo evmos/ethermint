@@ -34,7 +34,7 @@ jobs:
         run: |
           make test-unit-cover
         if: env.GIT_DIFF
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         with:
           file: ./coverage.txt
           fail_ci_if_error: true
