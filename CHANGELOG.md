@@ -47,6 +47,7 @@ Ref: https://keepachangelog.com/en/1.0.0/
 ### Bug Fixes
 
 - (rpc) [#1688](https://github.com/evmos/ethermint/pull/1688) Align filter rule for `debug_traceBlockByNumber`
+- (rpc) [#1815](https://github.com/evmos/ethermint/pull/1815) Support unprotected transactions using `--json-rpc.allow-unprotected-txs`.
 
 ### Improvements
 
