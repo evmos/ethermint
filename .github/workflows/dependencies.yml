@@ -13,7 +13,7 @@ jobs:
           go-version: 1.19
           check-latest: true
       - name: "Checkout Repository"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - uses: technote-space/get-diff-action@v6.1.2
         with:
           PATTERNS: |
